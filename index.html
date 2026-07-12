@@ -976,7 +976,7 @@ header {
          atributo, o navegador volta a enviar o referrer padrão (apenas a origem do site, por
          segurança) e o player passa a ser aceito pela maioria dos provedores de vídeo. -->
     <div class="iframe-wrapper" id="p-wrap">
-      <iframe id="player" src="" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" loading="eager"></iframe>
+      <iframe id="player" src="" referrerpolicy="origin" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowtransparency="true" loading="eager"></iframe>
     </div>
 
     <!-- BUG FIX: link alternativo caso o iframe seja bloqueado pelo player de origem -->
@@ -1010,14 +1010,14 @@ header {
     <!-- CONTROLES AVANÇADOS -->
     <div class="advanced-controls">
       <div class="control-group">
-        <button class="control-btn" onclick="skipBack(10)" title="Voltar 10s">⏪10</button>
-        <button class="control-btn" onclick="skipBack(30)" title="Voltar 30s">⏪30</button>
-        <button class="control-btn" onclick="togglePlayPause()" title="Play/Pause" id="play-btn">⏯️</button>
-        <button class="control-btn" onclick="skipForward(10)" title="Avançar 10s">10⏩</button>
-        <button class="control-btn" onclick="skipForward(30)" title="Avançar 30s">30⏩</button>
-        <button class="control-btn" onclick="skipForward(85)" title="Pular Abertura">⏭OP</button>
-        <button class="control-btn" onclick="skipBack(5)" title="Voltar 5s">⏪5</button>
-        <button class="control-btn" onclick="skipForward(5)" title="Avançar 5s">5⏩</button>
+        <button class="control-btn" onclick="skipBack(10)" title="Voltar 10s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> 10s</button>
+        <button class="control-btn" onclick="skipBack(30)" title="Voltar 30s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> 30s</button>
+        <button class="control-btn" onclick="togglePlayPause()" title="Play/Pause" id="play-btn"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></button>
+        <button class="control-btn" onclick="skipForward(10)" title="Avançar 10s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 10s</button>
+        <button class="control-btn" onclick="skipForward(30)" title="Avançar 30s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 30s</button>
+        <button class="control-btn" onclick="skipForward(85)" title="Pular Abertura"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> Abertura</button>
+        <button class="control-btn" onclick="skipBack(5)" title="Voltar 5s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> 5s</button>
+        <button class="control-btn" onclick="skipForward(5)" title="Avançar 5s"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> 5s</button>
       </div>
       <div class="control-group">
         <div class="brightness-control">
@@ -1030,7 +1030,7 @@ header {
           <input type="range" min="0" max="200" step="5" value="100" oninput="changeSat(this.value)" title="Saturação">
         </div>
         <div class="brightness-control">
-          <span style="font-size:12px; font-weight:600; color:var(--text-muted);">◑</span>
+          <span style="font-size:12px; font-weight:600; color:var(--text-muted);"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" stroke="none"></path></svg></span>
           <input type="range" min="0" max="200" step="5" value="100" oninput="changeContrast(this.value)" title="Contraste">
         </div>
       </div>
@@ -1083,7 +1083,7 @@ header {
     <!-- CONTROLES EXTRAS -->
     <div class="extra-controls-row">
       <button class="extra-ctrl-btn" onclick="toggleLoop()" id="btn-loop"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg> Loop</button>
-      <button class="extra-ctrl-btn" onclick="toggleAutoplay()" id="btn-autoplay" class="on">▶️ Autoplay</button>
+      <button class="extra-ctrl-btn on" onclick="toggleAutoplay()" id="btn-autoplay"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Autoplay</button>
       <button class="extra-ctrl-btn" onclick="toggleNightMode()" id="btn-night"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Modo Noturno</button>
       <button class="extra-ctrl-btn" onclick="toggleBlur()" id="btn-blur"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg> Desfoque</button>
       <button class="extra-ctrl-btn" onclick="toggleGrayscale()" id="btn-gray"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" stroke="none"></rect></svg> P&B</button>
@@ -1096,6 +1096,11 @@ header {
       <button class="extra-ctrl-btn" onclick="openNotes()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg> Notas</button>
       <button class="extra-ctrl-btn" onclick="toggleStats()" id="btn-stats"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Stats</button>
       <button class="extra-ctrl-btn" onclick="resetFilters()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg> Resetar Filtros</button>
+      <button class="extra-ctrl-btn" onclick="reloadPlayer()" title="Recarregar o player atual"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Recarregar</button>
+      <button class="extra-ctrl-btn" onclick="popoutPlayer()" title="Abrir o vídeo em nova janela"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg> Pop-out</button>
+      <button class="extra-ctrl-btn" onclick="tryPictureInPicture()" title="Picture-in-Picture (mini-janela flutuante)"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="2"></rect><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor" stroke="none"></rect></svg> PiP</button>
+      <button class="extra-ctrl-btn" onclick="copyLinkAtTime()" title="Copiar link com o tempo atual"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Link + Tempo</button>
+      <button class="extra-ctrl-btn" onclick="openSleepTimerMenu()" title="Fechar automaticamente após alguns minutos"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> Sleep Timer <span id="sleep-timer-badge" style="display:none;margin-left:6px;padding:2px 8px;background:var(--primary);color:#000;border-radius:8px;font-size:11px;font-weight:800;"></span></button>
     </div>
 
     <!-- SOCIAL BAR -->
@@ -1120,8 +1125,8 @@ header {
       <div class="social-right">
         <button class="btn-action" onclick="sharePlayer()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> COMPARTILHAR</button>
         <button class="btn-action" onclick="downloadEpisode()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> DOWNLOAD</button>
-        <button class="btn-action" onclick="playNext()">⏭️ PRÓXIMO</button>
-        <button class="btn-action" onclick="playPrev()">⏮️ ANTERIOR</button>
+        <button class="btn-action" onclick="playNext()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> PRÓXIMO</button>
+        <button class="btn-action" onclick="playPrev()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg> ANTERIOR</button>
       </div>
     </div>
 
@@ -1157,9 +1162,9 @@ header {
         <button class="ep-tool-btn" onclick="filterUnwatched()" id="filter-unwatched-btn"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> Não Vistos</button>
         <button class="ep-tool-btn" onclick="showRandomEp()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg> Aleatório</button>
         <div class="ep-view-toggle">
-          <button class="ep-view-btn active" onclick="setEpView('grid')" id="view-grid" title="Grade">⊞</button>
+          <button class="ep-view-btn active" onclick="setEpView('grid')" id="view-grid" title="Grade"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></button>
           <button class="ep-view-btn" onclick="setEpView('list')" id="view-list" title="Lista"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
-          <button class="ep-view-btn" onclick="setEpView('compact')" id="view-compact" title="Compacto">⊟</button>
+          <button class="ep-view-btn" onclick="setEpView('compact')" id="view-compact" title="Compacto"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></button>
         </div>
       </div>
 
@@ -1192,9 +1197,9 @@ header {
         <input type="number" id="jump-input" min="1" placeholder="Nº" onkeydown="if(event.key==='Enter') jumpToEp()">
         <button class="ep-jump-btn" onclick="jumpToEp()">IR</button>
         <span style="flex:1"></span>
-        <button class="ep-tool-btn" onclick="playNext()">⏭ Próximo EP</button>
-        <button class="ep-tool-btn" onclick="playPrev()">⏮ EP Anterior</button>
-        <button class="ep-tool-btn" onclick="playNext5()">⏭⏭ +5 EPs</button>
+        <button class="ep-tool-btn" onclick="playNext()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg> Próximo EP</button>
+        <button class="ep-tool-btn" onclick="playPrev()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg> EP Anterior</button>
+        <button class="ep-tool-btn" onclick="playNext5()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg> +5 EPs</button>
       </div>
 
     </div><!-- /episodes-section -->
@@ -1324,7 +1329,7 @@ header {
 
     <section id="curtas" class="section" style="padding-top:20px;">
       <div class="row">
-        <h2>▶️ CURTAS ESPECIAIS</h2>
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> CURTAS ESPECIAIS</h2>
         <div class="row-content" id="curtas-content">
           <div class="card" data-title="Paperman"><img src="https://image.tmdb.org/t/p/w500/5HO6hAE0rtfxvghHQcLBns2b0hJ.jpg"><div class="overlay"><div class="card-title">Paperman</div><div class="card-desc">Animação Curta</div><div class="card-rating"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> 8.1/10</div></div></div>
           <div class="card" data-title="Bao"><img src="https://image.tmdb.org/t/p/w500/lJwSvq2CGkLTDVGXWcVt2gDMa9d.jpg"><div class="overlay"><div class="card-title">Bao</div><div class="card-desc">Animação Curta</div><div class="card-rating"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> 8.0/10</div></div></div>
@@ -1415,6 +1420,12 @@ const STATE = {
   statsVisible: false,
   reportSelected: null,
   recentlyWatched: [],
+  // ── novos campos: título/URL atuais + estado de play/pause simulado + sleep timer
+  currentTitle: 'The Boys',
+  currentUrl: '',
+  isPaused: false,
+  sleepTimerId: null,
+  sleepTimerEnd: 0,
 };
 
 // ── DADOS DAS TEMPORADAS (THE BOYS) ──────────────────────────
@@ -1701,6 +1712,96 @@ function closePlayer() {
   resetFilters();
 }
 
+
+// ── NORMALIZADOR DE URLS DE EMBED ──────────────────────────────
+// Converte links "/f/" (página do arquivo) para "/e/" (embed) para hosts
+// conhecidos que só permitem carregar dentro de iframe pela rota /e/ ou /embed/.
+// Sem essa conversão MixDrop, Streamtape, DoodStream, Voe, Filemoon, StreamWish
+// etc. recusam o carregamento com X-Frame-Options/CSP e o player fica em branco.
+function normalizeEmbedUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+  let url = rawUrl.trim();
+  if (!url) return url;
+  try {
+    // corrige "//host/..." e adiciona https se faltar protocolo
+    if (url.startsWith('//')) url = 'https:' + url;
+    if (!/^https?:\/\//i.test(url) && /^[a-z0-9.-]+\.[a-z]{2,}\//i.test(url)) {
+      url = 'https://' + url;
+    }
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase().replace(/^www\./, '');
+
+    // MixDrop e forks (mixdrop.co/ag/sb/to/ch/club/...)
+    if (/(^|\.)mixdrop\.[a-z.]+$/.test(host) || host.startsWith('mixdrop')) {
+      u.pathname = u.pathname.replace(/^\/(f|d)\//, '/e/');
+      return u.toString();
+    }
+    // Streamtape e espelhos
+    if (/streamtape|streamta\.pe|stape|tapewithadblock|watchadsontape|adblockeronstape|streamadblocker/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/v\//, '/e/');
+      return u.toString();
+    }
+    // DoodStream / DoodLa / d0000d / d000d / dooood
+    if (/dood|d0000d|d000d|ds2play|ds2video/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/d\//, '/e/');
+      return u.toString();
+    }
+    // Voe.sx e espelhos
+    if (/^voe\.|voe-|voeun|voeunblk|voeunbl|voe\.sx|voeunblock/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/(f|d)\//, '/e/');
+      return u.toString();
+    }
+    // Filemoon
+    if (/filemoon|moonmov|fmoon|filelions|lylink|kerapoxy|z-lion|streamruby/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/(f|d)\//, '/e/');
+      return u.toString();
+    }
+    // StreamWish / SwHoster / EmbedWish
+    if (/streamwish|swhoster|embedwish|wishembed|awish|strwish|strmwis|dwish/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/f\//, '/e/');
+      return u.toString();
+    }
+    // Upstream / VidHide / VidMoly / Vidoza / Mp4Upload
+    if (/upstream\.to|vidhide|vhide|vidmoly|vidoza|mp4upload/.test(host)) {
+      u.pathname = u.pathname.replace(/^\/(f|v)\//, '/embed-') // upstream: /embed-<id>.html
+                            .replace(/^\/embed-/, '/embed-');
+      if (u.pathname.startsWith('/embed-') && !u.pathname.endsWith('.html')) {
+        u.pathname += '.html';
+      }
+      return u.toString();
+    }
+    // YouTube: watch?v=ID → /embed/ID
+    if (/(^|\.)youtube\.com$/.test(host) && u.pathname === '/watch') {
+      const id = u.searchParams.get('v');
+      if (id) return 'https://www.youtube.com/embed/' + id;
+    }
+    if (host === 'youtu.be') {
+      const id = u.pathname.replace(/^\//, '');
+      if (id) return 'https://www.youtube.com/embed/' + id;
+    }
+    // Google Drive: /file/d/ID/view → /file/d/ID/preview
+    if (host.endsWith('drive.google.com')) {
+      return url.replace(/\/view(\?.*)?$/, '/preview');
+    }
+    // Vimeo: vimeo.com/ID → player.vimeo.com/video/ID
+    if (host === 'vimeo.com') {
+      const m = u.pathname.match(/^\/(\d+)/);
+      if (m) return 'https://player.vimeo.com/video/' + m[1];
+    }
+  } catch (e) { /* URL inválida — devolve como veio */ }
+  return url;
+}
+
+// Aplica src no iframe com a URL já normalizada
+function setPlayerSrc(rawUrl) {
+  const iframe = document.getElementById('player');
+  if (!iframe) return rawUrl;
+  const finalUrl = normalizeEmbedUrl(rawUrl);
+  iframe.src = finalUrl;
+  STATE.currentUrl = finalUrl;
+  return finalUrl;
+}
+
 // Abre o player usando o(s) link(s) (iframe/URL) cadastrado(s) no admin para o item do catálogo
 function playCatalogItem(category, index) {
   const item = window.CATALOG_DATA && window.CATALOG_DATA[category] && window.CATALOG_DATA[category][index];
@@ -1718,10 +1819,11 @@ function playCatalogItem(category, index) {
   document.getElementById('player-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
   buildPlayerSourceSwitcher(sources, 0);
-  document.getElementById('player').src = sources[0].url;
+  const _u0 = setPlayerSrc(sources[0].url); sources[0].url = _u0;
   updatePlayerFallbackLink(sources[0].url);
   const titulo = document.getElementById('player-title-text');
   if (titulo) titulo.innerHTML = item.title;
+  STATE.currentTitle = item.title || 'Título';
   toast(`🎬 Reproduzindo: ${item.title}`);
 }
 
@@ -1748,7 +1850,7 @@ function switchPlayerSource(i) {
   const sources = JSON.parse(wrap.dataset.sources);
   const src = sources[i];
   if (!src) return;
-  document.getElementById('player').src = src.url;
+  const _u = setPlayerSrc(src.url); src.url = _u;
   updatePlayerFallbackLink(src.url);
   wrap.querySelectorAll('.player-source-btn').forEach((btn, idx) => btn.classList.toggle('active', idx === i));
   toast(`🔄 Trocado para: ${src.label}`);
@@ -1759,10 +1861,11 @@ function loadEpisode(season, ep) {
   STATE.currentSeason = season;
   STATE.currentEp = ep;
   const url = `https://superflixapi.top/serie/tt1190634/${season}/${ep}`;
-  document.getElementById('player').src = url;
+  setPlayerSrc(url);
   updatePlayerFallbackLink(url);
   document.getElementById('ep-label').textContent = `T${season} · E${ep}`;
   document.getElementById('player-title-text').innerHTML = `THE BOYS <span id="ep-label">T${season} · E${ep}</span>`;
+  STATE.currentTitle = `The Boys T${season}E${ep}`;
   updatePlayerInfoBar();
   updateSeasonInfoStrip();
   updateEpCounterBadge();
@@ -1894,7 +1997,7 @@ function buildPagination(pages) {
 
   const prevBtn = document.createElement('button');
   prevBtn.className = 'ep-page-btn';
-  prevBtn.textContent = '◀';
+  prevBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="15 18 9 12 15 6"></polyline></svg>';
   prevBtn.onclick = () => { if (STATE.currentPage > 1) { STATE.currentPage--; buildEpGrid(); } };
   pag.appendChild(prevBtn);
 
@@ -1908,7 +2011,7 @@ function buildPagination(pages) {
 
   const nextBtn = document.createElement('button');
   nextBtn.className = 'ep-page-btn';
-  nextBtn.textContent = '▶';
+  nextBtn.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="9 18 15 12 9 6"></polyline></svg>';
   nextBtn.onclick = () => { if (STATE.currentPage < pages) { STATE.currentPage++; buildEpGrid(); } };
   pag.appendChild(nextBtn);
 }
@@ -2114,7 +2217,24 @@ function seekTo(e) {
 
 // ── PLAYER CONTROLS ────────────────────────────────────────────
 function togglePlayPause() {
-  toast('⏯️ Play/Pause (controle no player interno)');
+  // Muitos players (MixDrop, Streamtape, etc.) rodam em iframe cross-origin,
+  // então não conseguimos mandar play/pause de fora. O que dá pra fazer com
+  // segurança é pausar/retomar a simulação de progresso local e atualizar o
+  // ícone do botão. O usuário ainda pode dar play/pause diretamente no player.
+  const btn = document.getElementById('play-btn');
+  const playSvg  = '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+  const pauseSvg = '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+  if (STATE.isPaused) {
+    STATE.isPaused = false;
+    if (btn) btn.innerHTML = pauseSvg;
+    startProgressSimulation();
+    toast('▶ Retomado (use o botão do player para o vídeo em si)');
+  } else {
+    STATE.isPaused = true;
+    if (btn) btn.innerHTML = playSvg;
+    stopProgressSimulation();
+    toast('⏸ Pausado (use o botão do player para o vídeo em si)');
+  }
 }
 function skipBack(sec) {
   STATE.progressSec = Math.max(0, STATE.progressSec - sec);
@@ -2343,22 +2463,38 @@ function rateEpisode() {
   }
 }
 function sharePlayer() {
-  const url = `https://kawecine.com/the-boys/t${STATE.currentSeason}e${STATE.currentEp}`;
+  const url = STATE.currentUrl || `https://kawecine.com/${encodeURIComponent(STATE.currentTitle || 'video')}`;
+  const title = STATE.currentTitle || 'Kawe Cinema';
   if (navigator.share) {
-    navigator.share({ title: 'The Boys', text: `Assistindo T${STATE.currentSeason}E${STATE.currentEp}`, url });
+    navigator.share({ title, text: `Assistindo: ${title}`, url });
   } else {
     navigator.clipboard.writeText(url).then(() => toast('🔗 Link copiado!'));
   }
 }
 function copyPlayerLink() {
-  const url = `https://kawecine.com/the-boys/t${STATE.currentSeason}e${STATE.currentEp}`;
+  const url = STATE.currentUrl || `https://kawecine.com/${encodeURIComponent(STATE.currentTitle || 'video')}`;
   navigator.clipboard.writeText(url).then(() => toast('🔗 Link copiado para a área de transferência!'));
 }
 function downloadEpisode() {
-  toast('⬇️ Download iniciado! (Funcionalidade premium)');
+  // Iframes cross-origin (MixDrop, Google Drive, etc.) não expõem o arquivo
+  // final pra baixar diretamente; o mais próximo de um "download" é abrir a
+  // página do player em aba nova para o usuário usar o botão de download do
+  // próprio host. Se o link já for direto (.mp4/.m3u8), o navegador tenta salvar.
+  const url = STATE.currentUrl || (document.getElementById('player') && document.getElementById('player').src);
+  if (!url) { toast('⚠️ Nenhum vídeo em reprodução'); return; }
+  const isDirect = /\.(mp4|m3u8|webm|mkv|mov|avi)(\?|$)/i.test(url);
+  if (isDirect) {
+    const a = document.createElement('a');
+    a.href = url; a.download = (STATE.currentTitle || 'video'); a.target = '_blank';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('⬇️ Download iniciado');
+  } else {
+    window.open(url, '_blank', 'noopener');
+    toast('⬇️ Abri a página do player — use o botão de download do host');
+  }
 }
 function addToWatchlist() {
-  const key = `The Boys T${STATE.currentSeason}E${STATE.currentEp}`;
+  const key = STATE.currentTitle || `The Boys T${STATE.currentSeason}E${STATE.currentEp}`;
   if (!STATE.watchlist.includes(key)) {
     STATE.watchlist.push(key);
     toast(`📌 "${key}" adicionado à Watchlist!`);
@@ -2385,6 +2521,86 @@ function toggleStats() {
     const totalW = Object.values(STATE.watchedEps).reduce((acc, s) => acc + Object.keys(s).length, 0);
     toast(`📊 Stats: ${totalW} eps vistos | ${STATE.likeCount} likes | Vol: ${STATE.volume}%`, 4000);
   }
+}
+
+// ── NOVAS FUNÇÕES DO PLAYER ───────────────────────────────────
+// Recarrega o iframe atual (útil quando o player travou ou o host desconectou)
+function reloadPlayer() {
+  const iframe = document.getElementById('player');
+  if (!iframe || !iframe.src) { toast('⚠️ Nenhum vídeo em reprodução'); return; }
+  const url = iframe.src;
+  iframe.src = 'about:blank';
+  setTimeout(() => { iframe.src = url; }, 120);
+  toast('🔄 Player recarregado');
+}
+
+// Abre o vídeo atual em uma janela pop-up separada
+function popoutPlayer() {
+  const url = STATE.currentUrl || (document.getElementById('player') && document.getElementById('player').src);
+  if (!url) { toast('⚠️ Nenhum vídeo em reprodução'); return; }
+  const w = window.open(url, 'kawe_popout', 'width=1000,height=600,resizable=yes,scrollbars=no');
+  if (w) toast('🪟 Player aberto em nova janela'); else toast('⚠️ Pop-up bloqueado pelo navegador');
+}
+
+// Copia o link do vídeo já com marca de tempo (?t=segundos)
+function copyLinkAtTime() {
+  const url = STATE.currentUrl || (document.getElementById('player') && document.getElementById('player').src);
+  if (!url) { toast('⚠️ Nenhum vídeo em reprodução'); return; }
+  const sep = url.includes('?') ? '&' : '?';
+  const stamped = `${url}${sep}t=${STATE.progressSec || 0}`;
+  navigator.clipboard.writeText(stamped).then(
+    () => toast(`🔗 Link copiado com marca ${formatTime(STATE.progressSec || 0)}`),
+    () => toast('⚠️ Falha ao copiar link')
+  );
+}
+
+// Sleep Timer: fecha o player após N minutos. Chamar de novo cancela.
+function setSleepTimer(minutes) {
+  const badge = document.getElementById('sleep-timer-badge');
+  if (STATE.sleepTimerId) {
+    clearTimeout(STATE.sleepTimerId);
+    STATE.sleepTimerId = null;
+    STATE.sleepTimerEnd = 0;
+    if (badge) badge.style.display = 'none';
+    toast('⏰ Sleep Timer cancelado');
+    if (!minutes || minutes <= 0) return;
+  }
+  if (!minutes || minutes <= 0) return;
+  const ms = minutes * 60 * 1000;
+  STATE.sleepTimerEnd = Date.now() + ms;
+  STATE.sleepTimerId = setTimeout(() => {
+    STATE.sleepTimerId = null;
+    if (badge) badge.style.display = 'none';
+    if (typeof closePlayer === 'function') closePlayer();
+    toast('⏰ Sleep Timer: sessão encerrada');
+  }, ms);
+  if (badge) { badge.style.display = 'inline-flex'; badge.textContent = `⏰ ${minutes}min`; }
+  toast(`⏰ Sleep Timer: fechará em ${minutes} min`);
+}
+
+// Menu simples de escolha do Sleep Timer
+function openSleepTimerMenu() {
+  const val = prompt('Sleep Timer — em quantos minutos fechar o player?\n(Deixe em branco ou 0 para CANCELAR)', '30');
+  if (val === null) return;
+  const n = parseInt(val, 10);
+  if (isNaN(n) || n <= 0) { setSleepTimer(0); return; }
+  setSleepTimer(n);
+}
+
+// Tenta ativar Picture-in-Picture (só funciona com vídeo mesma-origem).
+// Em iframes cross-origin cai para janela pop-out como alternativa.
+async function tryPictureInPicture() {
+  try {
+    const iframe = document.getElementById('player');
+    const doc = iframe && iframe.contentDocument;
+    const vid = doc && doc.querySelector('video');
+    if (vid && document.pictureInPictureEnabled) {
+      await vid.requestPictureInPicture();
+      toast('🖼️ Picture-in-Picture ativado');
+      return;
+    }
+  } catch (e) { /* cross-origin ou não suportado */ }
+  popoutPlayer();
 }
 
 // ── REPORT ─────────────────────────────────────────────────────
@@ -2453,6 +2669,33 @@ document.querySelectorAll('.card').forEach(card => {
 // --- ADMIN LOGIC ---
 let ADMIN_PASS = localStorage.getItem('kawe_admin_pass') || '2011';
 
+// Categorias disponíveis no painel admin. O `id` precisa bater com o `id` da <section>
+// correspondente no HTML (filmes, series, animes, infantil, curtas, adulto) para que
+// os itens cadastrados apareçam na tela certa quando o renderCards for chamado.
+window.ADMIN_CATEGORIES = [
+  { id: 'filmes',   label: 'Filmes' },
+  { id: 'series',   label: 'Séries' },
+  { id: 'animes',   label: 'Animes' },
+  { id: 'infantil', label: 'Infantil' },
+  { id: 'curtas',   label: 'Curtas' },
+  { id: 'adulto',   label: 'Adulto' }
+];
+
+// Preenche um <select> com as categorias disponíveis (usado nos formulários do admin).
+function populateCategorySelect(selectId, selectedValue) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const current = selectedValue || sel.value || 'filmes';
+  sel.innerHTML = '';
+  window.ADMIN_CATEGORIES.forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat.id;
+    opt.textContent = cat.label;
+    if (cat.id === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
 function openAdminAuth() {
   document.getElementById('admin-auth-modal').classList.add('open');
   const inputs = document.querySelectorAll('.pass-digit');
@@ -2485,6 +2728,19 @@ function movePass(input, index) {
 
 function openAdminPanel() {
   document.getElementById('admin-panel').classList.add('open');
+  populateCategorySelect('new-movie-category', 'filmes');
+  const filterSel = document.getElementById('admin-filter-category');
+  if (filterSel) {
+    const prev = filterSel.value || '';
+    filterSel.innerHTML = '<option value="">Todas as categorias</option>';
+    window.ADMIN_CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.label;
+      if (cat.id === prev) opt.selected = true;
+      filterSel.appendChild(opt);
+    });
+  }
   updateAdminMoviesList();
   document.getElementById('admin-source-code').value = document.documentElement.outerHTML;
   const newVideoList = document.getElementById('new-movie-video-list');
@@ -2507,22 +2763,29 @@ function switchAdminTab(tab) {
 function updateAdminMoviesList() {
   const list = document.getElementById('admin-movies-list');
   list.innerHTML = '';
-  
-  if (!window.CATALOG_DATA || !window.CATALOG_DATA.filmes) return;
-  
-  window.CATALOG_DATA.filmes.forEach((movie, index) => {
-    const tr = document.createElement('tr');
-    const hasVideo = !!(movie.videoUrl && movie.videoUrl.trim());
-    tr.innerHTML = `
-      <td>${movie.title}</td>
-      <td>${movie.genre || 'Geral'}</td>
-      <td><span class="video-status ${hasVideo ? 'ok' : 'missing'}">${hasVideo ? '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Configurado' : '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Sem link'}</span></td>
-      <td>
-        <button onclick="editMovie(${index})" style="background:none; border:none; color:var(--primary); cursor:pointer; margin-right:10px; font-weight:700;">EDITAR</button>
-        <button onclick="deleteMovie(${index})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">EXCLUIR</button>
-      </td>
-    `;
-    list.appendChild(tr);
+
+  if (!window.CATALOG_DATA) return;
+  const filterCat = (document.getElementById('admin-filter-category') || {}).value || '';
+
+  window.ADMIN_CATEGORIES.forEach(cat => {
+    if (filterCat && filterCat !== cat.id) return;
+    const items = window.CATALOG_DATA[cat.id];
+    if (!Array.isArray(items) || items.length === 0) return;
+    items.forEach((movie, index) => {
+      const tr = document.createElement('tr');
+      const hasVideo = !!(movie.videoUrl && movie.videoUrl.trim());
+      tr.innerHTML = `
+        <td>${movie.title}</td>
+        <td><span style="display:inline-block;padding:3px 8px;border-radius:6px;background:rgba(34,197,94,0.15);color:var(--primary);font-size:11px;font-weight:800;text-transform:uppercase;">${cat.label}</span></td>
+        <td>${movie.genre || 'Geral'}</td>
+        <td><span class="video-status ${hasVideo ? 'ok' : 'missing'}">${hasVideo ? '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Configurado' : '<svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Sem link'}</span></td>
+        <td>
+          <button onclick="editMovie(${index}, '${cat.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer; margin-right:10px; font-weight:700;">EDITAR</button>
+          <button onclick="deleteMovie(${index}, '${cat.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:700;">EXCLUIR</button>
+        </td>
+      `;
+      list.appendChild(tr);
+    });
   });
 }
 
@@ -2647,7 +2910,9 @@ function addNewMovie() {
   const genre = document.getElementById('new-movie-genre').value;
   const rating = document.getElementById('new-movie-rating').value;
   const videoSources = collectVideoLinks('new-movie-video-list');
-  
+  const categoryEl = document.getElementById('new-movie-category');
+  const category = (categoryEl && categoryEl.value) ? categoryEl.value : 'filmes';
+
   if (!title) { toast('⚠️ Título obrigatório'); return; }
   
   const newMovie = {
@@ -2660,16 +2925,18 @@ function addNewMovie() {
     videoUrl: videoSources.length > 0 ? videoSources[0].url : ''
   };
   
-  if (!window.CATALOG_DATA) window.CATALOG_DATA = { filmes: [] };
-  window.CATALOG_DATA.filmes.unshift(newMovie);
-  
+  if (!window.CATALOG_DATA) window.CATALOG_DATA = {};
+  if (!Array.isArray(window.CATALOG_DATA[category])) window.CATALOG_DATA[category] = [];
+  window.CATALOG_DATA[category].unshift(newMovie);
+
   // Persistir no localStorage
   localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA));
-  
-  toast(newMovie.videoUrl ? `✅ Filme adicionado com ${videoSources.length} link(s) de vídeo!` : '✅ Filme adicionado (sem link de vídeo ainda)');
+
+  const catLabel = (window.ADMIN_CATEGORIES.find(c => c.id === category) || {}).label || category;
+  toast(newMovie.videoUrl ? `✅ Adicionado em ${catLabel} com ${videoSources.length} link(s)!` : `✅ Adicionado em ${catLabel} (sem link de vídeo ainda)`);
   updateAdminMoviesList();
-  if (window.renderCards) window.renderCards('filmes', 1);
-  
+  if (window.renderCards) window.renderCards(category, 1);
+
   // Limpar campos
   document.getElementById('new-movie-title').value = '';
   document.getElementById('new-movie-poster').value = '';
@@ -2678,20 +2945,26 @@ function addNewMovie() {
   resetVideoLinksList('new-movie-video-list');
 }
 
-function deleteMovie(index) {
+function deleteMovie(index, category) {
+  category = category || 'filmes';
   if (confirm('Deseja realmente excluir este filme?')) {
-    window.CATALOG_DATA.filmes.splice(index, 1);
+    if (!window.CATALOG_DATA || !Array.isArray(window.CATALOG_DATA[category])) return;
+    window.CATALOG_DATA[category].splice(index, 1);
     localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA));
     updateAdminMoviesList();
-    if (window.renderCards) window.renderCards('filmes', 1);
-    toast('🗑️ Filme removido');
+    if (window.renderCards) window.renderCards(category, 1);
+    toast('🗑️ Item removido');
   }
 }
 
-function editMovie(index) {
-  const movie = window.CATALOG_DATA.filmes[index];
+function editMovie(index, category) {
+  category = category || 'filmes';
+  const list = window.CATALOG_DATA && window.CATALOG_DATA[category];
+  const movie = list && list[index];
   if (!movie) return;
   document.getElementById('edit-movie-index').value = index;
+  const catField = document.getElementById('edit-movie-category');
+  if (catField) catField.value = category;
   document.getElementById('edit-movie-title').value = movie.title || '';
   document.getElementById('edit-movie-poster').value = movie.poster || '';
   document.getElementById('edit-movie-genre').value = movie.genre || '';
@@ -2710,7 +2983,10 @@ function closeEditMovie() {
 
 function saveMovieEdit() {
   const index = parseInt(document.getElementById('edit-movie-index').value, 10);
-  const movie = window.CATALOG_DATA.filmes[index];
+  const catField = document.getElementById('edit-movie-category');
+  const category = (catField && catField.value) ? catField.value : 'filmes';
+  const list = window.CATALOG_DATA && window.CATALOG_DATA[category];
+  const movie = list && list[index];
   if (!movie) return;
 
   const title = document.getElementById('edit-movie-title').value;
@@ -2726,9 +3002,9 @@ function saveMovieEdit() {
 
   localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA));
   updateAdminMoviesList();
-  if (window.renderCards) window.renderCards('filmes', 1);
+  if (window.renderCards) window.renderCards(category, 1);
   closeEditMovie();
-  toast('📝 Filme atualizado com sucesso!');
+  toast('📝 Item atualizado com sucesso!');
 }
 
 function updateAdminPassword() {
@@ -2911,9 +3187,16 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initial load
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
-            if (window.CATALOG_DATA && window.CATALOG_DATA.filmes) {
-                renderCards('filmes', 1);
-            }
+            if (!window.CATALOG_DATA) return;
+            // Renderiza todas as categorias que já tenham conteúdo cadastrado
+            // (filmes, series, animes, infantil, curtas, adulto...), assim o item
+            // adicionado pelo admin aparece automaticamente na sua seção.
+            Object.keys(window.CATALOG_DATA).forEach(cat => {
+                const items = window.CATALOG_DATA[cat];
+                if (Array.isArray(items) && items.length > 0) {
+                    renderCards(cat, 1);
+                }
+            });
         }, 500);
     });
 })();
@@ -2989,6 +3272,11 @@ document.addEventListener('dblclick', (event) => {
       <h3>Adicionar novo conteúdo</h3>
       <p class="admin-subtitle">Preencha os dados abaixo. O link do vídeo é o que será reproduzido quando o usuário assistir.</p>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+        <div class="admin-form-group" style="grid-column: 1 / -1;">
+          <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"></path></svg> Categoria (onde o conteúdo vai aparecer)</label>
+          <select id="new-movie-category" class="admin-select"></select>
+          <div class="admin-input-hint">Escolha a categoria em que o título irá aparecer no site (Filmes, Séries, Animes, Infantil, Curtas ou Adulto).</div>
+        </div>
         <div class="admin-form-group">
           <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Título do Filme</label>
           <input type="text" id="new-movie-title" class="admin-input" placeholder="Ex: Deadpool & Wolverine">
@@ -3019,10 +3307,16 @@ document.addEventListener('dblclick', (event) => {
 
       <h3 style="margin-top:35px;">Gerenciar catálogo atual</h3>
       <p class="admin-subtitle">Edite, exclua ou verifique se o link de vídeo de cada título está configurado.</p>
+      <div class="admin-form-group" style="max-width:320px;">
+        <label>Filtrar por categoria</label>
+        <select id="admin-filter-category" class="admin-select" onchange="updateAdminMoviesList()">
+          <option value="">Todas as categorias</option>
+        </select>
+      </div>
       <div style="overflow-x:auto;">
         <table class="admin-table">
           <thead>
-            <tr><th>Título</th><th>Gênero</th><th>Vídeo</th><th>Ações</th></tr>
+            <tr><th>Título</th><th>Categoria</th><th>Gênero</th><th>Vídeo</th><th>Ações</th></tr>
           </thead>
           <tbody id="admin-movies-list">
             <!-- Gerado via JS -->
@@ -3080,6 +3374,7 @@ document.addEventListener('dblclick', (event) => {
   <div class="edit-movie-box">
     <h3><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg> Editar Conteúdo</h3>
     <input type="hidden" id="edit-movie-index">
+    <input type="hidden" id="edit-movie-category">
     <div class="admin-form-group">
       <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Título do Filme</label>
       <input type="text" id="edit-movie-title" class="admin-input" placeholder="Ex: Deadpool & Wolverine">
