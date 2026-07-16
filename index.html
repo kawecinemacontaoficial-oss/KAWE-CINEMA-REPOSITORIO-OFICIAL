@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3635,6 +3634,39 @@ function resetFactory() {
   }
 }
 
+function clearAllCatalog() {
+  if (!confirm('⚠️ ATENÇÃO: Isso irá APAGAR TODO o catálogo (filmes, séries, animes, infantil, novelas, etc), incluindo títulos, thumbnails, links e temporadas. Esta ação NÃO pode ser desfeita. Deseja continuar?')) return;
+  if (!confirm('Tem certeza absoluta? Digite OK na próxima janela para confirmar.')) return;
+  const typed = prompt('Digite APAGAR para confirmar a exclusão de TODO o catálogo:');
+  if (typed !== 'APAGAR') { toast('❌ Ação cancelada'); return; }
+
+  // Esvazia todas as categorias mantendo a estrutura
+  if (window.CATALOG_DATA && typeof window.CATALOG_DATA === 'object') {
+    Object.keys(window.CATALOG_DATA).forEach(cat => {
+      window.CATALOG_DATA[cat] = [];
+    });
+  } else {
+    window.CATALOG_DATA = {};
+  }
+
+  // Persiste o catálogo vazio
+  localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA));
+
+  // Atualiza UI do admin e da home
+  try { if (typeof updateAdminMoviesList === 'function') updateAdminMoviesList(); } catch(e){}
+  try {
+    if (window.CATALOG_DATA) {
+      Object.keys(window.CATALOG_DATA).forEach(cat => {
+        if (window.renderCards) window.renderCards(cat, 1);
+        const container = document.querySelector('[data-category="' + cat + '"]');
+        if (container) container.innerHTML = '<p style="color:var(--text-muted);padding:20px;">Nenhum conteúdo cadastrado.</p>';
+      });
+    }
+  } catch(e){}
+
+  toast('🗑️ Catálogo apagado por completo!');
+}
+
 // Carregar catálogo do localStorage se existir
 window.addEventListener('DOMContentLoaded', () => {
   const savedCatalog = localStorage.getItem('kawe_catalog');
@@ -3951,6 +3983,10 @@ document.addEventListener('dblclick', (event) => {
         <h4 style="color:var(--danger);">ZONA DE PERIGO</h4>
         <p style="font-size:12px;">Resetar todo o site para as configurações de fábrica.</p>
         <button class="admin-btn-danger" onclick="resetFactory()">RESET TOTAL</button>
+        <div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(239,68,68,0.3);">
+          <p style="font-size:12px; margin-bottom:8px;">Apagar TODO o catálogo (filmes, séries, animes, infantil, novelas) — títulos, thumbnails, links e temporadas.</p>
+          <button class="admin-btn-danger" onclick="clearAllCatalog()">🗑️ APAGAR TODO O CATÁLOGO</button>
+        </div>
       </div>
     </div>
 
