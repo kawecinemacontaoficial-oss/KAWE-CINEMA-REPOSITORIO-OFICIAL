@@ -1468,6 +1468,35 @@ header {
     <section id="suporte" class="section" style="padding-top:20px;">
       <div class="row">
         <h2 style="color:#f97316;"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#f97316;"><path d="M12 1a11 11 0 0 0-11 11v6a3 3 0 0 0 3 3h3v-8H4v-1a8 8 0 0 1 16 0v1h-3v8h3a3 3 0 0 0 3-3v-6A11 11 0 0 0 12 1z"></path></svg> SUPORTE</h2>
+        <div id="suporte-form-wrap" style="max-width:640px;margin:10px auto 30px;background:rgba(255,255,255,0.04);border:1px solid rgba(249,115,22,0.35);border-radius:14px;padding:24px;">
+          <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;line-height:1.5;">Está com algum problema, dúvida ou sugestão? Envie uma mensagem para nossa equipe de suporte. Responderemos o mais rápido possível.</p>
+          <form id="suporte-form" onsubmit="return sendSupportMessage(event)">
+            <div class="admin-form-group">
+              <label style="display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Nome</label>
+              <input type="text" id="sup-name" required maxlength="80" class="admin-input" placeholder="Seu nome" style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;">
+            </div>
+            <div class="admin-form-group" style="margin-top:14px;">
+              <label style="display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">E-mail ou contato</label>
+              <input type="text" id="sup-contact" required maxlength="120" class="admin-input" placeholder="email@exemplo.com" style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;">
+            </div>
+            <div class="admin-form-group" style="margin-top:14px;">
+              <label style="display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Assunto</label>
+              <select id="sup-subject" class="admin-select" style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;">
+                <option>Dúvida</option>
+                <option>Problema técnico</option>
+                <option>Sugestão</option>
+                <option>Reclamação</option>
+                <option>Outro</option>
+              </select>
+            </div>
+            <div class="admin-form-group" style="margin-top:14px;">
+              <label style="display:block;font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Mensagem</label>
+              <textarea id="sup-message" required maxlength="2000" rows="5" class="admin-input" placeholder="Descreva sua mensagem..." style="width:100%;padding:12px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:inherit;resize:vertical;"></textarea>
+            </div>
+            <button type="submit" style="margin-top:18px;background:#f97316;color:#fff;border:none;padding:13px 26px;border-radius:10px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;text-transform:uppercase;font-size:13px;letter-spacing:0.5px;">Enviar Mensagem</button>
+            <div id="sup-feedback" style="margin-top:14px;font-size:13px;"></div>
+          </form>
+        </div>
         <div class="row-content" id="suporte-content"></div>
       </div>
     </section>
@@ -4059,6 +4088,34 @@ window.addEventListener('DOMContentLoaded', () => {
     // Make CATALOG_DATA globally accessible
     window.renderCards = renderCards;
 
+    // BUG FIX: categorias sem conteúdo (LANÇAMENTOS, SUPORTE, PORNOGRAFIA,
+    // CANAIS, DOCUMENTÁRIOS, DORAMAS, NOVELAS...) mostravam uma seção
+    // completamente em branco. Agora, se o container estiver vazio, injeta
+    // uma mensagem amigável "Em breve" no lugar de deixar o layout quebrado.
+    const EMPTY_LABELS = {
+        lancamentos: 'Novos lançamentos chegando em breve',
+        pornografia: 'Conteúdo em atualização',
+        canais: 'Canais ao vivo em breve',
+        documentarios: 'Documentários chegando em breve',
+        doramas: 'Doramas chegando em breve',
+        novelas: 'Novelas chegando em breve'
+    };
+    function ensureCategoryFallback(id) {
+        const container = document.getElementById(id + '-content');
+        if (!container) return;
+        const hasCards = container.querySelector('.card');
+        const hasData = window.CATALOG_DATA && Array.isArray(window.CATALOG_DATA[id]) && window.CATALOG_DATA[id].length > 0;
+        if (!hasCards && !hasData && !container.dataset.emptyFilled) {
+            const msg = EMPTY_LABELS[id] || 'Em breve — novos conteúdos serão adicionados aqui.';
+            const holder = document.createElement('div');
+            holder.className = 'empty-cat-msg';
+            holder.style.cssText = 'grid-column: 1/-1; padding: 40px 20px; text-align:center; color: var(--text-muted); font-family:"Outfit",sans-serif; font-size:15px; letter-spacing:0.5px;';
+            holder.innerHTML = '<div style="font-size:40px;margin-bottom:12px;opacity:0.6;">🎬</div>' + msg;
+            container.appendChild(holder);
+            container.dataset.emptyFilled = '1';
+        }
+    }
+
     // Hook into global navigation functions
     const originalHeaderNav = window.showSectionFromHeader;
     window.showSectionFromHeader = function(id) {
@@ -4066,6 +4123,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (window.CATALOG_DATA && window.CATALOG_DATA[id]) {
             renderCards(id, 1);
         }
+        ensureCategoryFallback(id);
     };
 
     const originalSidebarNav = window.showSectionFromSidebar;
@@ -4074,21 +4132,23 @@ window.addEventListener('DOMContentLoaded', () => {
         if (window.CATALOG_DATA && window.CATALOG_DATA[id]) {
             renderCards(id, 1);
         }
+        ensureCategoryFallback(id);
     };
 
     // Initial load
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
-            if (!window.CATALOG_DATA) return;
-            // Renderiza todas as categorias que já tenham conteúdo cadastrado
-            // (filmes, series, animes, infantil, curtas, adulto...), assim o item
-            // adicionado pelo admin aparece automaticamente na sua seção.
-            Object.keys(window.CATALOG_DATA).forEach(cat => {
-                const items = window.CATALOG_DATA[cat];
-                if (Array.isArray(items) && items.length > 0) {
-                    renderCards(cat, 1);
-                }
-            });
+            if (window.CATALOG_DATA) {
+                Object.keys(window.CATALOG_DATA).forEach(cat => {
+                    const items = window.CATALOG_DATA[cat];
+                    if (Array.isArray(items) && items.length > 0) {
+                        renderCards(cat, 1);
+                    }
+                });
+            }
+            // Preenche fallback em TODAS as categorias vazias, para não sobrar
+            // seção em branco quando o usuário clicar no menu.
+            Object.keys(EMPTY_LABELS).forEach(ensureCategoryFallback);
         }, 500);
     });
 })();
@@ -4158,6 +4218,7 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-tab" onclick="switchAdminTab('source')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> CÓDIGO FONTE</div>
       <div class="admin-tab" onclick="switchAdminTab('backup')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> BACKUP / RESTORE</div>
       <div class="admin-tab" onclick="switchAdminTab('social')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> REDES SOCIAIS</div>
+      <div class="admin-tab" onclick="switchAdminTab('suporte'); renderSupportMessages()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> SUPORTE <span id="sup-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;">0</span></div>
     </div>
 
     <!-- ABA FILMES -->
@@ -4316,6 +4377,17 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-input-hint">Deixe em branco para esconder o botão. Os links ficam salvos e não desaparecem ao recarregar.</div>
     </div>
 
+    <!-- ABA SUPORTE (mensagens recebidas) -->
+    <div id="admin-suporte" class="admin-content-section">
+      <h3>Mensagens de Suporte</h3>
+      <p class="admin-subtitle">Mensagens enviadas pelos usuários através do formulário de suporte do site.</p>
+      <div style="display:flex;gap:10px;margin:10px 0 18px;flex-wrap:wrap;">
+        <button class="admin-btn-secondary" onclick="renderSupportMessages()">🔄 Atualizar</button>
+        <button class="admin-btn-danger" onclick="clearAllSupportMessages()" style="margin-top:0;">🗑️ Limpar todas</button>
+      </div>
+      <div id="support-messages-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+
   </div>
 </div>
 
@@ -4363,159 +4435,4 @@ document.addEventListener('dblclick', (event) => {
       <div class="series-empty-hint" id="edit-series-empty">Nenhuma temporada cadastrada ainda.</div>
     </div>
     <div>
-      <button class="admin-btn-save" onclick="saveMovieEdit()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> Salvar alterações</button>
-      <button class="admin-btn-secondary" onclick="closeEditMovie()">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- MODAL VIP (senha 4 dígitos) -->
-<div class="vip-modal" id="vip-auth-modal">
-  <div class="vip-box">
-    <div class="vip-crown">
-      <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v2H5v-2z"/></svg>
-    </div>
-    <div class="vip-title">ÁREA VIP</div>
-    <div class="vip-subtitle">Acesso Premium</div>
-    <div class="vip-hint">Digite a senha de 4 dígitos (letras maiúsculas)</div>
-    <div class="vip-error" id="vip-error">&nbsp;</div>
-    <div class="vip-pass-inputs">
-      <input type="text" maxlength="1" class="vip-pass-digit" onkeyup="moveVipPass(this,1,event)">
-      <input type="text" maxlength="1" class="vip-pass-digit" onkeyup="moveVipPass(this,2,event)">
-      <input type="text" maxlength="1" class="vip-pass-digit" onkeyup="moveVipPass(this,3,event)">
-      <input type="text" maxlength="1" class="vip-pass-digit" onkeyup="moveVipPass(this,4,event)">
-    </div>
-    <button class="vip-btn-cancel" onclick="closeVipAuth()">CANCELAR</button>
-  </div>
-</div>
-
-<script>
-/* ============ VIP AUTH (senha VIP1 em maiúsculas) ============ */
-const VIP_PASS = 'VIP1';
-
-function openVipAuth() {
-  const modal = document.getElementById('vip-auth-modal');
-  modal.classList.add('open');
-  const inputs = modal.querySelectorAll('.vip-pass-digit');
-  inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
-  document.getElementById('vip-error').innerHTML = '&nbsp;';
-  setTimeout(() => inputs[0].focus(), 100);
-}
-function closeVipAuth() {
-  document.getElementById('vip-auth-modal').classList.remove('open');
-}
-function moveVipPass(input, index, ev) {
-  // sempre maiúsculo
-  input.value = (input.value || '').toUpperCase();
-  if (input.value) input.classList.add('filled'); else input.classList.remove('filled');
-
-  const inputs = document.querySelectorAll('#vip-auth-modal .vip-pass-digit');
-
-  if (ev && ev.key === 'Backspace' && !input.value && index > 1) {
-    inputs[index - 2].focus();
-    return;
-  }
-  if (input.value && index < 4) {
-    inputs[index].focus();
-    return;
-  }
-  if (index === 4 && input.value) {
-    let typed = '';
-    inputs.forEach(i => typed += (i.value || '').toUpperCase());
-    if (typed.length === 4) {
-      if (typed === VIP_PASS) {
-        closeVipAuth();
-        if (typeof showSection === 'function') showSection('vip');
-        if (typeof toast === 'function') toast('👑 Bem-vindo à Área VIP');
-      } else {
-        document.getElementById('vip-error').textContent = 'SENHA INCORRETA';
-        inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
-        inputs[0].focus();
-      }
-    }
-  }
-}
-
-/* ============ CHAT: anexos de foto/arquivo ============ */
-function handleChatAttach(event, kind) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const messages = document.getElementById('chat-messages');
-    const now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const msg = document.createElement('div');
-    msg.className = 'chat-message user';
-    if (kind === 'image' && file.type.startsWith('image/')) {
-      msg.innerHTML = '<img class="chat-img" src="' + e.target.result + '" alt="foto">' +
-                      '<small>' + now + '</small>';
-    } else {
-      const sizeKb = (file.size / 1024).toFixed(1);
-      msg.innerHTML = '<a class="chat-file" href="' + e.target.result + '" download="' +
-        (file.name || 'arquivo') + '">' +
-        '<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>' +
-        '<span>' + (file.name || 'arquivo') + ' <small style="opacity:.6">(' + sizeKb + ' KB)</small></span></a>' +
-        '<small>' + now + '</small>';
-    }
-    messages.appendChild(msg);
-    messages.scrollTop = messages.scrollHeight;
-  };
-  reader.readAsDataURL(file);
-  event.target.value = '';
-}
-
-/* ============ ADMIN: Redes Sociais (persistência) ============ */
-const SOCIAL_STORAGE_KEY = 'kawe_social_links_v1';
-const SOCIAL_DEFAULTS = {
-  telegram: 'https://t.me/kawecine',
-  instagram: 'https://instagram.com/kawecine',
-  discord: 'https://discord.gg/kawecine'
-};
-
-function loadSocialLinks() {
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem(SOCIAL_STORAGE_KEY) || '{}'); } catch(e){}
-  const merged = Object.assign({}, SOCIAL_DEFAULTS, data);
-  applySocialLinks(merged);
-  // Preencher inputs se existirem
-  const tg = document.getElementById('social-telegram');
-  const ig = document.getElementById('social-instagram');
-  const dc = document.getElementById('social-discord');
-  if (tg) tg.value = merged.telegram || '';
-  if (ig) ig.value = merged.instagram || '';
-  if (dc) dc.value = merged.discord || '';
-}
-function applySocialLinks(map) {
-  const setBtn = (id, url) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (url && url.trim()) {
-      el.href = url.trim();
-      el.style.display = '';
-    } else {
-      el.style.display = 'none';
-    }
-  };
-  setBtn('float-telegram', map.telegram);
-  setBtn('float-instagram', map.instagram);
-  setBtn('float-discord', map.discord);
-}
-function saveSocialLinks() {
-  const data = {
-    telegram: (document.getElementById('social-telegram').value || '').trim(),
-    instagram: (document.getElementById('social-instagram').value || '').trim(),
-    discord: (document.getElementById('social-discord').value || '').trim()
-  };
-  localStorage.setItem(SOCIAL_STORAGE_KEY, JSON.stringify(data));
-  applySocialLinks(data);
-  if (typeof toast === 'function') toast('✅ Links das redes sociais salvos');
-}
-
-// Aplicar links salvos ao carregar
-document.addEventListener('DOMContentLoaded', loadSocialLinks);
-if (document.readyState !== 'loading') loadSocialLinks();
-</script>
-
-</body>
-</html>
+      <button class="admin-btn-save" onclick="saveMovieEdit()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2
