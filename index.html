@@ -3454,6 +3454,33 @@ function populateCategorySelect(selectId, selectedValue) {
   });
 }
 
+// Renderiza a lista de checkboxes de categorias extras (multi-categoria)
+function populateExtraCategoriesCheckboxes(containerId, primarySelectId) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const primarySel = primarySelectId ? document.getElementById(primarySelectId) : null;
+  const primary = primarySel ? primarySel.value : '';
+  // preserva marcadas anteriormente
+  const prevChecked = new Set(
+    Array.from(box.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value)
+  );
+  box.innerHTML = '';
+  window.ADMIN_CATEGORIES.forEach(cat => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);cursor:pointer;font-size:12.5px;font-weight:600;color:#fff;user-select:none;';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = cat.id;
+    cb.dataset.extraCategory = '1';
+    cb.style.accentColor = 'var(--primary)';
+    if (prevChecked.has(cat.id)) cb.checked = true;
+    if (cat.id === primary) { cb.checked = false; cb.disabled = true; label.style.opacity = '0.45'; label.title = 'Esta é a categoria principal'; }
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + cat.label));
+    box.appendChild(label);
+  });
+}
+
 function openAdminAuth() {
   document.getElementById('admin-auth-modal').classList.add('open');
   const inputs = document.querySelectorAll('.pass-digit');
@@ -3487,6 +3514,7 @@ function movePass(input, index) {
 function openAdminPanel() {
   document.getElementById('admin-panel').classList.add('open');
   populateCategorySelect('new-movie-category', 'filmes');
+  populateExtraCategoriesCheckboxes('new-movie-extra-categories','new-movie-category');
   const filterSel = document.getElementById('admin-filter-category');
   if (filterSel) {
     const prev = filterSel.value || '';
@@ -4082,10 +4110,36 @@ function addNewMovie() {
   if (!Array.isArray(window.CATALOG_DATA[category])) window.CATALOG_DATA[category] = [];
   window.CATALOG_DATA[category].unshift(newMovie);
 
+  // Categorias extras selecionadas via checkboxes (multi-categoria)
+  const addedCategories = [category];
+  const extraBox = document.getElementById('new-movie-extra-categories');
+  if (extraBox) {
+    const extras = Array.from(extraBox.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(cb => cb.value)
+      .filter(id => id && id !== category);
+    // dedupe
+    const seen = new Set(addedCategories);
+    extras.forEach(catId => {
+      if (seen.has(catId)) return;
+      seen.add(catId);
+      if (!Array.isArray(window.CATALOG_DATA[catId])) window.CATALOG_DATA[catId] = [];
+      // Clona o item para cada categoria (novo id para não colidir com índices),
+      // reaproveitando poster/título/links/temporadas — sem precisar recadastrar nada.
+      const clone = JSON.parse(JSON.stringify(newMovie));
+      clone.id = Date.now() + Math.floor(Math.random() * 100000);
+      // Se a categoria extra NÃO é de séries mas o item tem temporadas, mantém mesmo assim
+      // (não remove dados — o usuário pediu para não perder nada).
+      window.CATALOG_DATA[catId].unshift(clone);
+      addedCategories.push(catId);
+      if (window.renderCards) { try { window.renderCards(catId, 1); } catch(e){} }
+    });
+  }
+
   // Persistir no localStorage
   localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA));
 
-  const catLabel = (window.ADMIN_CATEGORIES.find(c => c.id === category) || {}).label || category;
+  const labelsAdded = addedCategories.map(cid => (window.ADMIN_CATEGORIES.find(c => c.id === cid) || {}).label || cid);
+  const catLabel = labelsAdded.join(' + ');
   toast(newMovie.videoUrl ? `✅ Adicionado em ${catLabel} com ${videoSources.length} link(s)!` : `✅ Adicionado em ${catLabel} (sem link de vídeo ainda)`);
   updateAdminMoviesList();
   if (window.renderCards) window.renderCards(category, 1);
@@ -4098,6 +4152,11 @@ function addNewMovie() {
   resetVideoLinksList('new-movie-video-list');
   resetSeriesFields('new');
   toggleSeriesFields('new');
+  // Limpa/atualiza checkboxes de categorias extras
+  if (extraBox) {
+    extraBox.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    populateExtraCategoriesCheckboxes('new-movie-extra-categories','new-movie-category');
+  }
   if (typeof populateSeriesPicker === 'function') populateSeriesPicker();
 }
 
@@ -4536,8 +4595,13 @@ document.addEventListener('dblclick', (event) => {
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
         <div class="admin-form-group" style="grid-column: 1 / -1;">
           <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"></path></svg> Categoria (onde o conteúdo vai aparecer)</label>
-          <select id="new-movie-category" class="admin-select" onchange="toggleSeriesFields('new')"></select>
-          <div class="admin-input-hint">Escolha a categoria em que o título irá aparecer no site (Filmes, Séries, Animes, Infantil, Curtas ou Adulto).</div>
+          <select id="new-movie-category" class="admin-select" onchange="toggleSeriesFields('new'); populateExtraCategoriesCheckboxes('new-movie-extra-categories','new-movie-category');"></select>
+          <div class="admin-input-hint">Escolha a categoria PRINCIPAL em que o título irá aparecer no site.</div>
+        </div>
+        <div class="admin-form-group" style="grid-column: 1 / -1;">
+          <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="20 6 9 17 4 12"></polyline></svg> Adicionar também em outras categorias (opcional)</label>
+          <div id="new-movie-extra-categories" class="extra-categories-list" style="display:flex; flex-wrap:wrap; gap:10px; padding:12px; border:1px dashed rgba(34,197,94,0.35); border-radius:10px; background:rgba(34,197,94,0.04);"></div>
+          <div class="admin-input-hint">Marque outras categorias onde o MESMO conteúdo (mesmo título, poster, links e temporadas) deve aparecer. Uma cópia idêntica será adicionada em cada categoria selecionada — sem precisar recadastrar.</div>
         </div>
         <div class="admin-form-group">
           <label><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Título do Filme</label>
