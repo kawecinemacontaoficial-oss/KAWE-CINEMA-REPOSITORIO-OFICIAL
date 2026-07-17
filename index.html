@@ -655,6 +655,40 @@ header {
   .control-group { gap: 6px; }
 }
 
+
+/* Custom floating buttons (thumbnail) */
+.float-btn.custom {
+  background: #111 center/cover no-repeat;
+  overflow: hidden;
+}
+.float-btn.custom img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+.float-btn.custom:hover { box-shadow: 0 8px 30px rgba(34,197,94,0.5); }
+
+/* Admin: custom social buttons list */
+.custom-social-list { display: flex; flex-direction: column; gap: 10px; margin: 10px 0 16px; }
+.custom-social-item {
+  display: grid; grid-template-columns: 44px 1fr 1fr auto; gap: 10px; align-items: center;
+  padding: 10px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+}
+.custom-social-item img {
+  width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
+  background: #000; border: 1px solid rgba(255,255,255,0.08);
+}
+.custom-social-item .cs-remove {
+  background: var(--danger); color: #fff; border: none; padding: 8px 12px;
+  border-radius: 8px; cursor: pointer; font-weight: 800; font-family:'Outfit',sans-serif;
+  font-size: 12px;
+}
+.custom-social-add-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-top: 6px;
+}
+@media (max-width: 640px){
+  .custom-social-item, .custom-social-add-row { grid-template-columns: 1fr 1fr; }
+}
+
 /* --- ADMIN STYLES --- */
 .nav-link.admin-btn { border: 1px solid var(--danger); color: var(--danger); margin-left: 10px; }
 .nav-link.admin-btn:hover { background: var(--danger); color: #fff; }
@@ -4782,6 +4816,18 @@ document.addEventListener('dblclick', (event) => {
         <input type="url" id="social-discord" class="admin-input" placeholder="https://discord.gg/seuservidor">
       </div>
 
+      
+      <h3 style="margin-top:28px;">Botões personalizados</h3>
+      <p class="admin-subtitle">Adicione quantos botões flutuantes quiser. Informe uma thumbnail (imagem) e o link externo.</p>
+      <div id="custom-social-list" class="custom-social-list"></div>
+      <div class="custom-social-add-row">
+        <input type="text" id="new-cs-label" class="admin-input" placeholder="Nome (ex: YouTube)">
+        <input type="url" id="new-cs-thumb" class="admin-input" placeholder="URL da thumbnail (imagem)">
+        <input type="url" id="new-cs-link" class="admin-input" placeholder="Link externo (https://...)">
+        <button class="admin-btn-secondary" onclick="addCustomSocial()" style="margin:0;">+ Adicionar</button>
+      </div>
+      <div class="admin-input-hint" style="margin-bottom:14px;">A imagem aparece como o próprio botão flutuante (redondo).</div>
+
       <button class="admin-btn-save" onclick="saveSocialLinks()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg> SALVAR LINKS</button>
       <div class="admin-input-hint">Deixe em branco para esconder o botão. Os links ficam salvos e não desaparecem ao recarregar.</div>
     </div>
@@ -4948,18 +4994,29 @@ function handleChatAttach(event, kind) {
 
 /* ============ ADMIN: Redes Sociais (persistência) ============ */
 const SOCIAL_STORAGE_KEY = 'kawe_social_links_v1';
+const CUSTOM_SOCIAL_KEY = 'kawe_custom_social_v1';
 const SOCIAL_DEFAULTS = {
   telegram: 'https://t.me/kawecine',
   instagram: 'https://instagram.com/kawecine',
   discord: 'https://discord.gg/kawecine'
 };
 
+function _escAttr(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function loadCustomSocial(){
+  try { return JSON.parse(localStorage.getItem(CUSTOM_SOCIAL_KEY) || '[]') || []; } catch(e){ return []; }
+}
+function saveCustomSocial(list){
+  localStorage.setItem(CUSTOM_SOCIAL_KEY, JSON.stringify(list));
+}
+
 function loadSocialLinks() {
   let data = {};
   try { data = JSON.parse(localStorage.getItem(SOCIAL_STORAGE_KEY) || '{}'); } catch(e){}
   const merged = Object.assign({}, SOCIAL_DEFAULTS, data);
   applySocialLinks(merged);
-  // Preencher inputs se existirem
+  applyCustomSocial(loadCustomSocial());
+  renderCustomSocialAdmin();
   const tg = document.getElementById('social-telegram');
   const ig = document.getElementById('social-instagram');
   const dc = document.getElementById('social-discord');
@@ -4971,16 +5028,74 @@ function applySocialLinks(map) {
   const setBtn = (id, url) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (url && url.trim()) {
-      el.href = url.trim();
-      el.style.display = '';
-    } else {
-      el.style.display = 'none';
-    }
+    if (url && url.trim()) { el.href = url.trim(); el.style.display = ''; }
+    else { el.style.display = 'none'; }
   };
   setBtn('float-telegram', map.telegram);
   setBtn('float-instagram', map.instagram);
   setBtn('float-discord', map.discord);
+}
+function applyCustomSocial(list){
+  const container = document.getElementById('floating-social');
+  if (!container) return;
+  container.querySelectorAll('.float-btn.custom').forEach(n => n.remove());
+  (list || []).forEach(item => {
+    if (!item || !item.link) return;
+    const a = document.createElement('a');
+    a.className = 'float-btn custom';
+    a.href = item.link;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.setAttribute('data-label', item.label || 'Link');
+    if (item.thumb) {
+      const img = document.createElement('img');
+      img.src = item.thumb;
+      img.alt = item.label || '';
+      a.appendChild(img);
+    }
+    container.appendChild(a);
+  });
+}
+function renderCustomSocialAdmin(){
+  const wrap = document.getElementById('custom-social-list');
+  if (!wrap) return;
+  const list = loadCustomSocial();
+  if (!list.length) {
+    wrap.innerHTML = '<div class="admin-input-hint" style="margin:0;">Nenhum botão personalizado ainda.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map((it, idx) => (
+    '<div class="custom-social-item">' +
+      '<img src="' + _escAttr(it.thumb || '') + '" alt="" onerror="this.style.opacity=0.2">' +
+      '<div><b>' + _escAttr(it.label || '(sem nome)') + '</b><br><small style="color:var(--text-muted);word-break:break-all;">' + _escAttr(it.link || '') + '</small></div>' +
+      '<small style="color:var(--text-muted);word-break:break-all;">' + _escAttr(it.thumb || '') + '</small>' +
+      '<button class="cs-remove" onclick="removeCustomSocial(' + idx + ')">Remover</button>' +
+    '</div>'
+  )).join('');
+}
+function addCustomSocial(){
+  const label = (document.getElementById('new-cs-label').value || '').trim();
+  const thumb = (document.getElementById('new-cs-thumb').value || '').trim();
+  const link  = (document.getElementById('new-cs-link').value  || '').trim();
+  if (!link) { if (typeof toast==='function') toast('❌ Informe o link externo'); return; }
+  if (!thumb) { if (typeof toast==='function') toast('❌ Informe a thumbnail'); return; }
+  const list = loadCustomSocial();
+  list.push({ label: label || 'Link', thumb, link });
+  saveCustomSocial(list);
+  document.getElementById('new-cs-label').value = '';
+  document.getElementById('new-cs-thumb').value = '';
+  document.getElementById('new-cs-link').value  = '';
+  renderCustomSocialAdmin();
+  applyCustomSocial(list);
+  if (typeof toast==='function') toast('✅ Botão adicionado');
+}
+function removeCustomSocial(idx){
+  const list = loadCustomSocial();
+  list.splice(idx, 1);
+  saveCustomSocial(list);
+  renderCustomSocialAdmin();
+  applyCustomSocial(list);
+  if (typeof toast==='function') toast('🗑️ Botão removido');
 }
 function saveSocialLinks() {
   const data = {
@@ -4993,7 +5108,6 @@ function saveSocialLinks() {
   if (typeof toast === 'function') toast('✅ Links das redes sociais salvos');
 }
 
-// Aplicar links salvos ao carregar
 document.addEventListener('DOMContentLoaded', loadSocialLinks);
 if (document.readyState !== 'loading') loadSocialLinks();
 </script>
