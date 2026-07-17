@@ -726,6 +726,14 @@ header {
 .nav-link.livros-btn:hover { background: #1f2937; color: #fff; }
 .sidebar-link.livros-btn { color: #e5e7eb; background: rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.12); }
 .sidebar-link.livros-btn:hover { background: rgba(0,0,0,0.85); color: #fff; }
+.nav-link.podcasts-btn { border: 1px solid #0b1f4a; background:#0b1f4a; color: #fff; margin-left: 10px; }
+.nav-link.podcasts-btn:hover { background: #13306e; color: #fff; }
+.sidebar-link.podcasts-btn { color: #b6c6ea; background: rgba(11,31,74,0.5); border:1px solid rgba(11,31,74,0.7); }
+.sidebar-link.podcasts-btn:hover { background: rgba(19,48,110,0.85); color: #fff; }
+.nav-link.radio-btn { border: 1px solid #7c3f00; background:#5c2e00; color: #fff; margin-left: 10px; }
+.nav-link.radio-btn:hover { background: #7c3f00; color: #fff; }
+.sidebar-link.radio-btn { color: #d6a982; background: rgba(92,46,0,0.35); border:1px solid rgba(124,63,0,0.45); }
+.sidebar-link.radio-btn:hover { background: rgba(92,46,0,0.7); color: #fff; }
 
 
 /* --- CHAT SECTION --- */
@@ -1357,6 +1365,8 @@ header {
     <div class="sidebar-link" onclick="showSectionFromSidebar('adulto')"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ADULTO</div>
     <div class="sidebar-link musica-btn" onclick="showSectionFromSidebar('musica')"><svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg> MÚSICA</div>
     <div class="sidebar-link livros-btn" onclick="showSectionFromSidebar('livros')"><svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H6V4h6v8l2.5-1.5L17 12V4h1v16z"/></svg> LIVROS</div>
+    <div class="sidebar-link podcasts-btn" onclick="showSectionFromSidebar('podcasts')"><svg viewBox="0 0 24 24"><path d="M12 3a5 5 0 0 0-5 5v4a5 5 0 0 0 10 0V8a5 5 0 0 0-5-5zm7 9a7 7 0 0 1-6 6.92V22h-2v-3.08A7 7 0 0 1 5 12h2a5 5 0 0 0 10 0h2z"/></svg> PODCASTS</div>
+    <div class="sidebar-link radio-btn" onclick="showSectionFromSidebar('radio')"><svg viewBox="0 0 24 24"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</div>
     <div class="sidebar-link" onclick="showSectionFromSidebar('sobre')"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> SOBRE NÓS</div>
   </div>
 </div>
@@ -1706,6 +1716,8 @@ header {
       <div class="nav-link" onclick="showSectionFromHeader('doramas')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> DORAMAS</div>
       <div class="nav-link" onclick="showSectionFromHeader('novelas')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 3l4 3-4 3V7zm0 6l4 3-4 3v-6z"/></svg> NOVELAS</div>
       <div class="nav-link" onclick="showSectionFromHeader('adulto')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ADULTO</div>
+      <div class="nav-link podcasts-btn" onclick="showSectionFromHeader('podcasts')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3a5 5 0 0 0-5 5v4a5 5 0 0 0 10 0V8a5 5 0 0 0-5-5zm7 9a7 7 0 0 1-6 6.92V22h-2v-3.08A7 7 0 0 1 5 12h2a5 5 0 0 0 10 0h2z"/></svg> PODCASTS</div>
+      <div class="nav-link radio-btn" onclick="showSectionFromHeader('radio')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</div>
       <div class="nav-link" onclick="showSectionFromHeader('sobre')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> SOBRE</div>
     </nav>
   </header>
@@ -1925,6 +1937,22 @@ header {
       <div class="row">
         <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H6V4h6v8l2.5-1.5L17 12V4h1v16z"/></svg> LIVROS</h2>
         <div class="row-content" id="livros-content">
+        </div>
+      </div>
+    </section>
+
+    <section id="podcasts" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a5 5 0 0 0-5 5v4a5 5 0 0 0 10 0V8a5 5 0 0 0-5-5zm7 9a7 7 0 0 1-6 6.92V22h-2v-3.08A7 7 0 0 1 5 12h2a5 5 0 0 0 10 0h2z"/></svg> PODCASTS</h2>
+        <div class="row-content" id="podcasts-content">
+        </div>
+      </div>
+    </section>
+
+    <section id="radio" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</h2>
+        <div class="row-content" id="radio-content">
         </div>
       </div>
     </section>
@@ -3470,7 +3498,9 @@ window.ADMIN_CATEGORIES = [
   { id: 'vip',      label: 'VIP' },
   { id: 'adulto',   label: 'Adulto' },
   { id: 'musica',   label: 'Música' },
-  { id: 'livros',   label: 'Livros' }
+  { id: 'livros',   label: 'Livros' },
+  { id: 'podcasts', label: 'Podcasts' },
+  { id: 'radio',    label: 'Rádio' }
 ];
 
 // Preenche um <select> com as categorias disponíveis (usado nos formulários do admin).
