@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+
 
 <style>
 :root {
@@ -1439,7 +1441,9 @@ header {
          segurança) e o player passa a ser aceito pela maioria dos provedores de vídeo. -->
     <div class="iframe-wrapper" id="p-wrap">
       <iframe id="player" src="about:blank" referrerpolicy="origin" allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowtransparency="true" loading="eager"></iframe>
+      <video id="player-native" controls autoplay playsinline style="display:none;width:100%;height:100%;background:#000;position:absolute;inset:0;"></video>
     </div>
+
 
     <!-- BUG FIX: link alternativo caso o iframe seja bloqueado pelo player de origem -->
     <div class="player-fallback-bar" id="player-fallback-bar" style="display:none;">
@@ -2481,15 +2485,61 @@ function normalizeEmbedUrl(rawUrl) {
   return url;
 }
 
-// Aplica src no iframe com a URL já normalizada
+// Aplica src no iframe com a URL já normalizada.
+// EXTENSÃO: detecta streams HLS (.m3u8) e vídeos diretos (mp4/webm/etc)
+// e usa o <video> nativo + hls.js — necessário para tocar canais IPTV via M3U.
 function setPlayerSrc(rawUrl) {
   const iframe = document.getElementById('player');
+  const video  = document.getElementById('player-native');
   if (!iframe) return rawUrl;
+
+  // Sempre destruir qualquer instância HLS anterior antes de trocar de fonte
+  if (window.__hls) { try { window.__hls.destroy(); } catch(e){} window.__hls = null; }
+  if (video) { try { video.pause(); video.removeAttribute('src'); video.load(); } catch(e){} }
+
   const finalUrl = normalizeEmbedUrl(rawUrl);
-  iframe.src = finalUrl;
+  const isHls    = /\.m3u8(\?|#|$)/i.test(finalUrl);
+  const isDirect = /\.(mp4|webm|mkv|mov|ogg|ogv)(\?|#|$)/i.test(finalUrl);
+
+  if (video && (isHls || isDirect)) {
+    // Modo player nativo (HLS/mp4). Esconde iframe, mostra <video>.
+    iframe.style.display = 'none';
+    iframe.src = 'about:blank';
+    video.style.display = 'block';
+
+    if (isHls) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari/iOS: HLS nativo
+        video.src = finalUrl;
+      } else if (window.Hls && window.Hls.isSupported()) {
+        const hls = new window.Hls({ enableWorker: true, lowLatencyMode: true });
+        hls.loadSource(finalUrl);
+        hls.attachMedia(video);
+        hls.on(window.Hls.Events.ERROR, (_, data) => {
+          if (data && data.fatal) console.warn('[HLS] erro fatal', data);
+        });
+        window.__hls = hls;
+      } else {
+        // Sem suporte: cai para iframe como último recurso
+        video.style.display = 'none';
+        iframe.style.display = '';
+        iframe.src = finalUrl;
+      }
+    } else {
+      video.src = finalUrl;
+    }
+    try { video.play().catch(()=>{}); } catch(e){}
+  } else {
+    // Modo iframe (embed padrão: YouTube, Drive, players de terceiros, etc.)
+    video && (video.style.display = 'none');
+    iframe.style.display = '';
+    iframe.src = finalUrl;
+  }
+
   STATE.currentUrl = finalUrl;
   return finalUrl;
 }
+
 
 // Abre o player usando o(s) link(s) (iframe/URL) cadastrado(s) no admin para o item do catálogo
 function playCatalogItem(category, index) {
@@ -3995,6 +4045,134 @@ function switchAdminTab(tab) {
   document.getElementById('admin-' + tab).classList.add('active');
 }
 
+/* =========================================================
+   SUPORTE A LISTAS M3U / M3U8 (CANAIS IPTV)
+   Parser de #EXTINF com tvg-logo / group-title / tvg-name.
+   Os canais são inseridos em window.CATALOG_DATA.canais e
+   ficam disponíveis na seção "CANAIS" do site.
+   ========================================================= */
+window.__parsedChannels = [];
+
+function parseM3U(text) {
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  const out = [];
+  let cur = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    if (/^#EXTM3U/i.test(line)) continue;
+    if (/^#EXTINF/i.test(line)) {
+      // #EXTINF:-1 tvg-id="..." tvg-logo="URL" group-title="GRP",NOME DO CANAL
+      const attrs = {};
+      const attrRe = /([a-zA-Z0-9-]+)="([^"]*)"/g;
+      let m;
+      while ((m = attrRe.exec(line)) !== null) attrs[m[1].toLowerCase()] = m[2];
+      const nameMatch = line.match(/,(.*)$/);
+      const name = (nameMatch ? nameMatch[1] : '').trim() || attrs['tvg-name'] || 'Canal';
+      cur = {
+        title: name,
+        poster: attrs['tvg-logo'] || '',
+        genre: attrs['group-title'] || 'Canais',
+        rating: 'AO VIVO',
+      };
+    } else if (!line.startsWith('#')) {
+      if (cur) { cur.videoUrl = line; out.push(cur); cur = null; }
+      else out.push({ title: 'Canal ' + (out.length + 1), poster: '', genre: 'Canais', rating: 'AO VIVO', videoUrl: line });
+    }
+  }
+  return out;
+}
+
+function renderM3UPreview() {
+  const box = document.getElementById('m3u-preview');
+  if (!box) return;
+  const list = window.__parsedChannels || [];
+  if (list.length === 0) { box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Nenhum canal carregado ainda.</div>'; return; }
+  const rows = list.slice(0, 200).map((c, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${c.poster ? `<img src="${c.poster}" alt="" style="width:32px;height:32px;object-fit:contain;background:#000;border-radius:4px;">` : ''}</td>
+      <td>${(c.title || '').replace(/</g,'&lt;')}</td>
+      <td><span style="color:var(--text-muted);font-size:11px;">${(c.genre||'').replace(/</g,'&lt;')}</span></td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#06b6d4;font-size:11px;">${(c.videoUrl||'').replace(/</g,'&lt;')}</td>
+    </tr>`).join('');
+  box.innerHTML = `
+    <div style="color:var(--primary);font-weight:800;margin-bottom:8px;">✅ ${list.length} canal(is) carregado(s)${list.length > 200 ? ' (mostrando 200)' : ''}</div>
+    <table class="admin-table"><thead><tr><th>#</th><th>Logo</th><th>Nome</th><th>Grupo</th><th>URL</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function handleM3UFile(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    window.__parsedChannels = parseM3U(e.target.result);
+    renderM3UPreview();
+    if (window.toast) toast(`📺 ${window.__parsedChannels.length} canal(is) lido(s) do arquivo`);
+  };
+  reader.readAsText(f);
+}
+
+async function loadM3UFromUrl() {
+  const url = (document.getElementById('m3u-url-input') || {}).value;
+  if (!url) return;
+  try {
+    const r = await fetch(url);
+    const txt = await r.text();
+    window.__parsedChannels = parseM3U(txt);
+    renderM3UPreview();
+    if (window.toast) toast(`📺 ${window.__parsedChannels.length} canal(is) carregado(s)`);
+  } catch (e) {
+    if (window.toast) toast('❌ Falha ao baixar M3U (CORS?). Baixe o arquivo e use "Enviar arquivo".');
+    console.error(e);
+  }
+}
+
+function parseM3UFromTextarea() {
+  const txt = (document.getElementById('m3u-text-input') || {}).value;
+  window.__parsedChannels = parseM3U(txt);
+  renderM3UPreview();
+  if (window.toast) toast(`📺 ${window.__parsedChannels.length} canal(is) processado(s)`);
+}
+
+function saveParsedChannels(replace) {
+  const list = window.__parsedChannels || [];
+  if (list.length === 0) { if (window.toast) toast('⚠️ Nada para adicionar — carregue uma lista primeiro'); return; }
+  if (!window.CATALOG_DATA) window.CATALOG_DATA = {};
+  if (replace || !Array.isArray(window.CATALOG_DATA.canais)) window.CATALOG_DATA.canais = [];
+  let nextId = Date.now();
+  list.forEach(c => {
+    window.CATALOG_DATA.canais.push({
+      id: nextId++,
+      title: c.title,
+      poster: c.poster || 'https://cdn-icons-png.flaticon.com/512/1179/1179069.png',
+      genre: c.genre || 'Canais',
+      rating: c.rating || 'AO VIVO',
+      videoUrl: c.videoUrl,
+      videoSources: [{ label: 'Ao Vivo', url: c.videoUrl }]
+    });
+  });
+  try { localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA)); } catch(e){}
+  // Remove a mensagem "em breve" e re-renderiza
+  const cont = document.getElementById('canais-content');
+  if (cont) { cont.innerHTML = ''; delete cont.dataset.emptyFilled; }
+  if (window.renderCards) window.renderCards('canais', 1);
+  if (window.toast) toast(`✅ ${list.length} canal(is) salvo(s) na aba CANAIS`);
+}
+
+function clearAllChannels() {
+  if (!confirm('Remover TODOS os canais cadastrados?')) return;
+  if (window.CATALOG_DATA) window.CATALOG_DATA.canais = [];
+  try { localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA)); } catch(e){}
+  const cont = document.getElementById('canais-content');
+  if (cont) { cont.innerHTML = ''; delete cont.dataset.emptyFilled; }
+  if (window.renderCards) window.renderCards('canais', 1);
+  window.__parsedChannels = [];
+  renderM3UPreview();
+  if (window.toast) toast('🗑 Canais removidos');
+}
+
+
 function updateAdminMoviesList() {
   const list = document.getElementById('admin-movies-list');
   list.innerHTML = '';
@@ -4649,7 +4827,9 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-tab" onclick="switchAdminTab('source')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg> CÓDIGO FONTE</div>
       <div class="admin-tab" onclick="switchAdminTab('backup')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> BACKUP / RESTORE</div>
       <div class="admin-tab" onclick="switchAdminTab('social')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> REDES SOCIAIS</div>
+      <div class="admin-tab" onclick="switchAdminTab('canais')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"></path></svg> CANAIS (M3U)</div>
       <div class="admin-tab" onclick="switchAdminTab('suporte'); renderSupportMessages()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> SUPORTE <span id="sup-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;">0</span></div>
+
     </div>
 
     <!-- ABA FILMES -->
@@ -4862,8 +5042,41 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-input-hint">Deixe em branco para esconder o botão. Os links ficam salvos e não desaparecem ao recarregar.</div>
     </div>
 
+    <!-- ABA CANAIS (upload / colar M3U) -->
+    <div id="admin-canais" class="admin-content-section">
+      <h3>Canais ao Vivo (M3U / M3U8)</h3>
+      <p class="admin-subtitle">Envie um arquivo <b>.m3u</b> / <b>.m3u8</b> ou cole a URL da playlist / o conteúdo direto. Os canais serão adicionados na aba "CANAIS" do site e tocam via HLS.js.</p>
+
+      <div class="admin-form-group">
+        <label>Arquivo .m3u / .m3u8</label>
+        <input type="file" id="m3u-file-input" accept=".m3u,.m3u8,audio/x-mpegurl,application/vnd.apple.mpegurl,text/plain" class="admin-input" onchange="handleM3UFile(event)">
+        <div class="admin-input-hint">Selecione um arquivo local. O conteúdo será lido e listado abaixo.</div>
+      </div>
+
+      <div class="admin-form-group">
+        <label>Ou cole a URL da playlist</label>
+        <input type="url" id="m3u-url-input" class="admin-input" placeholder="https://exemplo.com/lista.m3u">
+        <button class="admin-btn-secondary" style="margin-top:8px" onclick="loadM3UFromUrl()">Carregar URL</button>
+      </div>
+
+      <div class="admin-form-group">
+        <label>Ou cole o conteúdo M3U direto</label>
+        <textarea id="m3u-text-input" class="admin-input" rows="6" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-logo=&quot;...&quot; group-title=&quot;Abertos&quot;,Globo&#10;http://exemplo/stream.m3u8"></textarea>
+        <button class="admin-btn-secondary" style="margin-top:8px" onclick="parseM3UFromTextarea()">Processar Texto</button>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <button class="admin-btn-save" onclick="saveParsedChannels(false)">➕ Adicionar aos Canais</button>
+        <button class="admin-btn-save" style="background:#06b6d4;color:#000;" onclick="saveParsedChannels(true)">🔄 Substituir Canais</button>
+        <button class="admin-btn-danger" onclick="clearAllChannels()">🗑 Limpar Todos os Canais</button>
+      </div>
+
+      <div id="m3u-preview" style="margin-top:20px;"></div>
+    </div>
+
     <!-- ABA SUPORTE (mensagens recebidas) -->
     <div id="admin-suporte" class="admin-content-section">
+
       <h3>Mensagens de Suporte</h3>
       <p class="admin-subtitle">Mensagens enviadas pelos usuários através do formulário de suporte do site.</p>
       <div style="display:flex;gap:10px;margin:10px 0 18px;flex-wrap:wrap;">
