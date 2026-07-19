@@ -12,6 +12,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 
+<!-- ── FIREBASE (Realtime Database) ─────────────────────────────── -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAsCaUlP_Yjn-p0Z5bU13a3TOKy7g8tHJg",
+    authDomain: "kawe-cinema-oficial.firebaseapp.com",
+    databaseURL: "https://kawe-cinema-oficial-default-rtdb.firebaseio.com",
+    projectId: "kawe-cinema-oficial",
+    storageBucket: "kawe-cinema-oficial.firebasestorage.app",
+    messagingSenderId: "870425813714",
+    appId: "1:870425813714:web:8e35d69512b8093073430b",
+    measurementId: "G-7JR7C0308J"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.kaweDB = firebase.database();
+    console.log("[KAWE] Firebase conectado:", firebaseConfig.projectId);
+  } catch(e) {
+    console.error("[KAWE] Falha ao iniciar Firebase:", e);
+  }
+</script>
+
 
 <style>
 :root {
@@ -5663,6 +5686,125 @@ function initAuthPosterWall() {
   });
   wall.dataset.ready = '1';
 }
+
+
+// ══════════════════════════════════════════════════════════════════
+// ── SINCRONIZAÇÃO FIREBASE (mantém localStorage + espelha no RTDB)
+// ══════════════════════════════════════════════════════════════════
+// Ideia: NÃO troca o localStorage; apenas intercepta os saves das chaves
+// principais (kawe_users e kawe_catalog) e replica no Firebase. Na hora
+// de carregar, puxa do Firebase e faz merge com o que já existe local.
+// Assim a tela de login/cadastro atual (kaweUsersRegister/kaweUsersLogin)
+// continua funcionando sem alteração, e os dados passam a ser globais.
+(function(){
+  if (!window.kaweDB) {
+    console.warn("[KAWE-SYNC] Firebase indisponível — usando só localStorage.");
+    return;
+  }
+
+  const SYNC_KEYS = {
+    'kawe_users':   'kawe_users',
+    'kawe_catalog': 'kawe_catalog'
+    // (localStorage key)  ->  (caminho no Realtime Database)
+  };
+
+  // ── Monkey-patch do localStorage.setItem: espelha no Firebase ─
+  const _origSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(key, value) {
+    _origSet.apply(this, arguments);
+    if (this === window.localStorage && SYNC_KEYS[key]) {
+      try {
+        const parsed = JSON.parse(value);
+        window.kaweDB.ref(SYNC_KEYS[key]).set(parsed).catch(err => {
+          console.warn("[KAWE-SYNC] Falha ao enviar " + key + ":", err && err.message);
+        });
+      } catch(e) { /* valor não-JSON, ignora */ }
+    }
+  };
+
+  // Mesmo tratamento para removeItem (limpar tudo)
+  const _origRemove = Storage.prototype.removeItem;
+  Storage.prototype.removeItem = function(key) {
+    _origRemove.apply(this, arguments);
+    if (this === window.localStorage && SYNC_KEYS[key]) {
+      try { window.kaweDB.ref(SYNC_KEYS[key]).remove(); } catch(e){}
+    }
+  };
+
+  // ── Merge helper (une por id, prioriza registro mais recente) ─
+  function mergeUsers(localList, remoteList) {
+    const map = new Map();
+    const push = u => {
+      if (!u || !u.id) return;
+      const prev = map.get(u.id);
+      if (!prev) { map.set(u.id, u); return; }
+      // mantém o de lastLogin/createdAt mais recente
+      const pT = Date.parse(prev.lastLogin || prev.createdAt || 0) || 0;
+      const nT = Date.parse(u.lastLogin || u.createdAt || 0) || 0;
+      map.set(u.id, nT >= pT ? u : prev);
+    };
+    (localList  || []).forEach(push);
+    (remoteList || []).forEach(push);
+    return Array.from(map.values());
+  }
+
+  // ── Carrega usuários do Firebase e faz merge com o que tem local ─
+  window.kaweDB.ref('kawe_users').once('value').then(snap => {
+    const remote = snap.val();
+    if (!remote) return;
+    const remoteList = Array.isArray(remote) ? remote : Object.values(remote);
+    let local = [];
+    try { local = JSON.parse(localStorage.getItem('kawe_users') || '[]') || []; } catch(e){}
+    const merged = mergeUsers(local, remoteList);
+    // grava direto (sem passar pelo patch, pra não reenviar antes da hora)
+    _origSet.call(localStorage, 'kawe_users', JSON.stringify(merged));
+    // agora sim envia o merged (garante que Firebase fica com a união)
+    try { window.kaweDB.ref('kawe_users').set(merged); } catch(e){}
+    if (typeof renderAdminUsers === 'function') { try { renderAdminUsers(); } catch(e){} }
+    console.log("[KAWE-SYNC] Usuários sincronizados:", merged.length);
+  }).catch(err => console.warn("[KAWE-SYNC] load users:", err && err.message));
+
+  // ── Escuta mudanças em tempo real (outros dispositivos) ────────
+  window.kaweDB.ref('kawe_users').on('value', snap => {
+    const remote = snap.val();
+    if (!remote) return;
+    const remoteList = Array.isArray(remote) ? remote : Object.values(remote);
+    let local = [];
+    try { local = JSON.parse(localStorage.getItem('kawe_users') || '[]') || []; } catch(e){}
+    // se remoto == local, nada a fazer
+    if (JSON.stringify(remoteList) === JSON.stringify(local)) return;
+    _origSet.call(localStorage, 'kawe_users', JSON.stringify(remoteList));
+    if (typeof renderAdminUsers === 'function') { try { renderAdminUsers(); } catch(e){} }
+  });
+
+  // ── Catálogo: se local vazio e remoto existir, importa ────────
+  window.kaweDB.ref('kawe_catalog').once('value').then(snap => {
+    const remote = snap.val();
+    if (!remote) return;
+    const local = localStorage.getItem('kawe_catalog');
+    if (!local || local === '{}' || local === 'null' || local === '[]') {
+      _origSet.call(localStorage, 'kawe_catalog', JSON.stringify(remote));
+      // re-render se o app já tiver montado
+      if (typeof renderCards === 'function') { try { renderCards(); } catch(e){} }
+      console.log("[KAWE-SYNC] Catálogo importado do Firebase.");
+    }
+  }).catch(()=>{});
+
+  // ── Escuta catálogo em tempo real ─────────────────────────────
+  window.kaweDB.ref('kawe_catalog').on('value', snap => {
+    const remote = snap.val();
+    if (!remote) return;
+    const currentStr = localStorage.getItem('kawe_catalog') || '';
+    const remoteStr  = JSON.stringify(remote);
+    if (currentStr === remoteStr) return;
+    _origSet.call(localStorage, 'kawe_catalog', remoteStr);
+    if (typeof window.CATALOG_DATA !== 'undefined') { window.CATALOG_DATA = remote; }
+    if (typeof renderCards === 'function') { try { renderCards(); } catch(e){} }
+  });
+
+  console.log("[KAWE-SYNC] Sincronização Firebase ativa (users + catalog).");
+})();
+
 
 </script>
 </body>
