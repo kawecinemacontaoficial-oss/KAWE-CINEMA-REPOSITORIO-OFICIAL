@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -4633,7 +4635,256 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
+/* ══════════════════════════════════════════════════════════════════
+   KAWE — SINCRONIZAÇÃO GLOBAL DO CATÁLOGO VIA FIREBASE
+   Salva CATALOG_DATA no Realtime Database e escuta mudanças
+   para que TODOS os usuários vejam o mesmo catálogo em tempo real.
+   ══════════════════════════════════════════════════════════════════ */
+window.__kaweSyncing = false;
+
+window.saveCatalogGlobal = function() {
+  try { localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA)); } catch(e){}
+  if (!window.kaweDB) return;
+  window.__kaweSyncing = true;
+  window.kaweDB.ref('catalog').set(window.CATALOG_DATA || {})
+    .catch(err => console.error('[KAWE] Erro salvando catálogo no Firebase:', err))
+    .finally(() => { setTimeout(() => { window.__kaweSyncing = false; }, 500); });
+};
+
+// Monkey-patch localStorage.setItem para 'kawe_catalog' → também salva no Firebase
+(function(){
+  const _origSet = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(key, value) {
+    _origSet.call(this, key, value);
+    if (key === 'kawe_catalog' && !window.__kaweSyncing && window.kaweDB) {
+      window.__kaweSyncing = true;
+      try {
+        window.kaweDB.ref('catalog').set(JSON.parse(value || '{}'))
+          .catch(err => console.error('[KAWE] Sync erro:', err))
+          .finally(() => setTimeout(() => { window.__kaweSyncing = false; }, 500));
+      } catch(e) { window.__kaweSyncing = false; }
+    }
+  };
+})();
+
+// Escuta mudanças no Firebase e reflete para TODOS os usuários
+window.addEventListener('DOMContentLoaded', () => {
+  if (!window.kaweDB) { console.warn('[KAWE] Firebase indisponível — catálogo ficará só local.'); return; }
+
+  window.kaweDB.ref('catalog').on('value', (snap) => {
+    const remote = snap.val();
+    if (!remote || typeof remote !== 'object') return;
+    if (window.__kaweSyncing) return; // ignora eco do próprio save
+
+    // Mescla no CATALOG_DATA local
+    if (!window.CATALOG_DATA || typeof window.CATALOG_DATA !== 'object') window.CATALOG_DATA = {};
+    Object.keys(remote).forEach(k => {
+      if (Array.isArray(remote[k])) window.CATALOG_DATA[k] = remote[k];
+    });
+
+    // Re-renderiza todas as categorias
+    try {
+      Object.keys(window.CATALOG_DATA).forEach(cat => {
+        if (window.renderCards) window.renderCards(cat, 1);
+      });
+    } catch(e){}
+    console.log('[KAWE] Catálogo sincronizado do Firebase');
+  }, (err) => console.error('[KAWE] Erro escutando catálogo:', err));
+});
+
+
+/* ══════════════════════════════════════════════════════════════════
+   KAWE — IMPORTAR DE QUALQUER URL (M3U / JSON / vídeo direto)
+   ══════════════════════════════════════════════════════════════════ */
+function _apiStatus(msg, isError) {
+  const el = document.getElementById('api-import-status');
+  if (el) el.innerHTML = `<span style="color:${isError ? 'var(--danger)' : 'var(--primary)'};">${msg}</span>`;
+  if (window.toast) toast(msg);
+}
+
+function _detectUrlType(url, text) {
+  if (/\.m3u8?(\?|#|$)/i.test(url) || /^#EXTM3U/i.test((text||'').trim())) return 'm3u';
+  if (/\.json(\?|#|$)/i.test(url)) return 'json';
+  if (/\.(mp4|mkv|webm|mov|avi)(\?|#|$)/i.test(url)) return 'video';
+  try {
+    const t = (text||'').trim();
+    if (t.startsWith('{') || t.startsWith('[')) return 'json';
+    if (/^#EXTM3U/i.test(t) || /#EXTINF/i.test(t)) return 'm3u';
+  } catch(e){}
+  return null;
+}
+
+async function importFromApiUrl() {
+  const url  = (document.getElementById('api-import-url')||{}).value?.trim();
+  const kind = (document.getElementById('api-import-type')||{}).value || 'auto';
+  const cat  = (document.getElementById('api-import-category')||{}).value || 'filmes';
+  const mode = (document.getElementById('api-import-mode')||{}).value || 'merge';
+  const title = (document.getElementById('api-import-title')||{}).value?.trim();
+
+  if (!url) return _apiStatus('❌ Cole uma URL primeiro', true);
+  _apiStatus('⏳ Baixando ' + url + ' …');
+
+  // Se é claramente vídeo direto sem baixar
+  let type = kind === 'auto' ? _detectUrlType(url, '') : kind;
+
+  if (type === 'video') return _importVideoDirect(url, cat, title);
+
+  let text = '';
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    text = await r.text();
+  } catch(err) {
+    return _apiStatus('❌ Falha ao baixar (CORS ou URL inválida): ' + err.message, true);
+  }
+
+  if (kind === 'auto') type = _detectUrlType(url, text) || 'json';
+
+  if (type === 'm3u')  return _importM3UText(text, mode);
+  if (type === 'json') return _importJsonText(text, cat, mode);
+  return _apiStatus('❌ Formato não reconhecido', true);
+}
+
+function _importM3UText(text, mode) {
+  try {
+    const list = parseM3U(text);
+    if (!list.length) return _apiStatus('⚠️ Nenhum canal encontrado no M3U', true);
+    if (!window.CATALOG_DATA) window.CATALOG_DATA = {};
+    if (mode === 'replace' || !Array.isArray(window.CATALOG_DATA.canais)) window.CATALOG_DATA.canais = [];
+    let nextId = Date.now();
+    list.forEach(c => {
+      window.CATALOG_DATA.canais.push({
+        id: nextId++, title: c.title,
+        poster: c.poster || 'https://cdn-icons-png.flaticon.com/512/1179/1179069.png',
+        genre: c.genre || 'Canais', rating: c.rating || 'AO VIVO',
+        videoUrl: c.videoUrl, videoSources: [{ label: 'Ao Vivo', url: c.videoUrl }]
+      });
+    });
+    saveCatalogGlobal();
+    if (window.renderCards) window.renderCards('canais', 1);
+    _apiStatus(`✅ ${list.length} canal(is) importado(s) e salvo(s) globalmente`);
+  } catch(e) { _apiStatus('❌ Erro ao processar M3U: ' + e.message, true); }
+}
+
+function _importJsonText(text, cat, mode) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e) { return _apiStatus('❌ JSON inválido: ' + e.message, true); }
+
+  if (!window.CATALOG_DATA) window.CATALOG_DATA = {};
+  let count = 0;
+
+  // Formato 1: { filmes:[], series:[], canais:[] } — catálogo completo
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    Object.keys(data).forEach(k => {
+      if (!Array.isArray(data[k])) return;
+      if (mode === 'replace' || !Array.isArray(window.CATALOG_DATA[k])) window.CATALOG_DATA[k] = [];
+      data[k].forEach(item => { window.CATALOG_DATA[k].push(item); count++; });
+    });
+  }
+  // Formato 2: array — vai tudo pra categoria selecionada
+  else if (Array.isArray(data)) {
+    if (mode === 'replace' || !Array.isArray(window.CATALOG_DATA[cat])) window.CATALOG_DATA[cat] = [];
+    data.forEach(item => { window.CATALOG_DATA[cat].push(item); count++; });
+  } else {
+    return _apiStatus('❌ Estrutura JSON não reconhecida', true);
+  }
+
+  saveCatalogGlobal();
+  try { Object.keys(window.CATALOG_DATA).forEach(c => window.renderCards && window.renderCards(c, 1)); } catch(e){}
+  _apiStatus(`✅ ${count} item(ns) importado(s) e salvo(s) globalmente (modo: ${mode})`);
+}
+
+function _importVideoDirect(url, cat, title) {
+  if (!window.CATALOG_DATA) window.CATALOG_DATA = {};
+  if (!Array.isArray(window.CATALOG_DATA[cat])) window.CATALOG_DATA[cat] = [];
+  window.CATALOG_DATA[cat].unshift({
+    id: Date.now(),
+    title: title || ('Vídeo ' + new Date().toLocaleDateString('pt-BR')),
+    poster: 'https://cdn-icons-png.flaticon.com/512/1179/1179069.png',
+    genre: cat, rating: 'NOVO',
+    videoUrl: url, videoSources: [{ label: 'Player 1', url }]
+  });
+  saveCatalogGlobal();
+  if (window.renderCards) window.renderCards(cat, 1);
+  _apiStatus('✅ Vídeo adicionado em "' + cat + '" e salvo globalmente');
+}
+
+/* ── Fontes de API salvas (persistidas no Firebase) ── */
+function saveApiSource() {
+  const url  = (document.getElementById('api-import-url')||{}).value?.trim();
+  const kind = (document.getElementById('api-import-type')||{}).value || 'auto';
+  const cat  = (document.getElementById('api-import-category')||{}).value || 'filmes';
+  const mode = (document.getElementById('api-import-mode')||{}).value || 'merge';
+  if (!url) return _apiStatus('❌ Cole uma URL primeiro', true);
+  if (!window.kaweDB) return _apiStatus('❌ Firebase indisponível', true);
+  const ref = window.kaweDB.ref('apiSources').push();
+  ref.set({ url, kind, cat, mode, savedAt: Date.now() })
+    .then(() => { _apiStatus('💾 Fonte salva'); renderApiSourcesList(); })
+    .catch(err => _apiStatus('❌ Erro: ' + err.message, true));
+}
+
+function renderApiSourcesList() {
+  const el = document.getElementById('api-sources-list');
+  if (!el || !window.kaweDB) return;
+  window.kaweDB.ref('apiSources').once('value').then(snap => {
+    const val = snap.val() || {};
+    const keys = Object.keys(val);
+    if (!keys.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Nenhuma fonte salva ainda.</p>'; return; }
+    el.innerHTML = keys.map(k => {
+      const s = val[k];
+      return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:#fff;font-size:13px;word-break:break-all;">${s.url}</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">tipo: ${s.kind} · categoria: ${s.cat} · modo: ${s.mode}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="admin-btn-secondary" style="padding:6px 12px;font-size:12px;margin:0;" onclick="reimportApiSource('${k}')">🔁 Importar</button>
+          <button class="admin-btn-danger" style="padding:6px 12px;font-size:12px;margin:0;" onclick="deleteApiSource('${k}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function reimportApiSource(id) {
+  window.kaweDB.ref('apiSources/' + id).once('value').then(snap => {
+    const s = snap.val(); if (!s) return;
+    document.getElementById('api-import-url').value = s.url;
+    document.getElementById('api-import-type').value = s.kind || 'auto';
+    document.getElementById('api-import-category').value = s.cat || 'filmes';
+    document.getElementById('api-import-mode').value = s.mode || 'merge';
+    importFromApiUrl();
+  });
+}
+
+function deleteApiSource(id) {
+  if (!confirm('Remover esta fonte?')) return;
+  window.kaweDB.ref('apiSources/' + id).remove().then(renderApiSourcesList);
+}
+
+async function reimportAllApiSources() {
+  if (!window.kaweDB) return _apiStatus('❌ Firebase indisponível', true);
+  const snap = await window.kaweDB.ref('apiSources').once('value');
+  const val = snap.val() || {};
+  const keys = Object.keys(val);
+  if (!keys.length) return _apiStatus('⚠️ Nenhuma fonte salva', true);
+  _apiStatus(`⏳ Re-importando ${keys.length} fonte(s)…`);
+  for (const k of keys) {
+    const s = val[k];
+    document.getElementById('api-import-url').value = s.url;
+    document.getElementById('api-import-type').value = s.kind || 'auto';
+    document.getElementById('api-import-category').value = s.cat || 'filmes';
+    document.getElementById('api-import-mode').value = s.mode || 'merge';
+    await importFromApiUrl();
+  }
+  _apiStatus(`✅ ${keys.length} fonte(s) re-importada(s)`);
+}
+
 </script>
+
+
+
 
 
 
@@ -4854,6 +5105,7 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-tab" onclick="switchAdminTab('canais')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"></path></svg> CANAIS (M3U)</div>
       <div class="admin-tab" onclick="switchAdminTab('suporte'); renderSupportMessages()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> SUPORTE <span id="sup-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;">0</span></div>
       <div class="admin-tab" onclick="switchAdminTab('catalogo'); renderAdminCatalogo()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-8 14l-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7z"/></svg> CATÁLOGO</div>
+      <div class="admin-tab" onclick="switchAdminTab('api'); renderApiSourcesList()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2"/></svg> API / IMPORTAR</div>
 
     </div>
 
@@ -5134,6 +5386,73 @@ document.addEventListener('dblclick', (event) => {
 
       <h3 style="margin-top:30px;">Links Cadastrados</h3>
       <div id="admin-catalogo-list" style="display:flex;flex-direction:column;gap:10px;margin-top:15px;"></div>
+    </div>
+
+    <!-- ABA API / IMPORTAR (universal: M3U, JSON, link direto) -->
+    <div id="admin-api" class="admin-content-section">
+      <h3>API / Importar de Qualquer URL</h3>
+      <p class="admin-subtitle">
+        Cole qualquer link e o sistema detecta automaticamente:
+        <b>.m3u / .m3u8</b> vira canais ao vivo,
+        <b>.json</b> substitui/mescla o catálogo (filmes, séries, canais),
+        <b>.mp4 / .mkv / .webm / .mov / iframe</b> entra como item novo.
+        Tudo é salvo no <b>Firebase</b> e aparece para <b>todos os usuários</b> em tempo real — não some ao atualizar a página.
+      </p>
+
+      <div class="admin-form-group">
+        <label>🔗 URL da API / M3U / JSON / vídeo</label>
+        <input type="url" id="api-import-url" class="admin-input" placeholder="https://exemplo.com/lista.m3u ou https://api.exemplo.com/catalogo.json ou https://.../video.mp4">
+        <div class="admin-input-hint">Aceita também endpoints REST que devolvam JSON com <code>{ filmes: [...], series: [...], canais: [...] }</code>.</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+        <div class="admin-form-group">
+          <label>Tipo (opcional)</label>
+          <select id="api-import-type" class="admin-select">
+            <option value="auto">🔍 Auto-detectar</option>
+            <option value="m3u">📺 M3U / M3U8 (canais)</option>
+            <option value="json">📦 JSON (catálogo completo)</option>
+            <option value="video">🎬 Link direto de vídeo</option>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label>Categoria destino (JSON/vídeo)</label>
+          <select id="api-import-category" class="admin-select">
+            <option value="filmes">Filmes</option>
+            <option value="series">Séries</option>
+            <option value="canais">Canais</option>
+            <option value="animes">Animes</option>
+            <option value="doramas">Doramas</option>
+            <option value="novelas">Novelas</option>
+            <option value="desenhos">Desenhos</option>
+            <option value="infantil">Infantil</option>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label>Modo</label>
+          <select id="api-import-mode" class="admin-select">
+            <option value="merge">➕ Mesclar (adiciona)</option>
+            <option value="replace">🔄 Substituir categoria</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-form-group">
+        <label>Título (se link direto de vídeo)</label>
+        <input type="text" id="api-import-title" class="admin-input" placeholder="Ex: Novo Filme 2025">
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+        <button class="admin-btn-save" onclick="importFromApiUrl()">🚀 IMPORTAR AGORA</button>
+        <button class="admin-btn-secondary" onclick="saveApiSource()">💾 Salvar esta fonte</button>
+        <button class="admin-btn-secondary" onclick="reimportAllApiSources()">🔁 Re-importar TODAS as fontes salvas</button>
+      </div>
+
+      <div id="api-import-status" style="margin-top:15px; font-size:13px; color:var(--text-muted);"></div>
+
+      <h3 style="margin-top:30px;">Fontes de API Salvas</h3>
+      <p class="admin-subtitle">Estas fontes ficam salvas no Firebase e podem ser re-importadas a qualquer momento.</p>
+      <div id="api-sources-list" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;"></div>
     </div>
 
   </div>
