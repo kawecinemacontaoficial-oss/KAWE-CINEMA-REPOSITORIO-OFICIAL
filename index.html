@@ -1719,6 +1719,7 @@ header {
   <header>
     <div class="header-left">
       <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+      <button class="nav-link catalogo-btn" onclick="openCatalogoModal()" style="margin-left:10px; border:1px solid var(--primary); color:var(--primary); background:rgba(34,197,94,0.08); font-family:'Outfit',sans-serif; font-weight:800; text-transform:uppercase; font-size:12px; letter-spacing:0.5px; padding:8px 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#000';" onmouseout="this.style.background='rgba(34,197,94,0.08)'; this.style.color='var(--primary)';"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-8 14l-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7z"/></svg> ADQUIRA NOSSO CATÁLOGO</button>
       <div class="logo">KAWE <span>CINEMA</span></div>
     </div>
     <div class="search-container">
@@ -4852,6 +4853,7 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-tab" onclick="switchAdminTab('social')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> REDES SOCIAIS</div>
       <div class="admin-tab" onclick="switchAdminTab('canais')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"></path></svg> CANAIS (M3U)</div>
       <div class="admin-tab" onclick="switchAdminTab('suporte'); renderSupportMessages()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> SUPORTE <span id="sup-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;">0</span></div>
+      <div class="admin-tab" onclick="switchAdminTab('catalogo'); renderAdminCatalogo()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-8 14l-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7z"/></svg> CATÁLOGO</div>
 
     </div>
 
@@ -5107,6 +5109,31 @@ document.addEventListener('dblclick', (event) => {
         <button class="admin-btn-danger" onclick="clearAllSupportMessages()" style="margin-top:0;">🗑️ Limpar todas</button>
       </div>
       <div id="support-messages-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+
+    <!-- ABA CATÁLOGO -->
+    <div id="admin-catalogo" class="admin-content-section">
+      <h3>Gerenciar Catálogo (JSON)</h3>
+      <p class="admin-subtitle">Adicione links para download de arquivos JSON do catálogo. Estes links aparecerão na aba "ADQUIRA NOSSO CATÁLOGO" para os usuários.</p>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+        <div class="admin-form-group">
+          <label>Título / Nome do arquivo</label>
+          <input type="text" id="new-catalogo-title" class="admin-input" placeholder="Ex: Catálogo Filmes 2025">
+        </div>
+        <div class="admin-form-group">
+          <label>Link do arquivo JSON</label>
+          <input type="text" id="new-catalogo-url" class="admin-input" placeholder="https://.../arquivo.json">
+        </div>
+        <div class="admin-form-group" style="grid-column:1 / -1;">
+          <label>Descrição (opcional)</label>
+          <input type="text" id="new-catalogo-desc" class="admin-input" placeholder="Ex: Contém 500 filmes atualizados">
+        </div>
+      </div>
+      <button class="admin-btn-save" onclick="addCatalogoLink()">+ Adicionar Link</button>
+
+      <h3 style="margin-top:30px;">Links Cadastrados</h3>
+      <div id="admin-catalogo-list" style="display:flex;flex-direction:column;gap:10px;margin-top:15px;"></div>
     </div>
 
   </div>
@@ -5807,5 +5834,186 @@ function initAuthPosterWall() {
 
 
 </script>
+
+<!-- ================ MODAL ADQUIRA NOSSO CATÁLOGO ================ -->
+<style>
+#catalogo-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  z-index: 9500; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#catalogo-modal.open { display: flex; animation: fadeIn 0.3s ease; }
+.catalogo-box {
+  width: 100%; max-width: 780px; max-height: 90vh; overflow-y: auto;
+  background: linear-gradient(160deg, #050b06 0%, #0a1a0d 60%, #061008 100%);
+  border: 1px solid rgba(34,197,94,0.45);
+  border-radius: 20px; padding: 0;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 60px rgba(34,197,94,0.25) inset;
+  animation: fadeIn 0.4s ease;
+}
+.catalogo-box::-webkit-scrollbar { width: 8px; }
+.catalogo-box::-webkit-scrollbar-thumb { background: rgba(34,197,94,0.35); border-radius: 8px; }
+.catalogo-header {
+  padding: 28px 30px 20px; border-bottom: 1px solid rgba(34,197,94,0.2);
+  display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  background: linear-gradient(90deg, rgba(34,197,94,0.15), transparent);
+}
+.catalogo-header h2 {
+  font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 22px;
+  color: var(--primary); text-shadow: 0 0 20px rgba(34,197,94,0.4);
+  display: flex; align-items: center; gap: 10px; letter-spacing: -0.3px;
+}
+.catalogo-close {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  font-size: 18px; transition: 0.3s;
+}
+.catalogo-close:hover { background: var(--danger); border-color: var(--danger); }
+.catalogo-intro { padding: 20px 30px 6px; color: var(--text-muted); font-size: 13.5px; line-height: 1.6; }
+.catalogo-list { padding: 12px 30px 30px; display: flex; flex-direction: column; gap: 12px; }
+.catalogo-item {
+  background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px;
+  transition: 0.3s;
+}
+.catalogo-item:hover { background: rgba(34,197,94,0.1); border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(34,197,94,0.15); }
+.catalogo-item-icon {
+  width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), #0f5e2e);
+  display: flex; align-items: center; justify-content: center; color: #000;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.4);
+}
+.catalogo-item-info { flex: 1; min-width: 0; }
+.catalogo-item-title { font-family: 'Outfit', sans-serif; font-weight: 800; color: #fff; font-size: 15px; }
+.catalogo-item-desc { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalogo-item-btn {
+  background: var(--primary); color: #000; border: none; padding: 10px 18px;
+  border-radius: 10px; font-family: 'Outfit', sans-serif; font-weight: 800;
+  cursor: pointer; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  transition: 0.3s; flex-shrink: 0;
+}
+.catalogo-item-btn:hover { background: #16a34a; transform: scale(1.05); box-shadow: 0 8px 20px rgba(34,197,94,0.5); }
+.catalogo-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; }
+.catalogo-admin-item {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+}
+.catalogo-admin-item-info { flex: 1; min-width: 0; }
+.catalogo-admin-item-info b { color: var(--primary); font-family: 'Outfit', sans-serif; }
+.catalogo-admin-item-info small { display:block; color: var(--text-muted); font-size: 11.5px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
+<div id="catalogo-modal" onclick="if(event.target===this) closeCatalogoModal()">
+  <div class="catalogo-box">
+    <div class="catalogo-header">
+      <h2>
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-8 14l-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7z"/></svg>
+        ADQUIRA NOSSO CATÁLOGO
+      </h2>
+      <button class="catalogo-close" onclick="closeCatalogoModal()">✕</button>
+    </div>
+    <p class="catalogo-intro">Baixe abaixo os arquivos JSON do nosso catálogo completo. Escolha um dos links disponíveis e clique em <b style="color:var(--primary);">BAIXAR</b>.</p>
+    <div class="catalogo-list" id="catalogo-list-user">
+      <div class="catalogo-empty">Carregando catálogo...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ CATÁLOGO (Firebase) ============ */
+function openCatalogoModal() {
+  document.getElementById('catalogo-modal').classList.add('open');
+  renderCatalogoUser();
+}
+function closeCatalogoModal() {
+  document.getElementById('catalogo-modal').classList.remove('open');
+}
+function _catalogoRef() {
+  if (!window.kaweDB) return null;
+  return window.kaweDB.ref('catalogo');
+}
+function renderCatalogoUser() {
+  const box = document.getElementById('catalogo-list-user');
+  const ref = _catalogoRef();
+  if (!ref) { box.innerHTML = '<div class="catalogo-empty">Erro: banco de dados indisponível.</div>'; return; }
+  ref.once('value').then(snap => {
+    const data = snap.val() || {};
+    const keys = Object.keys(data);
+    if (!keys.length) {
+      box.innerHTML = '<div class="catalogo-empty">📂 Nenhum arquivo disponível no momento.<br>Volte em breve!</div>';
+      return;
+    }
+    box.innerHTML = keys.map(k => {
+      const item = data[k] || {};
+      const title = (item.title || 'Sem título').toString();
+      const desc = (item.desc || '').toString();
+      const url = (item.url || '#').toString();
+      return `
+        <div class="catalogo-item">
+          <div class="catalogo-item-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+          </div>
+          <div class="catalogo-item-info">
+            <div class="catalogo-item-title">${_escHtml(title)}</div>
+            <div class="catalogo-item-desc">${desc ? _escHtml(desc) : _escHtml(url)}</div>
+          </div>
+          <a class="catalogo-item-btn" href="${_escAttr(url)}" download target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> BAIXAR
+          </a>
+        </div>`;
+    }).join('');
+  }).catch(err => {
+    console.error('[CATALOGO] Erro:', err);
+    box.innerHTML = '<div class="catalogo-empty">Erro ao carregar catálogo.</div>';
+  });
+}
+function _escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function _escAttr(s){return _escHtml(s);}
+
+/* ============ ADMIN CATÁLOGO ============ */
+function renderAdminCatalogo() {
+  const box = document.getElementById('admin-catalogo-list');
+  const ref = _catalogoRef();
+  if (!ref) { box.innerHTML = '<div style="color:var(--text-muted);">Erro: banco indisponível.</div>'; return; }
+  ref.once('value').then(snap => {
+    const data = snap.val() || {};
+    const keys = Object.keys(data);
+    if (!keys.length) { box.innerHTML = '<div style="color:var(--text-muted);padding:14px;">Nenhum link cadastrado ainda.</div>'; return; }
+    box.innerHTML = keys.map(k => {
+      const item = data[k] || {};
+      return `
+        <div class="catalogo-admin-item">
+          <div class="catalogo-admin-item-info">
+            <b>${_escHtml(item.title || '(sem título)')}</b>
+            <small>${_escHtml(item.url || '')}</small>
+            ${item.desc ? `<small style="color:#888;">${_escHtml(item.desc)}</small>` : ''}
+          </div>
+          <button class="admin-btn-danger" style="margin-top:0;padding:8px 14px;font-size:12px;" onclick="deleteCatalogoLink('${k}')">Excluir</button>
+        </div>`;
+    }).join('');
+  });
+}
+function addCatalogoLink() {
+  const title = (document.getElementById('new-catalogo-title').value || '').trim();
+  const url = (document.getElementById('new-catalogo-url').value || '').trim();
+  const desc = (document.getElementById('new-catalogo-desc').value || '').trim();
+  if (!title || !url) { alert('Preencha título e link.'); return; }
+  const ref = _catalogoRef();
+  if (!ref) { alert('Banco indisponível.'); return; }
+  ref.push({ title, url, desc, createdAt: Date.now() }).then(() => {
+    document.getElementById('new-catalogo-title').value = '';
+    document.getElementById('new-catalogo-url').value = '';
+    document.getElementById('new-catalogo-desc').value = '';
+    renderAdminCatalogo();
+  }).catch(err => alert('Erro: ' + err.message));
+}
+function deleteCatalogoLink(key) {
+  if (!confirm('Excluir este link do catálogo?')) return;
+  const ref = _catalogoRef();
+  if (!ref) return;
+  ref.child(key).remove().then(renderAdminCatalogo);
+}
+</script>
+
 </body>
 </html>
