@@ -1359,6 +1359,136 @@ header {
 @keyframes aovivoPulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 
 #terror h2 { color:#ff2400 !important; text-shadow:0 0 12px #ff240066; }
+
+/* ── MODERADOR — botão verde+vermelho ── */
+.nav-link.moderador-btn {
+  color:#fff !important;
+  background: linear-gradient(135deg, #16a34a 0%, #16a34a 45%, #ef4444 55%, #ef4444 100%);
+  border: 1px solid rgba(255,255,255,0.25);
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 0 12px rgba(22,163,74,0.35), 0 0 12px rgba(239,68,68,0.25);
+}
+.nav-link.moderador-btn:hover {
+  background: linear-gradient(135deg, #22c55e 0%, #22c55e 45%, #f87171 55%, #f87171 100%);
+  box-shadow: 0 0 20px rgba(34,197,94,0.55), 0 0 20px rgba(248,113,113,0.45);
+  color:#fff !important;
+}
+.sidebar-link.moderador-btn {
+  color:#fff !important;
+  background: linear-gradient(90deg, rgba(22,163,74,0.35), rgba(239,68,68,0.35));
+  border-left: 3px solid #ef4444;
+  border-right: 3px solid #16a34a;
+  font-weight: 800;
+}
+.sidebar-link.moderador-btn:hover {
+  background: linear-gradient(90deg, rgba(22,163,74,0.6), rgba(239,68,68,0.6));
+  color:#fff !important;
+}
+
+/* ── MODAL DE SENHA MODERADOR — roxo ── */
+#mod-auth-modal .pass-box {
+  background: linear-gradient(160deg, #2a0a4a 0%, #1a0530 60%, #0f0220 100%) !important;
+  border: 1px solid #a855f7 !important;
+  box-shadow: 0 0 40px rgba(168,85,247,0.5), inset 0 0 20px rgba(168,85,247,0.15) !important;
+}
+#mod-auth-modal .pass-title {
+  color: #d8b4fe !important;
+  text-shadow: 0 0 12px rgba(168,85,247,0.7);
+}
+#mod-auth-modal input {
+  background: rgba(168,85,247,0.08) !important;
+  border: 1px solid rgba(168,85,247,0.45) !important;
+  color: #fff !important;
+}
+#mod-auth-modal input:focus {
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.25) !important;
+}
+#mod-auth-modal .mod-enter-btn {
+  margin-top:18px;width:100%;padding:13px;
+  background: linear-gradient(135deg,#a855f7,#7c3aed);
+  color:#fff;border:none;border-radius:10px;font-weight:800;
+  font-family:'Outfit',sans-serif;text-transform:uppercase;letter-spacing:1px;
+  cursor:pointer;font-size:14px;
+  box-shadow: 0 8px 24px rgba(168,85,247,0.4);
+}
+#mod-auth-modal .mod-enter-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(168,85,247,0.6); }
+
+
+/* ── NOVAS CATEGORIAS: SITCOM / LIVE ACTION / CINEMA / TELEVISÃO / LIVES ── */
+/* SITCOM — marrom */
+.nav-link.sitcom-btn { border:1px solid #6b3f1d; background:#5a3212; color:#f4d9b3 !important; }
+.nav-link.sitcom-btn:hover { background:#7a4a20; color:#fff !important; box-shadow:0 4px 14px rgba(107,63,29,0.5); }
+.sidebar-link.sitcom-btn { color:#c99162 !important; border-left:3px solid #6b3f1d; background:rgba(107,63,29,0.15); }
+.sidebar-link.sitcom-btn:hover { background:linear-gradient(90deg,#6b3f1d55,transparent); color:#f4d9b3 !important; }
+
+/* LIVE ACTION — vermelho fraco */
+.nav-link.liveaction-btn { border:1px solid #f87171; background:rgba(248,113,113,0.15); color:#fca5a5 !important; }
+.nav-link.liveaction-btn:hover { background:#f87171; color:#fff !important; box-shadow:0 4px 14px rgba(248,113,113,0.45); }
+.sidebar-link.liveaction-btn { color:#fca5a5 !important; border-left:3px solid #f87171; background:rgba(248,113,113,0.1); }
+.sidebar-link.liveaction-btn:hover { background:linear-gradient(90deg,#f8717133,transparent); color:#fecaca !important; }
+
+/* CINEMA — estilo cinema: dourado sobre bordô/preto, com brilho de holofote */
+.nav-link.cinema-btn {
+  color:#f7d774 !important;
+  background: linear-gradient(135deg,#1a0000 0%, #3d0a0a 40%, #7a1e1e 55%, #3d0a0a 70%, #1a0000 100%);
+  border:1px solid #f7d774;
+  text-shadow: 0 0 6px rgba(247,215,116,0.55);
+  box-shadow: 0 0 12px rgba(247,215,116,0.25), inset 0 1px 0 rgba(247,215,116,0.35);
+  letter-spacing: 1px;
+}
+.nav-link.cinema-btn:hover {
+  background: linear-gradient(135deg,#3d0a0a 0%, #7a1e1e 50%, #3d0a0a 100%);
+  color:#fff2c2 !important;
+  box-shadow: 0 0 22px rgba(247,215,116,0.55), inset 0 1px 0 rgba(247,215,116,0.55);
+}
+.sidebar-link.cinema-btn {
+  color:#f7d774 !important;
+  background: linear-gradient(90deg, rgba(122,30,30,0.55), rgba(26,0,0,0.25));
+  border-left:3px solid #f7d774;
+  text-shadow: 0 0 6px rgba(247,215,116,0.4);
+}
+.sidebar-link.cinema-btn:hover { background: linear-gradient(90deg, rgba(122,30,30,0.9), rgba(26,0,0,0.5)); color:#fff2c2 !important; }
+
+/* TELEVISÃO — amarelo forte */
+.nav-link.televisao-btn { border:1px solid #facc15; background:#facc15; color:#111 !important; text-shadow:none; box-shadow:0 0 12px rgba(250,204,21,0.5); font-weight:800; }
+.nav-link.televisao-btn:hover { background:#fde047; color:#000 !important; box-shadow:0 0 20px rgba(250,204,21,0.8); }
+.sidebar-link.televisao-btn { color:#000 !important; background:#facc15; border-left:3px solid #a16207; font-weight:800; }
+.sidebar-link.televisao-btn:hover { background:#fde047; color:#000 !important; text-shadow:0 0 6px rgba(255,255,255,0.4); }
+
+/* LIVES — verde neon */
+.nav-link.lives-btn {
+  border:1px solid #39ff14;
+  background: rgba(57,255,20,0.08);
+  color:#39ff14 !important;
+  text-shadow: 0 0 8px rgba(57,255,20,0.7);
+  box-shadow: 0 0 12px rgba(57,255,20,0.35), inset 0 0 8px rgba(57,255,20,0.15);
+  animation: livesNeonPulse 1.6s ease-in-out infinite;
+}
+.nav-link.lives-btn:hover { background:#39ff14; color:#001a00 !important; text-shadow:none; box-shadow:0 0 24px rgba(57,255,20,0.9); }
+.sidebar-link.lives-btn {
+  color:#39ff14 !important;
+  border-left:3px solid #39ff14;
+  background: rgba(57,255,20,0.08);
+  text-shadow: 0 0 8px rgba(57,255,20,0.6);
+  animation: livesNeonPulse 1.6s ease-in-out infinite;
+}
+.sidebar-link.lives-btn:hover { background: rgba(57,255,20,0.2); color:#a7ffb0 !important; }
+.nav-link.lives-btn::before, .sidebar-link.lives-btn::before {
+  content:'● ';
+  color:#39ff14;
+  text-shadow:0 0 8px #39ff14;
+  animation: livesDot 1s ease-in-out infinite;
+}
+@keyframes livesNeonPulse { 0%,100%{ box-shadow:0 0 12px rgba(57,255,20,0.35), inset 0 0 8px rgba(57,255,20,0.15);} 50%{ box-shadow:0 0 22px rgba(57,255,20,0.75), inset 0 0 12px rgba(57,255,20,0.3);} }
+@keyframes livesDot { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+#sitcom h2 { color:#c99162 !important; text-shadow:0 0 10px rgba(201,145,98,0.5); }
+#live-action h2 { color:#fca5a5 !important; text-shadow:0 0 10px rgba(248,113,113,0.5); }
+#cinema h2 { color:#f7d774 !important; text-shadow:0 0 12px rgba(247,215,116,0.6); letter-spacing:2px; }
+#televisao h2 { color:#facc15 !important; text-shadow:0 0 12px rgba(250,204,21,0.7); }
+#lives h2 { color:#39ff14 !important; text-shadow:0 0 14px rgba(57,255,20,0.8); }
 </style>
 </head>
 <body>
@@ -1478,11 +1608,13 @@ header {
   <div class="sidebar-menu">
     <div class="sidebar-link" onclick="showSectionFromSidebar('home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> INÍCIO</div>
     <div class="sidebar-link admin-btn" onclick="openAdminAuth()"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> PAINEL ADMIN</div>
+    <div class="sidebar-link moderador-btn" onclick="openModeradorAuth()"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> MODERADOR</div>
     <div class="sidebar-link vip-btn" onclick="openVipAuth()"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> VIP</div>
     <div class="sidebar-link chat-btn" onclick="showSectionFromSidebar('chat')"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> CHAT</div>
     <div class="sidebar-link lancamentos-btn" onclick="showSectionFromSidebar('lancamentos')"><svg viewBox="0 0 24 24"><path d="M12 2l1.5 4.5H18l-3.6 2.7 1.4 4.3L12 10.8l-3.8 2.7 1.4-4.3L6 6.5h4.5L12 2zm7 15l-2 5-2-5-5-2 5-2 2-5 2 5 5 2-5 2z"/></svg> LANÇAMENTOS</div>
     <div class="sidebar-link suporte-btn" onclick="showSectionFromSidebar('suporte')"><svg viewBox="0 0 24 24"><path d="M12 1a11 11 0 0 0-11 11v6a3 3 0 0 0 3 3h3v-8H4v-1a8 8 0 0 1 16 0v1h-3v8h3a3 3 0 0 0 3-3v-6A11 11 0 0 0 12 1z"/></svg> SUPORTE</div>
     <div class="sidebar-link canais-btn" onclick="showSectionFromSidebar('canais')"><svg viewBox="0 0 24 24"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"/></svg> CANAIS</div>
+    <div class="sidebar-link jogos-btn" onclick="showSectionFromSidebar('jogos')"><svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM11 13H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg> JOGOS</div>
     <div class="sidebar-link" onclick="showSectionFromSidebar('filmes')"><svg viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg> FILMES</div>
     <div class="sidebar-link" onclick="showSectionFromSidebar('series')"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM5 15h2v2H5v-2zm0-4h2v2H5v-2zm0-4h2v2H5V7zm4 8h10v2H9v-2zm0-4h10v2H9v-2zm0-4h10v2H9V7z"/></svg> SÉRIES</div>
     <div class="sidebar-link" onclick="showSectionFromSidebar('animes')"><svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg> ANIMES</div>
@@ -1497,14 +1629,19 @@ header {
     <div class="sidebar-link radio-btn" onclick="showSectionFromSidebar('radio')"><svg viewBox="0 0 24 24"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</div>
     <div class="sidebar-link esportes-btn" onclick="showSectionFromSidebar('esportes')"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg> ESPORTES</div>
     <div class="sidebar-link aovivo-btn" onclick="showSectionFromSidebar('ao-vivo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg> AO VIVO</div>
+    <div class="sidebar-link sitcom-btn" onclick="showSectionFromSidebar('sitcom')"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H4zM2 18h20v2H2z"/></svg> SITCOM</div>
+    <div class="sidebar-link liveaction-btn" onclick="showSectionFromSidebar('live-action')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> LIVE ACTION</div>
+    <div class="sidebar-link cinema-btn" onclick="showSectionFromSidebar('cinema')"><svg viewBox="0 0 24 24"><path d="M4 4h3l1 3H5L4 4zm5 0h3l1 3h-3L9 4zm5 0h3l1 3h-3l-1-3zm5 0h1v3h-2l1-3zM3 8h18v12H3z"/></svg> CINEMA</div>
+    <div class="sidebar-link televisao-btn" onclick="showSectionFromSidebar('televisao')"><svg viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6v2h6v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z"/></svg> TELEVISÃO</div>
+    <div class="sidebar-link lives-btn" onclick="showSectionFromSidebar('lives')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> LIVES</div>
         <div class="sidebar-link adulto-btn" onclick="showSectionFromSidebar('adulto')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> ADULTO</div>
     <div class="sidebar-link pornografia-btn" onclick="showSectionFromSidebar('pornografia')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg> PORNOGRAFIA</div>
-    <div class="sidebar-link bronze-btn" onclick="showSectionFromSidebar('bronze')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> BRONZE</div>
-    <div class="sidebar-link prata-btn" onclick="showSectionFromSidebar('prata')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PRATA</div>
-    <div class="sidebar-link platina-btn" onclick="showSectionFromSidebar('platina')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PLATINA</div>
-    <div class="sidebar-link diamante-btn" onclick="showSectionFromSidebar('diamante')"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/></svg> DIAMANTE</div>
-    <div class="sidebar-link ouro-btn" onclick="showSectionFromSidebar('ouro')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> OURO</div>
-    <div class="sidebar-link premium-btn" onclick="showSectionFromSidebar('premium')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PREMIUM</div>
+    <div class="sidebar-link bronze-btn" onclick="openVipCategory('bronze','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> BRONZE</div>
+    <div class="sidebar-link prata-btn" onclick="openVipCategory('prata','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PRATA</div>
+    <div class="sidebar-link platina-btn" onclick="openVipCategory('platina','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PLATINA</div>
+    <div class="sidebar-link diamante-btn" onclick="openVipCategory('diamante','sidebar')"><svg viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/></svg> DIAMANTE</div>
+    <div class="sidebar-link ouro-btn" onclick="openVipCategory('ouro','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> OURO</div>
+    <div class="sidebar-link premium-btn" onclick="openVipCategory('premium','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PREMIUM</div>
     <div class="sidebar-link terror-btn" onclick="showSectionFromSidebar('terror')"><svg viewBox="0 0 24 24"><path d="M12 2C7 2 4 6 4 11c0 3 1 5 2 7l2-2 2 3 2-3 2 3 2-3 2 2c1-2 2-4 2-7 0-5-3-9-8-9zm-2 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm4 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg> TERROR</div>
     <div class="sidebar-link" onclick="showSectionFromSidebar('sobre')"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> SOBRE NÓS</div>
   </div>
@@ -1845,11 +1982,13 @@ header {
     <nav class="header-nav">
       <div class="nav-link active" onclick="showSectionFromHeader('home')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> INÍCIO</div>
       <div class="nav-link admin-btn" onclick="openAdminAuth()"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> ADMIN</div>
+      <div class="nav-link moderador-btn" onclick="openModeradorAuth()"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> MODERADOR</div>
       <div class="nav-link vip-btn" onclick="openVipAuth()"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> VIP</div>
       <div class="nav-link chat-btn" onclick="showSectionFromHeader('chat')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> CHAT</div>
       <div class="nav-link lancamentos-btn" onclick="showSectionFromHeader('lancamentos')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l1.5 4.5H18l-3.6 2.7 1.4 4.3L12 10.8l-3.8 2.7 1.4-4.3L6 6.5h4.5L12 2z"/></svg> LANÇAMENTOS</div>
       <div class="nav-link suporte-btn" onclick="showSectionFromHeader('suporte')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 1a11 11 0 0 0-11 11v6a3 3 0 0 0 3 3h3v-8H4v-1a8 8 0 0 1 16 0v1h-3v8h3a3 3 0 0 0 3-3v-6A11 11 0 0 0 12 1z"/></svg> SUPORTE</div>
       <div class="nav-link canais-btn" onclick="showSectionFromHeader('canais')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"/></svg> CANAIS</div>
+      <div class="nav-link jogos-btn" onclick="showSectionFromHeader('jogos')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM11 13H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg> JOGOS</div>
       <div class="nav-link" onclick="showSectionFromHeader('filmes')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg> FILMES</div>
       <div class="nav-link" onclick="showSectionFromHeader('series')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM5 15h2v2H5v-2zm0-4h2v2H5v-2zm0-4h2v2H5V7zm4 8h10v2H9v-2zm0-4h10v2H9v-2zm0-4h10v2H9V7z"/></svg> SÉRIES</div>
       <div class="nav-link" onclick="showSectionFromHeader('animes')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg> ANIMES</div>
@@ -1862,14 +2001,19 @@ header {
       <div class="nav-link radio-btn" onclick="showSectionFromHeader('radio')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</div>
       <div class="nav-link adulto-btn" onclick="showSectionFromHeader('adulto')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> ADULTO</div>
       <div class="nav-link pornografia-btn" onclick="showSectionFromHeader('pornografia')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg> PORNOGRAFIA</div>
-      <div class="nav-link bronze-btn" onclick="showSectionFromHeader('bronze')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> BRONZE</div>
-      <div class="nav-link prata-btn" onclick="showSectionFromHeader('prata')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PRATA</div>
-      <div class="nav-link platina-btn" onclick="showSectionFromHeader('platina')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PLATINA</div>
-      <div class="nav-link diamante-btn" onclick="showSectionFromHeader('diamante')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/></svg> DIAMANTE</div>
-      <div class="nav-link ouro-btn" onclick="showSectionFromHeader('ouro')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> OURO</div>
-      <div class="nav-link premium-btn" onclick="showSectionFromHeader('premium')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PREMIUM</div>
+      <div class="nav-link bronze-btn" onclick="openVipCategory('bronze','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> BRONZE</div>
+      <div class="nav-link prata-btn" onclick="openVipCategory('prata','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PRATA</div>
+      <div class="nav-link platina-btn" onclick="openVipCategory('platina','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PLATINA</div>
+      <div class="nav-link diamante-btn" onclick="openVipCategory('diamante','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/></svg> DIAMANTE</div>
+      <div class="nav-link ouro-btn" onclick="openVipCategory('ouro','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> OURO</div>
+      <div class="nav-link premium-btn" onclick="openVipCategory('premium','header')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> PREMIUM</div>
       <div class="nav-link esportes-btn" onclick="showSectionFromHeader('esportes')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg> ESPORTES</div>
       <div class="nav-link aovivo-btn" onclick="showSectionFromHeader('ao-vivo')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 4 4 4 4 0 0 0-4-4zm0 6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z"/></svg> AO VIVO</div>
+      <div class="nav-link sitcom-btn" onclick="showSectionFromHeader('sitcom')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 6h16v10H4zM2 18h20v2H2z"/></svg> SITCOM</div>
+      <div class="nav-link liveaction-btn" onclick="showSectionFromHeader('live-action')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> LIVE ACTION</div>
+      <div class="nav-link cinema-btn" onclick="showSectionFromHeader('cinema')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h3l1 3H5L4 4zm5 0h3l1 3h-3L9 4zm5 0h3l1 3h-3l-1-3zm5 0h1v3h-2l1-3zM3 8h18v12H3z"/></svg> CINEMA</div>
+      <div class="nav-link televisao-btn" onclick="showSectionFromHeader('televisao')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6v2h6v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z"/></svg> TELEVISÃO</div>
+      <div class="nav-link lives-btn" onclick="showSectionFromHeader('lives')"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg> LIVES</div>
             <div class="nav-link terror-btn" onclick="showSectionFromHeader('terror')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C7 2 4 6 4 11c0 3 1 5 2 7l2-2 2 3 2-3 2 3 2-3 2 2c1-2 2-4 2-7 0-5-3-9-8-9zm-2 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm4 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg> TERROR</div>
       <div class="nav-link" onclick="showSectionFromHeader('sobre')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> SOBRE</div>
     </nav>
@@ -1902,13 +2046,18 @@ header {
     <span class="gn-link" data-target="canais"        onclick="window.showSectionFromHeader('canais')">Canais</span>
     <span class="gn-link" data-target="esportes"      onclick="window.showSectionFromHeader('esportes')">Esportes</span>
     <span class="gn-link" data-target="ao-vivo"       onclick="window.showSectionFromHeader('ao-vivo')">Ao Vivo</span>
+    <span class="gn-link" data-target="sitcom"       onclick="window.showSectionFromHeader('sitcom')">Sitcom</span>
+    <span class="gn-link" data-target="live-action"  onclick="window.showSectionFromHeader('live-action')">Live Action</span>
+    <span class="gn-link" data-target="cinema"       onclick="window.showSectionFromHeader('cinema')">Cinema</span>
+    <span class="gn-link" data-target="televisao"    onclick="window.showSectionFromHeader('televisao')">Televisão</span>
+    <span class="gn-link" data-target="lives"        onclick="window.showSectionFromHeader('lives')">Lives</span>
     <span class="gn-link" data-target="terror"        onclick="window.showSectionFromHeader('terror')">Terror</span>
-    <span class="gn-link" data-target="bronze"        onclick="window.showSectionFromHeader('bronze')">Bronze</span>
-    <span class="gn-link" data-target="prata"         onclick="window.showSectionFromHeader('prata')">Prata</span>
-    <span class="gn-link" data-target="ouro"          onclick="window.showSectionFromHeader('ouro')">Ouro</span>
-    <span class="gn-link" data-target="platina"       onclick="window.showSectionFromHeader('platina')">Platina</span>
-    <span class="gn-link" data-target="diamante"      onclick="window.showSectionFromHeader('diamante')">Diamante</span>
-    <span class="gn-link" data-target="premium"       onclick="window.showSectionFromHeader('premium')">Premium</span>
+    <span class="gn-link" data-target="bronze"        onclick="window.openVipCategory('bronze','header')">Bronze</span>
+    <span class="gn-link" data-target="prata"         onclick="window.openVipCategory('prata','header')">Prata</span>
+    <span class="gn-link" data-target="ouro"          onclick="window.openVipCategory('ouro','header')">Ouro</span>
+    <span class="gn-link" data-target="platina"       onclick="window.openVipCategory('platina','header')">Platina</span>
+    <span class="gn-link" data-target="diamante"      onclick="window.openVipCategory('diamante','header')">Diamante</span>
+    <span class="gn-link" data-target="premium"       onclick="window.openVipCategory('premium','header')">Premium</span>
     <span class="gn-link" data-target="adulto"        onclick="window.showSectionFromHeader('adulto')">Adulto</span>
     <span class="gn-link" data-target="pornografia"   onclick="window.showSectionFromHeader('pornografia')">Pornografia</span>
     <span class="gn-link" data-target="chat"          onclick="window.showSectionFromHeader('chat')">Chat</span>
@@ -2119,6 +2268,14 @@ header {
       </div>
     </section>
 
+    <section id="jogos" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2 style="color:#a855f7;"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM11 13H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg> JOGOS</h2>
+        <div class="jogos-empty" id="jogos-empty" style="color:#71717a;padding:30px 10px;text-align:center;display:none;">Nenhum jogo cadastrado ainda. Adicione pelo Painel Admin &gt; JOGOS.</div>
+        <div class="jogos-grid" id="jogos-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;padding:10px 0;"></div>
+      </div>
+    </section>
+
     <section id="radio" class="section" style="padding-top:20px;">
       <div class="row">
         <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3.24 6.15A2 2 0 0 0 2 8v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H8.3l7.43-3-.75-1.87L3.24 6.15zM7 20a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm13-2h-9v-2h9v2zm0-4h-9v-2h9v2z"/></svg> RÁDIO</h2>
@@ -2210,6 +2367,41 @@ header {
       <div class="row">
         <h2 style="background:linear-gradient(90deg,#e40303,#ff8c00,#ffed00,#008026,#004dff,#750787);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#e40303;"><circle cx="12" cy="12" r="5"/></svg> AO VIVO</h2>
         <div class="row-content" id="ao-vivo-content" data-category="ao-vivo"></div>
+      </div>
+    </section>
+
+    <section id="sitcom" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#c99162;"><path d="M4 6h16v10H4zM2 18h20v2H2z"/></svg> SITCOM</h2>
+        <div class="row-content" id="sitcom-content" data-category="sitcom"></div>
+      </div>
+    </section>
+
+    <section id="live-action" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fca5a5;"><path d="M8 5v14l11-7z"/></svg> LIVE ACTION</h2>
+        <div class="row-content" id="live-action-content" data-category="live-action"></div>
+      </div>
+    </section>
+
+    <section id="cinema" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#f7d774;"><path d="M4 4h3l1 3H5L4 4zm5 0h3l1 3h-3L9 4zm5 0h3l1 3h-3l-1-3zm5 0h1v3h-2l1-3zM3 8h18v12H3z"/></svg> CINEMA</h2>
+        <div class="row-content" id="cinema-content" data-category="cinema"></div>
+      </div>
+    </section>
+
+    <section id="televisao" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#facc15;"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6v2h6v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/></svg> TELEVISÃO</h2>
+        <div class="row-content" id="televisao-content" data-category="televisao"></div>
+      </div>
+    </section>
+
+    <section id="lives" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#39ff14;"><circle cx="12" cy="12" r="5"/></svg> LIVES</h2>
+        <div class="row-content" id="lives-content" data-category="lives"></div>
       </div>
     </section>
 
@@ -3828,7 +4020,12 @@ window.ADMIN_CATEGORIES = [
   { id: 'premium', label: 'Premium' },
   { id: 'terror', label: 'Terror' },
   { id: 'esportes', label: 'Esportes' },
-  { id: 'ao-vivo', label: 'Ao Vivo' }
+  { id: 'ao-vivo', label: 'Ao Vivo' },
+  { id: 'sitcom', label: 'Sitcom' },
+  { id: 'live-action', label: 'Live Action' },
+  { id: 'cinema', label: 'Cinema' },
+  { id: 'televisao', label: 'Televisão' },
+  { id: 'lives', label: 'Lives' }
 ];
 
 // Preenche um <select> com as categorias disponíveis (usado nos formulários do admin).
@@ -5361,6 +5558,64 @@ document.addEventListener('dblclick', (event) => {
 </script>
 
 
+<!-- MODAL DE SENHA MODERADOR (roxo) -->
+<div class="pass-modal" id="mod-auth-modal">
+  <div class="pass-box" style="max-width:420px;">
+    <div class="pass-title">🛡️ ACESSO MODERADOR</div>
+    <p style="margin-bottom:18px; color:#d8b4fe; font-size:13px;">Digite a senha de moderador para acessar o painel</p>
+
+    <div style="text-align:left;margin-bottom:16px;">
+      <label style="display:block;font-size:12px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Senha</label>
+      <input type="password" id="mod-auth-password" autocomplete="current-password" placeholder="Sua senha de moderador"
+        style="width:100%;padding:12px 14px;border-radius:10px;font-size:14px;outline:none;"
+        onkeydown="if(event.key==='Enter'){tryModeradorLogin();}">
+    </div>
+
+    <button class="mod-enter-btn" onclick="tryModeradorLogin()">ENTRAR</button>
+    <button class="btn-cancel" onclick="closeModeradorAuth()" style="margin-top:10px;">CANCELAR</button>
+  </div>
+</div>
+
+<script>
+// ── MODERADOR: usa o mesmo painel do ADMIN (mesmas funções de conteúdo) ──
+window.MOD_SENHA = 'MOD1';
+function openModeradorAuth(){
+  const m = document.getElementById('mod-auth-modal');
+  if(!m) return;
+  const inp = document.getElementById('mod-auth-password');
+  if(inp) inp.value = '';
+  m.classList.add('open');
+  setTimeout(()=>{ if(inp) inp.focus(); }, 100);
+}
+function closeModeradorAuth(){
+  const m = document.getElementById('mod-auth-modal');
+  if(m) m.classList.remove('open');
+}
+function tryModeradorLogin(){
+  const senha = (document.getElementById('mod-auth-password').value || '').trim();
+  if(senha !== window.MOD_SENHA){
+    if(typeof toast === 'function') toast('❌ Senha de moderador incorreta');
+    else alert('Senha de moderador incorreta');
+    return;
+  }
+  closeModeradorAuth();
+  if(typeof toast === 'function') toast('✅ Bem-vindo(a), Moderador');
+  // Abre o mesmo painel do ADMIN — todas as funções de conteúdo
+  if(typeof openAdminPanel === 'function'){
+    openAdminPanel();
+    // Marca o cabeçalho como MODERADOR para deixar claro
+    setTimeout(()=>{
+      const h = document.querySelector('#admin-panel .admin-header h2');
+      if(h){
+        h.dataset.originalText = h.dataset.originalText || h.textContent;
+        h.style.color = '#a855f7';
+        h.textContent = '🛡️ PAINEL MODERADOR';
+      }
+    }, 50);
+  }
+}
+</script>
+
 <!-- MODAL DE SENHA ADMIN -->
 <div class="pass-modal" id="admin-auth-modal">
   <div class="pass-box" style="max-width:420px;">
@@ -5410,6 +5665,8 @@ document.addEventListener('dblclick', (event) => {
       <div class="admin-tab" onclick="switchAdminTab('social')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> REDES SOCIAIS</div>
       <div class="admin-tab" onclick="switchAdminTab('canais')"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zm-5-6l-7 4v-8z"></path></svg> CANAIS (M3U)</div>
       <div class="admin-tab" onclick="switchAdminTab('suporte'); renderSupportMessages()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> SUPORTE <span id="sup-badge" style="display:none;background:#ef4444;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;margin-left:6px;">0</span></div>
+      <div class="admin-tab" onclick="switchAdminTab('categorias'); renderAdminCategorias()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> CATEGORIAS</div>
+      <div class="admin-tab" onclick="switchAdminTab('jogos'); renderAdminJogos()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM11 13H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4-3a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg> JOGOS</div>
       <div class="admin-tab" onclick="switchAdminTab('catalogo'); renderAdminCatalogo()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-8 14l-4-4 1.4-1.4L11 14.2l5.6-5.6L18 10l-7 7z"/></svg> CATÁLOGO</div>
       <div class="admin-tab" onclick="switchAdminTab('api'); renderApiSourcesList()"><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="2"/></svg> API / IMPORTAR</div>
 
@@ -5708,6 +5965,46 @@ document.addEventListener('dblclick', (event) => {
     </div>
 
     <!-- ABA API / IMPORTAR (universal: M3U, JSON, link direto) -->
+    <div id="admin-categorias" class="admin-content-section">
+      <h3>SENHAS DAS CATEGORIAS VIP</h3>
+      <p class="admin-subtitle">Defina uma senha personalizada para cada categoria. Pode ter <b>qualquer quantidade de dígitos/letras</b> (mínimo 1). Deixe em branco para manter a senha padrão <b>VIP1</b>. As letras serão sempre em MAIÚSCULAS.</p>
+
+      <div id="admin-categorias-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:18px;"></div>
+
+      <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="admin-btn-save" onclick="saveAdminCategoriasPass()">SALVAR SENHAS</button>
+        <button class="admin-btn-secondary" onclick="resetAdminCategoriasPass()">RESTAURAR PADRÃO (VIP1)</button>
+      </div>
+    </div>
+
+    <div id="admin-jogos" class="admin-content-section">
+      <h3>GERENCIAR JOGOS</h3>
+      <p class="admin-subtitle">Cadastre jogos manualmente informando o nome, a URL da logo/capa e a URL do jogo (link direto, iframe embed ou endpoint de API que retorne o URL de jogo).</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;max-width:900px;margin-top:16px;">
+        <div class="admin-form-group"><label>Nome do jogo *</label><input type="text" id="jogo-nome" class="admin-input" placeholder="Ex: Free Fire Web"></div>
+        <div class="admin-form-group"><label>URL da Logo / Capa *</label><input type="url" id="jogo-logo" class="admin-input" placeholder="https://exemplo.com/logo.png"></div>
+        <div class="admin-form-group"><label>URL do Jogo / Embed *</label><input type="url" id="jogo-url" class="admin-input" placeholder="https://exemplo.com/jogo"></div>
+        <div class="admin-form-group"><label>Tipo</label>
+          <select id="jogo-tipo" class="admin-input">
+            <option value="url">URL / Link externo</option>
+            <option value="embed">Embed (iframe)</option>
+            <option value="api">API (JSON com campo url)</option>
+          </select>
+        </div>
+        <div class="admin-form-group"><label>Categoria (opcional)</label><input type="text" id="jogo-categoria" class="admin-input" placeholder="Ex: Ação, Puzzle, Multiplayer"></div>
+        <div class="admin-form-group" style="grid-column:1/-1;"><label>Descrição (opcional)</label><textarea id="jogo-desc" class="admin-input" rows="2" placeholder="Descrição curta do jogo"></textarea></div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="admin-btn-save" onclick="saveAdminJogo()">ADICIONAR JOGO</button>
+        <button class="admin-btn-secondary" onclick="clearAdminJogoForm()">LIMPAR FORMULÁRIO</button>
+      </div>
+
+      <h3 style="margin-top:28px;">JOGOS CADASTRADOS</h3>
+      <div id="admin-jogos-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:14px;"></div>
+    </div>
+
     <div id="admin-api" class="admin-content-section">
       <h3>API / Importar de Qualquer URL</h3>
       <p class="admin-subtitle">
@@ -7623,8 +7920,319 @@ body.kawe-light .card { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
     window.CATALOG_DATA = window.CATALOG_DATA || {};
     if (!Array.isArray(window.CATALOG_DATA['esportes'])) window.CATALOG_DATA['esportes'] = [];
     if (!Array.isArray(window.CATALOG_DATA['ao-vivo'])) window.CATALOG_DATA['ao-vivo'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['sitcom'])) window.CATALOG_DATA['sitcom'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['live-action'])) window.CATALOG_DATA['live-action'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['cinema'])) window.CATALOG_DATA['cinema'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['televisao'])) window.CATALOG_DATA['televisao'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['lives'])) window.CATALOG_DATA['lives'] = [];
   } catch(e){ console.warn('[KAWE] init novas categorias:', e); }
 })();
+</script>
+
+<style>
+/* ── VIP Category Modal (senha 4 dígitos - mesma cor do botão) ── */
+.vipcat-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9500;backdrop-filter:blur(6px);}
+.vipcat-modal.open{display:flex;animation:fadeIn .4s ease;}
+.vipcat-box{background:linear-gradient(160deg,#0b0b0b 0%,#141414 100%);border:2px solid var(--vipcat-color,#facc15);border-radius:22px;padding:36px 34px;width:min(92vw,380px);text-align:center;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px var(--vipcat-glow,rgba(250,204,21,.35));}
+.vipcat-crown{width:64px;height:64px;border-radius:50%;background:var(--vipcat-color,#facc15);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 0 24px var(--vipcat-glow,rgba(250,204,21,.6));}
+.vipcat-crown svg{width:32px;height:32px;fill:#000;}
+.vipcat-title{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:900;color:var(--vipcat-color,#facc15);letter-spacing:4px;margin-bottom:4px;text-transform:uppercase;text-shadow:0 0 12px var(--vipcat-glow,rgba(250,204,21,.5));}
+.vipcat-subtitle{color:var(--vipcat-color,#facc15);font-size:12px;letter-spacing:3px;font-weight:700;margin-bottom:20px;text-transform:uppercase;opacity:.85;}
+.vipcat-hint{color:#a8a29e;font-size:12px;margin-bottom:16px;}
+.vipcat-error{color:#ef4444;font-size:12px;height:16px;margin-bottom:8px;font-weight:700;letter-spacing:1px;}
+.vipcat-inputs{display:flex;justify-content:center;gap:12px;margin-bottom:24px;}
+.vipcat-digit{width:52px;height:60px;border-radius:12px;border:2px solid var(--vipcat-color,#facc15);background:#000;color:var(--vipcat-color,#facc15);font-size:26px;font-weight:800;text-align:center;font-family:'Montserrat',sans-serif;outline:none;transition:all .2s;text-transform:uppercase;}
+.vipcat-digit:focus{transform:scale(1.06);box-shadow:0 0 18px var(--vipcat-glow,rgba(250,204,21,.7));}
+.vipcat-digit.filled{background:var(--vipcat-color,#facc15);color:#000;}
+.vipcat-cancel{background:transparent;border:1px solid var(--vipcat-color,#facc15);color:var(--vipcat-color,#facc15);padding:10px 26px;border-radius:10px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .3s;font-family:'Montserrat',sans-serif;font-size:12px;}
+.vipcat-cancel:hover{background:var(--vipcat-color,#facc15);color:#000;}
+</style>
+
+<!-- MODAL VIP POR CATEGORIA (senha 4 dígitos = VIP1) -->
+<div class="vipcat-modal" id="vipcat-modal">
+  <div class="vipcat-box" id="vipcat-box">
+    <div class="vipcat-crown">
+      <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v2H5v-2z"/></svg>
+    </div>
+    <div class="vipcat-title" id="vipcat-title">CATEGORIA</div>
+    <div class="vipcat-subtitle">Acesso Restrito</div>
+    <div class="vipcat-hint">Digite a senha de 4 dígitos (letras maiúsculas)</div>
+    <div class="vipcat-error" id="vipcat-error">&nbsp;</div>
+    <div class="vipcat-inputs">
+      <input type="text" maxlength="1" class="vipcat-digit" onkeyup="moveVipCat(this,1,event)">
+      <input type="text" maxlength="1" class="vipcat-digit" onkeyup="moveVipCat(this,2,event)">
+      <input type="text" maxlength="1" class="vipcat-digit" onkeyup="moveVipCat(this,3,event)">
+      <input type="text" maxlength="1" class="vipcat-digit" onkeyup="moveVipCat(this,4,event)">
+    </div>
+    <button class="vipcat-cancel" onclick="closeVipCategory()">CANCELAR</button>
+  </div>
+</div>
+
+<script>
+/* ============ VIP CATEGORY AUTH (senha VIP1) ============ */
+const VIPCAT_DEFAULT_PASS = 'VIP1';
+function getCategoriaPass(cat){
+  try{
+    const raw = localStorage.getItem('kawe_cat_pass');
+    if(raw){
+      const map = JSON.parse(raw);
+      if(map && map[cat] && String(map[cat]).length > 0) return String(map[cat]).toUpperCase();
+    }
+  }catch(e){}
+  return VIPCAT_DEFAULT_PASS;
+}
+const VIPCAT_COLORS = {
+  bronze:   { c:'#8B4513', g:'rgba(139,69,19,.55)'  },
+  prata:    { c:'#e5e7eb', g:'rgba(229,231,235,.55)'},
+  platina:  { c:'#1e3a8a', g:'rgba(30,58,138,.6)'   },
+  ouro:     { c:'#fde68a', g:'rgba(253,230,138,.55)'},
+  diamante: { c:'#22d3ee', g:'rgba(34,211,238,.55)' },
+  premium:  { c:'#f97316', g:'rgba(249,115,22,.55)' }
+};
+let VIPCAT_CURRENT = null;
+let VIPCAT_ORIGIN  = 'sidebar';
+
+function openVipCategory(cat, origin){
+  VIPCAT_CURRENT = cat;
+  VIPCAT_ORIGIN  = origin || 'sidebar';
+  const conf = VIPCAT_COLORS[cat] || { c:'#facc15', g:'rgba(250,204,21,.5)' };
+  const modal = document.getElementById('vipcat-modal');
+  const box   = document.getElementById('vipcat-box');
+  box.style.setProperty('--vipcat-color', conf.c);
+  box.style.setProperty('--vipcat-glow',  conf.g);
+  document.getElementById('vipcat-title').textContent = cat.toUpperCase();
+  modal.classList.add('open');
+  const pass = getCategoriaPass(cat);
+  const len = Math.max(1, pass.length);
+  const container = modal.querySelector('.vipcat-inputs');
+  container.innerHTML = '';
+  for(let i=1;i<=len;i++){
+    const inp = document.createElement('input');
+    inp.type='text'; inp.maxLength=1; inp.className='vipcat-digit';
+    inp.setAttribute('data-idx', i);
+    inp.setAttribute('data-total', len);
+    inp.addEventListener('keyup', function(ev){ moveVipCat(this, parseInt(this.getAttribute('data-idx'),10), ev); });
+    container.appendChild(inp);
+  }
+  document.getElementById('vipcat-error').innerHTML = '&nbsp;';
+  setTimeout(()=>{ const first = container.querySelector('.vipcat-digit'); if(first) first.focus(); }, 100);
+}
+function closeVipCategory(){
+  document.getElementById('vipcat-modal').classList.remove('open');
+}
+function moveVipCat(input, index, ev){
+  input.value = (input.value || '').toUpperCase();
+  if (input.value) input.classList.add('filled'); else input.classList.remove('filled');
+  const inputs = document.querySelectorAll('#vipcat-modal .vipcat-digit');
+  const total = inputs.length;
+  if (ev && ev.key === 'Backspace' && !input.value && index > 1){ inputs[index-2].focus(); return; }
+  if (input.value && index < total){ inputs[index].focus(); return; }
+  if (index === total && input.value){
+    let typed = '';
+    inputs.forEach(i => typed += (i.value || '').toUpperCase());
+    if (typed.length === total){
+      const expected = getCategoriaPass(VIPCAT_CURRENT);
+      if (typed === expected){
+        closeVipCategory();
+        const cat = VIPCAT_CURRENT;
+        try {
+          if (VIPCAT_ORIGIN === 'header' && typeof showSectionFromHeader === 'function') {
+            showSectionFromHeader(cat);
+          } else if (typeof showSectionFromSidebar === 'function') {
+            showSectionFromSidebar(cat);
+          } else if (typeof showSection === 'function') {
+            showSection(cat);
+          }
+        } catch(e){ console.error(e); }
+        if (typeof toast === 'function') toast('✅ Acesso liberado: ' + cat.toUpperCase());
+      } else {
+        document.getElementById('vipcat-error').textContent = 'SENHA INCORRETA';
+        inputs.forEach(i => { i.value=''; i.classList.remove('filled'); });
+        inputs[0].focus();
+      }
+    }
+  }
+}
+</script>
+
+
+<script>
+/* ===== ADMIN: gerenciar senhas das categorias VIP ===== */
+const KAWE_CATS = ['bronze','prata','platina','ouro','diamante','premium'];
+const KAWE_CAT_COLORS = {
+  bronze:'#8B4513', prata:'#e5e7eb', platina:'#1e3a8a',
+  ouro:'#fde68a', diamante:'#22d3ee', premium:'#f97316'
+};
+function _loadCatPassMap(){
+  try{ return JSON.parse(localStorage.getItem('kawe_cat_pass')||'{}') || {}; }catch(e){ return {}; }
+}
+function renderAdminCategorias(){
+  const wrap = document.getElementById('admin-categorias-list');
+  if(!wrap) return;
+  const map = _loadCatPassMap();
+  wrap.innerHTML = KAWE_CATS.map(cat=>{
+    const color = KAWE_CAT_COLORS[cat];
+    const val = (map[cat]||'').toUpperCase();
+    return '<div style="background:#0f0f0f;border:1px solid '+color+'55;border-left:4px solid '+color+';border-radius:12px;padding:14px 16px;">'
+      + '<label style="display:block;font-family:Montserrat,sans-serif;font-weight:800;letter-spacing:2px;color:'+color+';margin-bottom:8px;font-size:13px;">'+cat.toUpperCase()+'</label>'
+      + '<input type="text" class="admin-input admin-cat-pass" data-cat="'+cat+'" value="'+val.replace(/"/g,'&quot;')+'" placeholder="VIP1 (padrão)" style="text-transform:uppercase;letter-spacing:2px;font-weight:700;">'
+      + '<div style="font-size:11px;color:#71717a;margin-top:6px;">Comprimento livre. Vazio = <b>VIP1</b>.</div>'
+      + '</div>';
+  }).join('');
+}
+function saveAdminCategoriasPass(){
+  const map = {};
+  document.querySelectorAll('.admin-cat-pass').forEach(inp=>{
+    const cat = inp.getAttribute('data-cat');
+    const v = (inp.value||'').toUpperCase().trim();
+    if(v.length > 0) map[cat] = v;
+  });
+  try{ localStorage.setItem('kawe_cat_pass', JSON.stringify(map)); }catch(e){}
+  if(typeof toast==='function') toast('✅ Senhas das categorias salvas');
+  renderAdminCategorias();
+}
+function resetAdminCategoriasPass(){
+  try{ localStorage.removeItem('kawe_cat_pass'); }catch(e){}
+  if(typeof toast==='function') toast('↩️ Senhas restauradas para VIP1');
+  renderAdminCategorias();
+}
+</script>
+
+<script>
+/* ===== JOGOS: cadastro (admin) + render (frontend) ===== */
+function _loadJogos(){ try{ return JSON.parse(localStorage.getItem('kawe_jogos')||'[]') || []; }catch(e){ return []; } }
+function _saveJogos(list){ try{ localStorage.setItem('kawe_jogos', JSON.stringify(list)); }catch(e){} }
+
+function clearAdminJogoForm(){
+  ['jogo-nome','jogo-logo','jogo-url','jogo-categoria','jogo-desc'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  const t = document.getElementById('jogo-tipo'); if(t) t.value='url';
+}
+
+async function saveAdminJogo(){
+  const nome = (document.getElementById('jogo-nome').value||'').trim();
+  const logo = (document.getElementById('jogo-logo').value||'').trim();
+  const url  = (document.getElementById('jogo-url').value||'').trim();
+  const tipo = (document.getElementById('jogo-tipo').value||'url');
+  const categoria = (document.getElementById('jogo-categoria').value||'').trim();
+  const desc = (document.getElementById('jogo-desc').value||'').trim();
+  if(!nome || !logo || !url){
+    if(typeof toast==='function') toast('⚠️ Preencha Nome, Logo e URL do jogo'); return;
+  }
+  try{ new URL(logo); new URL(url); }catch(e){
+    if(typeof toast==='function') toast('⚠️ URLs inválidas'); return;
+  }
+  const list = _loadJogos();
+  list.push({
+    id: Date.now(),
+    nome, logo, url, tipo, categoria, desc
+  });
+  _saveJogos(list);
+  if(typeof toast==='function') toast('✅ Jogo adicionado: ' + nome);
+  clearAdminJogoForm();
+  renderAdminJogos();
+  renderJogosFrontend();
+}
+
+function deleteAdminJogo(id){
+  const list = _loadJogos().filter(j => j.id !== id);
+  _saveJogos(list);
+  if(typeof toast==='function') toast('🗑️ Jogo removido');
+  renderAdminJogos();
+  renderJogosFrontend();
+}
+
+function renderAdminJogos(){
+  const wrap = document.getElementById('admin-jogos-list');
+  if(!wrap) return;
+  const list = _loadJogos();
+  if(list.length===0){ wrap.innerHTML = '<div style="color:#71717a;padding:16px;">Nenhum jogo cadastrado ainda.</div>'; return; }
+  wrap.innerHTML = list.map(j =>
+    '<div style="background:#0f0f0f;border:1px solid rgba(168,85,247,0.35);border-left:4px solid #a855f7;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center;">'
+    + '<img src="'+j.logo.replace(/"/g,'&quot;')+'" alt="" onerror="this.style.opacity=.3;this.src=\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%23222%22/></svg>\';" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:#000;">'
+    + '<div style="flex:1;min-width:0;">'
+    + '<div style="font-weight:800;color:#fff;letter-spacing:1px;">'+_esc(j.nome)+'</div>'
+    + '<div style="font-size:11px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;">'+_esc(j.tipo||'url')+(j.categoria?' • '+_esc(j.categoria):'')+'</div>'
+    + '<div style="font-size:11px;color:#71717a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_esc(j.url)+'</div>'
+    + '</div>'
+    + '<button class="admin-btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="deleteAdminJogo('+j.id+')">EXCLUIR</button>'
+    + '</div>'
+  ).join('');
+}
+
+function _esc(str){ return String(str==null?'':str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function _resolveJogoUrl(j){
+  if(j.tipo !== 'api') return j.url;
+  try{
+    const r = await fetch(j.url); const data = await r.json();
+    return data.url || data.link || data.embed || j.url;
+  }catch(e){ return j.url; }
+}
+
+async function playJogo(id){
+  const j = _loadJogos().find(x => x.id === id); if(!j) return;
+  const url = await _resolveJogoUrl(j);
+  if((j.tipo||'url') === 'embed'){
+    openJogoModal(j.nome, url, true);
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+}
+
+function openJogoModal(nome, url, isEmbed){
+  let modal = document.getElementById('jogo-play-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'jogo-play-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9600;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = '<div style="width:min(96vw,1100px);height:min(90vh,720px);background:#000;border:1px solid #a855f7;border-radius:14px;overflow:hidden;position:relative;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0f0f0f;border-bottom:1px solid #a855f755;">'
+      + '<div id="jogo-play-title" style="font-family:Montserrat,sans-serif;color:#a855f7;letter-spacing:2px;font-weight:800;"></div>'
+      + '<button onclick="document.getElementById(\'jogo-play-modal\').remove()" style="background:transparent;border:1px solid #a855f7;color:#a855f7;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;">FECHAR</button>'
+      + '</div>'
+      + '<iframe id="jogo-play-frame" src="" style="width:100%;height:calc(100% - 46px);border:0;" allow="autoplay; fullscreen; gamepad; xr-spatial-tracking" allowfullscreen></iframe>'
+      + '</div>';
+    document.body.appendChild(modal);
+  }
+  document.getElementById('jogo-play-title').textContent = nome;
+  document.getElementById('jogo-play-frame').src = url;
+}
+
+function renderJogosFrontend(){
+  const wrap = document.getElementById('jogos-content');
+  const empty = document.getElementById('jogos-empty');
+  if(!wrap) return;
+  const list = _loadJogos();
+  if(list.length===0){
+    wrap.innerHTML = '';
+    if(empty) empty.style.display = 'block';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+  wrap.innerHTML = list.map(j =>
+    '<div class="jogo-card" onclick="playJogo('+j.id+')" style="cursor:pointer;background:#0f0f0f;border:1px solid rgba(168,85,247,0.3);border-radius:14px;overflow:hidden;transition:all .3s;">'
+    + '<div style="aspect-ratio:1/1;background:#000;overflow:hidden;">'
+    + '<img src="'+_esc(j.logo)+'" alt="'+_esc(j.nome)+'" style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;" onerror="this.style.opacity=.3;">'
+    + '</div>'
+    + '<div style="padding:10px 12px;">'
+    + '<div style="font-weight:800;color:#fff;font-size:13px;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_esc(j.nome)+'</div>'
+    + (j.categoria?'<div style="font-size:11px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">'+_esc(j.categoria)+'</div>':'')
+    + '</div>'
+    + '</div>'
+  ).join('');
+}
+
+/* Hover effect */
+(function(){
+  const st = document.createElement('style');
+  st.textContent = '.jogo-card:hover{transform:translateY(-4px);border-color:#a855f7 !important;box-shadow:0 10px 30px rgba(168,85,247,.35);} .jogo-card:hover img{transform:scale(1.06);} .sidebar-link.jogos-btn{color:#a855f7;} .sidebar-link.jogos-btn:hover{background:rgba(168,85,247,0.1);} .nav-link.jogos-btn{color:#a855f7;} .nav-link.jogos-btn:hover{background:rgba(168,85,247,0.12);}';
+  document.head.appendChild(st);
+})();
+
+document.addEventListener('DOMContentLoaded', renderJogosFrontend);
+setTimeout(renderJogosFrontend, 800);
 </script>
 </body>
 </html>
