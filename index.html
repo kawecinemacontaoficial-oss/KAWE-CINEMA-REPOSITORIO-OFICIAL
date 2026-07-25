@@ -1,6 +1,4 @@
 
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1267,7 +1265,7 @@ header {
 /* ── AUTH MODAL ── */
 .auth-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9500; display:none; align-items:center; justify-content:center; padding:20px; }
 .auth-modal-overlay.active { display:flex; animation: fadeIn 0.3s ease; }
-.auth-modal-overlay .auth-modal { background:linear-gradient(160deg,#0f0f0f,#050505); border:1px solid rgba(34,197,94,0.25); border-radius:20px; width:100%; max-width:440px; padding:34px 28px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 25px 70px rgba(0,0,0,0.6); }
+.auth-modal-overlay .auth-modal { display:block; background:linear-gradient(160deg,#0f0f0f,#050505); border:1px solid rgba(34,197,94,0.25); border-radius:20px; width:100%; max-width:440px; padding:34px 28px; position:relative; max-height:92vh; overflow-y:auto; box-shadow:0 25px 70px rgba(0,0,0,0.6); }
 .auth-modal-overlay .auth-modal-close { position:absolute; top:14px; right:14px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.3s; }
 .auth-modal-overlay .auth-modal-close:hover { background:var(--danger); border-color:var(--danger); transform:rotate(90deg); }
 .auth-modal-overlay .auth-modal-close svg { width:16px; height:16px; }
@@ -2674,8 +2672,10 @@ function openUserAuth() {
   const m = document.getElementById('user-auth-modal');
   if (!m) { finishUserAuth(); return; }
   // Se já logou/entrou como visitante nessa sessão, pula
+  // Só pula se o usuário JÁ entrou/cadastrou NESTA sessão do navegador.
+  // (antes usava localStorage, que ficava salvo pra sempre e a tela nunca mais aparecia)
   try {
-    if (localStorage.getItem('kawe_user_authed') === '1') { finishUserAuth(); return; }
+    if (sessionStorage.getItem('kawe_auth_session') === '1') { finishUserAuth(); return; }
   } catch(e){}
   m.classList.add('open');
   switchAuthTab('login');
@@ -2728,6 +2728,7 @@ function userAuthGuest() {
   finishUserAuth();
 }
 function finishUserAuth() {
+  try { sessionStorage.setItem('kawe_auth_session','1'); } catch(e){}
   const m = document.getElementById('user-auth-modal');
   if (m) m.classList.remove('open');
   document.getElementById('main-content').classList.add('show-content');
@@ -6989,11 +6990,11 @@ function deleteCatalogoLink(key) {
       </div>
       <div class="auth-field">
         <label>Senha</label>
-        <input type="password" id="auth-password" minlength="6" maxlength="80" placeholder="••••••••" autocomplete="current-password" required>
+        <input type="password" id="auth-password" minlength="4" maxlength="80" placeholder="••••••••" autocomplete="current-password" required>
       </div>
       <div class="auth-field" id="authConfirmField" style="display:none;">
         <label>Confirmar senha</label>
-        <input type="password" id="auth-password-confirm" minlength="6" maxlength="80" placeholder="••••••••" autocomplete="new-password">
+        <input type="password" id="auth-password-confirm" minlength="4" maxlength="80" placeholder="••••••••" autocomplete="new-password">
       </div>
       <button type="submit" class="auth-submit" id="authSubmitBtn">Entrar</button>
     </form>
@@ -7023,7 +7024,10 @@ function deleteCatalogoLink(key) {
   let authMethod = 'email'; // 'email' | 'phone'
 
   window.openAuthModal = function(mode){
+    const startModal = document.getElementById('user-auth-modal');
+    if (startModal) startModal.classList.remove('open');
     setAuthMode(mode || 'login');
+    setAuthMethod('email');
     document.getElementById('authModalOverlay').classList.add('active');
     document.body.style.overflow = 'hidden';
   };
@@ -7033,7 +7037,7 @@ function deleteCatalogoLink(key) {
   };
   window.setAuthMode = function(mode){
     authMode = mode;
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    document.querySelectorAll('#authModalOverlay .auth-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
     const isSignup = mode === 'signup';
     document.getElementById('authNameField').style.display = isSignup ? '' : 'none';
     document.getElementById('authConfirmField').style.display = isSignup ? '' : 'none';
@@ -7050,7 +7054,7 @@ function deleteCatalogoLink(key) {
   };
   window.setAuthMethod = function(method){
     authMethod = method;
-    document.querySelectorAll('.auth-method-tab').forEach(t => t.classList.toggle('active', t.dataset.method === method));
+    document.querySelectorAll('#authModalOverlay .auth-method-tab').forEach(t => t.classList.toggle('active', t.dataset.method === method));
     const isEmail = method === 'email';
     document.getElementById('authEmailField').style.display = isEmail ? '' : 'none';
     document.getElementById('authPhoneField').style.display = isEmail ? 'none' : '';
@@ -7849,8 +7853,8 @@ body.kawe-light .card { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
     window.submitAuth = function(ev){
       if (ev && ev.preventDefault) ev.preventDefault();
       try {
-        const modeBtn = document.querySelector('.auth-tab.active');
-        const methodBtn = document.querySelector('.auth-method-tab.active');
+        const modeBtn = document.querySelector('#authModalOverlay .auth-tab.active');
+        const methodBtn = document.querySelector('#authModalOverlay .auth-method-tab.active');
         const mode = modeBtn ? modeBtn.dataset.mode : 'login';
         const method = methodBtn ? methodBtn.dataset.method : 'email';
 
