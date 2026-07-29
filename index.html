@@ -9028,6 +9028,492 @@ setTimeout(renderJogosFrontend, 800);
 })();
 </script>
 
+
+<!-- ══════════════════════════════════════════════════════════════
+     KAWE · SISTEMA DE SERVIDORES (v1)
+     - 5 servidores verdes por padrão (SERVIDOR 1 a 5)
+     - Cada link cadastrado pertence a um servidor (padrão: SERVIDOR 1)
+     - Aba ADMIN "SERVIDORES" para adicionar / renomear / apagar
+     Nada do site original foi removido: este bloco apenas ESTENDE.
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  var KEY = 'kawe_servers_v1';
+
+  function defaults(){
+    return [1,2,3,4,5].map(function(n){ return { id:n, name:'SERVIDOR ' + n, color:'#22c55e' }; });
+  }
+
+  // Cor padrão dos botões de servidor
+  function normColor(c){
+    c = String(c || '').trim();
+    return /^#[0-9a-fA-F]{6}$/.test(c) ? c.toLowerCase() : '#22c55e';
+  }
+  function hexRgba(hex, a){
+    hex = normColor(hex);
+    var r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  function isLight(hex){
+    hex = normColor(hex);
+    var r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16);
+    return (r*299 + g*587 + b*114) / 1000 > 150;
+  }
+
+  var SRV = {
+    list: defaults(),
+    load: function(){
+      try {
+        var a = JSON.parse(localStorage.getItem(KEY));
+        if (Array.isArray(a) && a.length) {
+          this.list = a.filter(function(s){ return s && s.id; })
+                       .map(function(s){ return { id: Number(s.id), name: String(s.name || ('SERVIDOR ' + s.id)), color: normColor(s.color) }; });
+        }
+      } catch(e){}
+      if (!this.list.length) this.list = defaults();
+      return this.list;
+    },
+    save: function(){
+      try { localStorage.setItem(KEY, JSON.stringify(this.list)); } catch(e){}
+      refreshAllSelects();
+    },
+    firstId: function(){ return this.list.length ? this.list[0].id : 1; },
+    has: function(id){ return this.list.some(function(s){ return s.id === Number(id); }); },
+    color: function(id){
+      var f = this.list.filter(function(s){ return s.id === Number(id); })[0];
+      return normColor(f && f.color);
+    },
+    name: function(id){
+      var f = this.list.filter(function(s){ return s.id === Number(id); })[0];
+      return f ? f.name : ('SERVIDOR ' + id);
+    },
+    add: function(name, color){
+      var max = this.list.reduce(function(m,s){ return Math.max(m, s.id); }, 0);
+      var id = max + 1;
+      this.list.push({ id:id, name: (name || ('SERVIDOR ' + id)).toUpperCase(), color: normColor(color) });
+      this.save();
+      return id;
+    },
+    remove: function(id){
+      this.list = this.list.filter(function(s){ return s.id !== Number(id); });
+      if (!this.list.length) this.list = defaults();
+      this.save();
+    },
+    rename: function(id, name){
+      this.list.forEach(function(s){ if (s.id === Number(id)) s.name = String(name || s.name).toUpperCase(); });
+      this.save();
+    },
+    setColor: function(id, color){
+      this.list.forEach(function(s){ if (s.id === Number(id)) s.color = normColor(color); });
+      this.save();
+    },
+    update: function(id, name, color){
+      this.list.forEach(function(s){
+        if (s.id === Number(id)) {
+          if (name) s.name = String(name).toUpperCase();
+          s.color = normColor(color || s.color);
+        }
+      });
+      this.save();
+    }
+  };
+  SRV.load();
+  window.KAWE_SERVERS = SRV;
+
+  // Normaliza o servidor de um link (links antigos ficam no primeiro servidor)
+  function srvOf(src){
+    var v = Number(src && src.server);
+    if (!v || !SRV.has(v)) return SRV.firstId();
+    return v;
+  }
+  window.kaweServerOf = srvOf;
+
+  /* ── ESTILO ───────────────────────────────────────────────── */
+  var css = document.createElement('style');
+  css.textContent = [
+    '.kawe-server-bar{display:none;flex-wrap:wrap;gap:8px;padding:0 0 10px;}',
+    '.kawe-server-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;cursor:pointer;',
+    'font-family:"Outfit",sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;',
+    'background:rgba(34,197,94,.14);color:#22c55e;border:1px solid rgba(34,197,94,.45);transition:.2s;}',
+    '.kawe-server-btn:hover{filter:brightness(1.25);}',
+    '.kawe-srv-color{width:46px;height:38px;padding:2px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);cursor:pointer;}',
+    '.kawe-server-btn.active{background:#22c55e;color:#000;border-color:#22c55e;box-shadow:0 4px 18px rgba(34,197,94,.4);}',
+    '.kawe-server-btn.empty{opacity:.35;}',
+    '.kawe-server-btn .kawe-srv-count{background:rgba(0,0,0,.35);border-radius:999px;padding:1px 8px;font-size:11px;}',
+    '.kawe-server-btn.active .kawe-srv-count{background:rgba(0,0,0,.2);}',
+    '.video-link-server{padding:10px 8px;border-radius:8px;background:rgba(255,255,255,.05);',
+    'border:1px solid rgba(34,197,94,.3);color:#fff;font-size:12.5px;min-width:130px;outline:none;}',
+    '.kawe-srv-row{display:flex;gap:10px;align-items:center;margin-bottom:10px;}',
+    '.kawe-srv-row input{flex:1;}'
+  ].join('');
+  document.head.appendChild(css);
+
+  /* ── PLAYER: BARRA DE SERVIDORES ──────────────────────────── */
+  function bar(){
+    var wrap = document.getElementById('player-source-switcher');
+    if (!wrap) return null;
+    var b = document.getElementById('kawe-server-bar');
+    if (!b) {
+      b = document.createElement('div');
+      b.id = 'kawe-server-bar';
+      b.className = 'kawe-server-bar';
+      wrap.parentNode.insertBefore(b, wrap);
+    }
+    return b;
+  }
+
+  function normalizeSources(sources){
+    return (Array.isArray(sources) ? sources : []).map(function(s, i){
+      return { label: s.label || ('Player ' + (i+1)), url: s.url, server: srvOf(s) };
+    });
+  }
+
+  var lastBuild = 0;
+
+  function render(all, activeIndex){
+    var wrap = document.getElementById('player-source-switcher');
+    var b = bar();
+    if (!wrap || !b) return;
+    lastBuild = Date.now();
+
+    if (!all.length) {
+      b.style.display = 'none';
+      wrap.style.display = 'none';
+      wrap.innerHTML = '';
+      return;
+    }
+
+    var activeSrc = all[activeIndex] || all[0];
+    var activeServer = srvOf(activeSrc);
+
+    b.innerHTML = SRV.list.map(function(s){
+      var count = all.filter(function(x){ return srvOf(x) === s.id; }).length;
+      var col = normColor(s.color);
+      var on = (s.id === activeServer);
+      var style = on
+        ? ('background:' + col + ';border-color:' + col + ';color:' + (isLight(col) ? '#000' : '#fff')
+           + ';box-shadow:0 4px 18px ' + hexRgba(col, .4) + ';')
+        : ('background:' + hexRgba(col, .14) + ';border-color:' + hexRgba(col, .45) + ';color:' + col + ';');
+      return '<button type="button" class="kawe-server-btn' + (on ? ' active' : '')
+        + (count === 0 ? ' empty' : '') + '" style="' + style + '" onclick="kaweSelectServer(' + s.id + ')">'
+        + s.name + ' <span class="kawe-srv-count">' + count + '</span></button>';
+    }).join('');
+    b.style.display = 'flex';
+
+    var inServer = [];
+    all.forEach(function(src, i){ if (srvOf(src) === activeServer) inServer.push({ src:src, i:i }); });
+
+    if (inServer.length > 1) {
+      wrap.innerHTML = inServer.map(function(o){
+        return '<button type="button" class="player-source-btn' + (o.i === activeIndex ? ' active' : '')
+          + '" onclick="switchPlayerSource(' + o.i + ')">' + o.src.label + '</button>';
+      }).join('');
+      wrap.style.display = 'flex';
+    } else {
+      wrap.innerHTML = '';
+      wrap.style.display = 'none';
+    }
+    wrap.dataset.sources = JSON.stringify(all);
+    wrap.dataset.kaweActive = String(activeIndex);
+  }
+
+  window.buildPlayerSourceSwitcher = function(sources, activeIndex){
+    var all = normalizeSources(sources);
+    render(all, Number(activeIndex) || 0);
+  };
+
+  window.switchPlayerSource = function(i){
+    var wrap = document.getElementById('player-source-switcher');
+    if (!wrap || !wrap.dataset.sources) return;
+    var all = JSON.parse(wrap.dataset.sources);
+    var src = all[i];
+    if (!src) return;
+    var u = (typeof setPlayerSrc === 'function') ? setPlayerSrc(src.url) : src.url;
+    src.url = u;
+    if (typeof updatePlayerFallbackLink === 'function') updatePlayerFallbackLink(src.url);
+    render(all, i);
+    if (typeof toast === 'function') toast('🔄 ' + SRV.name(srvOf(src)) + ' · ' + src.label);
+  };
+
+  window.kaweSelectServer = function(id){
+    var wrap = document.getElementById('player-source-switcher');
+    if (!wrap || !wrap.dataset.sources) return;
+    var all = JSON.parse(wrap.dataset.sources);
+    var idx = -1;
+    for (var i = 0; i < all.length; i++) { if (srvOf(all[i]) === Number(id)) { idx = i; break; } }
+    if (idx === -1) { if (typeof toast === 'function') toast('⚠️ ' + SRV.name(id) + ' ainda não tem links para este título'); return; }
+    window.switchPlayerSource(idx);
+  };
+
+  function hideBar(){ var b = document.getElementById('kawe-server-bar'); if (b) b.style.display = 'none'; }
+
+  ['closePlayer','openTheBoys'].forEach(function(fn){
+    var orig = window[fn];
+    if (typeof orig === 'function') {
+      window[fn] = function(){ hideBar(); return orig.apply(this, arguments); };
+    }
+  });
+
+  // Se o site esconder o switcher por conta própria (título sem link), some com a barra
+  setInterval(function(){
+    var wrap = document.getElementById('player-source-switcher');
+    var b = document.getElementById('kawe-server-bar');
+    if (!wrap || !b) return;
+    if (b.style.display !== 'none' && wrap.innerHTML === '' && wrap.style.display === 'none' && (Date.now() - lastBuild) > 800) {
+      if (!wrap.dataset.sources) hideBar();
+    }
+  }, 1000);
+
+  /* ── ADMIN: SELETOR DE SERVIDOR EM CADA LINHA DE LINK ─────── */
+  function optionsHTML(sel){
+    return SRV.list.map(function(s){
+      return '<option value="' + s.id + '"' + (Number(sel) === s.id ? ' selected' : '') + '>' + s.name + '</option>';
+    }).join('');
+  }
+
+  function upgradeRow(row, server){
+    if (!row || row.querySelector('.video-link-server')) return;
+    var sel = document.createElement('select');
+    sel.className = 'video-link-server';
+    sel.title = 'Servidor onde este link ficará';
+    sel.innerHTML = optionsHTML(server || row.getAttribute('data-server') || SRV.firstId());
+    var btn = row.querySelector('.video-link-remove-btn');
+    if (btn) row.insertBefore(sel, btn); else row.appendChild(sel);
+  }
+
+  function upgradeAll(){
+    document.querySelectorAll('.video-link-row').forEach(function(r){ upgradeRow(r); });
+  }
+  window.kaweUpgradeLinkRows = upgradeAll;
+
+  function refreshAllSelects(){
+    document.querySelectorAll('.video-link-server').forEach(function(sel){
+      var v = sel.value;
+      sel.innerHTML = optionsHTML(v);
+      if (!SRV.has(v)) sel.value = String(SRV.firstId());
+    });
+    if (typeof window.renderAdminServidores === 'function') window.renderAdminServidores();
+  }
+
+  var _addRow = window.addVideoLinkRow;
+  if (typeof _addRow === 'function') {
+    window.addVideoLinkRow = function(containerId, label, url, server){
+      _addRow.call(this, containerId, label, url);
+      var c = document.getElementById(containerId);
+      if (c && c.lastElementChild) upgradeRow(c.lastElementChild, server);
+    };
+  }
+
+  window.populateVideoLinksList = function(containerId, videoSources){
+    var c = document.getElementById(containerId);
+    if (!c) return;
+    c.innerHTML = '';
+    if (Array.isArray(videoSources) && videoSources.length > 0) {
+      videoSources.forEach(function(src){ window.addVideoLinkRow(containerId, src.label, src.url, srvOf(src)); });
+    } else {
+      window.addVideoLinkRow(containerId);
+    }
+  };
+
+  window.collectVideoLinks = function(containerId){
+    var c = document.getElementById(containerId);
+    if (!c) return [];
+    var links = [];
+    Array.prototype.forEach.call(c.querySelectorAll('.video-link-row'), function(row, i){
+      var labelInput = row.querySelector('.video-link-label');
+      var urlInput = row.querySelector('.video-link-url');
+      var selEl = row.querySelector('.video-link-server');
+      var raw = urlInput ? urlInput.value : '';
+      var url = (typeof normalizeVideoUrl === 'function') ? normalizeVideoUrl(raw) : raw;
+      if (!url) return;
+      var label = (labelInput && labelInput.value.trim()) || ('Player ' + (i + 1));
+      links.push({ label: label, url: url, server: selEl ? Number(selEl.value) : SRV.firstId() });
+    });
+    return links;
+  };
+
+  window.buildEpisodeBlockHTML = function(seasonNumber, epNumber, sources){
+    window.__episodeListCounter = (window.__episodeListCounter || 0) + 1;
+    var listId = 'eplist-' + window.__episodeListCounter;
+    var rowsHTML = (Array.isArray(sources) && sources.length > 0)
+      ? sources.map(function(s, i){
+          return '<div class="video-link-row">'
+            + '<input type="text" class="admin-input video-link-label" placeholder="Player ' + (i+1) + '" value="' + String(s.label || ('Player ' + (i+1))).replace(/"/g,'&quot;') + '">'
+            + '<input type="text" class="admin-input video-link-url" placeholder="https://... ou &lt;iframe&gt;" value="' + String(s.url || '').replace(/"/g,'&quot;') + '">'
+            + '<select class="video-link-server" title="Servidor">' + optionsHTML(srvOf(s)) + '</select>'
+            + '<button type="button" class="video-link-remove-btn" onclick="this.closest(\'.video-link-row\').remove()">✕</button>'
+            + '</div>';
+        }).join('')
+      : '';
+    return ''
+      + '<div class="episode-block" data-ep="' + epNumber + '">'
+      +   '<div class="episode-block-header">'
+      +     '<span class="episode-block-title">Episódio ' + epNumber + '<small>T' + seasonNumber + 'E' + epNumber + '</small></span>'
+      +   '</div>'
+      +   '<div class="video-links-list" id="' + listId + '">' + rowsHTML + '</div>'
+      +   '<button type="button" class="video-link-add-btn" onclick="addVideoLinkRow(\'' + listId + '\')">+ Adicionar player</button>'
+      + '</div>';
+  };
+
+  window.collectEpisodesFromCard = function(card){
+    var list = card && card.querySelector('.season-episodes-list');
+    var result = [];
+    if (!list) return result;
+    Array.prototype.forEach.call(list.querySelectorAll('.episode-block'), function(block, i){
+      var linksList = block.querySelector('.video-links-list');
+      var sources = [];
+      if (linksList) {
+        Array.prototype.forEach.call(linksList.querySelectorAll('.video-link-row'), function(row, j){
+          var labelInput = row.querySelector('.video-link-label');
+          var urlInput = row.querySelector('.video-link-url');
+          var selEl = row.querySelector('.video-link-server');
+          var raw = urlInput ? urlInput.value : '';
+          var url = (typeof normalizeVideoUrl === 'function') ? normalizeVideoUrl(raw) : raw;
+          if (!url) return;
+          var label = (labelInput && labelInput.value.trim()) || ('Player ' + (j + 1));
+          sources.push({ label: label, url: url, server: selEl ? Number(selEl.value) : SRV.firstId() });
+        });
+      }
+      result.push({
+        number: i + 1,
+        videoSources: sources,
+        videoUrl: sources.length > 0 ? sources[0].url : ''
+      });
+    });
+    return result;
+  };
+
+  /* ── ADMIN: ABA SERVIDORES ────────────────────────────────── */
+  function injectAdminTab(){
+    var tabs = document.querySelector('#admin-panel .admin-tabs');
+    var box  = document.querySelector('#admin-panel .admin-box');
+    if (!tabs || !box || document.getElementById('admin-servidores')) return;
+
+    var tab = document.createElement('div');
+    tab.className = 'admin-tab';
+    tab.id = 'kawe-tab-servidores';
+    tab.textContent = '🖧 SERVIDORES';
+    tab.onclick = function(){
+      document.querySelectorAll('#admin-panel .admin-tab').forEach(function(t){ t.classList.remove('active'); });
+      document.querySelectorAll('#admin-panel .admin-content-section').forEach(function(s){ s.classList.remove('active'); });
+      tab.classList.add('active');
+      document.getElementById('admin-servidores').classList.add('active');
+      renderAdminServidores();
+    };
+    tabs.appendChild(tab);
+
+    var sec = document.createElement('div');
+    sec.id = 'admin-servidores';
+    sec.className = 'admin-content-section';
+    sec.innerHTML = ''
+      + '<h3>Servidores de vídeo</h3>'
+      + '<p class="admin-subtitle">Cada link cadastrado fica guardado dentro de um servidor. No player, o usuário vê os botões verdes (SERVIDOR 1, 2, 3...) e escolhe de onde assistir. Links antigos continuam no <b>primeiro servidor</b>.</p>'
+      + '<div class="admin-form-group">'
+      +   '<label>Novo servidor</label>'
+      +   '<div class="kawe-srv-row">'
+      +     '<input type="text" id="kawe-new-server-name" class="admin-input" placeholder="Ex: SERVIDOR 6">'
+      +     '<input type="color" id="kawe-new-server-color" class="kawe-srv-color" value="#22c55e" title="Cor do botão">'
+      +     '<button type="button" class="video-link-add-btn" onclick="kaweAddServer()">+ Adicionar servidor</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div id="kawe-servers-list"></div>';
+    box.appendChild(sec);
+    renderAdminServidores();
+  }
+
+  window.renderAdminServidores = function(){
+    var el = document.getElementById('kawe-servers-list');
+    if (!el) return;
+    el.innerHTML = '<table class="admin-table"><thead><tr><th>#</th><th>Nome</th><th>Cor</th><th>Prévia</th><th>Links</th><th>Ações</th></tr></thead><tbody>'
+      + SRV.list.map(function(s){
+          var col = normColor(s.color);
+          return '<tr>'
+            + '<td>' + s.id + '</td>'
+            + '<td><input type="text" class="admin-input" id="kawe-srv-name-' + s.id + '" value="' + String(s.name).replace(/"/g,'&quot;') + '" oninput="kawePreviewServer(' + s.id + ')"></td>'
+            + '<td><input type="color" class="kawe-srv-color" id="kawe-srv-color-' + s.id + '" value="' + col + '" oninput="kawePreviewServer(' + s.id + ')"></td>'
+            + '<td><span class="kawe-server-btn" id="kawe-srv-preview-' + s.id + '" style="background:' + col + ';border-color:' + col + ';color:' + (isLight(col) ? '#000' : '#fff') + ';">' + s.name + '</span></td>'
+            + '<td>' + countLinks(s.id) + '</td>'
+            + '<td>'
+            +   '<button type="button" class="video-link-add-btn" onclick="kaweRenameServer(' + s.id + ')">Salvar</button> '
+            +   '<button type="button" class="video-link-remove-btn" style="width:auto;padding:8px 12px;" onclick="kaweDeleteServer(' + s.id + ')">Apagar</button>'
+            + '</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table>';
+  };
+
+  function countLinks(id){
+    var n = 0;
+    try {
+      var cat = window.CATALOG_DATA || {};
+      Object.keys(cat).forEach(function(k){
+        (cat[k] || []).forEach(function(item){
+          (item.videoSources || []).forEach(function(s){ if (srvOf(s) === Number(id)) n++; });
+          var seasons = item.seasons;
+          if (seasons) {
+            var arr = Array.isArray(seasons) ? seasons : Object.keys(seasons).map(function(k2){ return seasons[k2]; });
+            arr.forEach(function(se){
+              (((se || {}).episodes) || []).forEach(function(ep){
+                (ep.videoSources || []).forEach(function(s){ if (srvOf(s) === Number(id)) n++; });
+              });
+            });
+          }
+        });
+      });
+    } catch(e){}
+    return n;
+  }
+
+  window.kawePreviewServer = function(id){
+    var n = document.getElementById('kawe-srv-name-' + id);
+    var c = document.getElementById('kawe-srv-color-' + id);
+    var p = document.getElementById('kawe-srv-preview-' + id);
+    if (!p) return;
+    var col = normColor(c && c.value);
+    p.textContent = (n && n.value ? n.value : SRV.name(id)).toUpperCase();
+    p.style.background = col;
+    p.style.borderColor = col;
+    p.style.color = isLight(col) ? '#000' : '#fff';
+  };
+
+  window.kaweAddServer = function(){
+    var i = document.getElementById('kawe-new-server-name');
+    var c = document.getElementById('kawe-new-server-color');
+    var name = i ? i.value.trim() : '';
+    SRV.add(name, c ? c.value : '');
+    if (i) i.value = '';
+    renderAdminServidores();
+    if (typeof toast === 'function') toast('✅ Servidor adicionado');
+  };
+
+  window.kaweRenameServer = function(id){
+    var i = document.getElementById('kawe-srv-name-' + id);
+    var c = document.getElementById('kawe-srv-color-' + id);
+    SRV.update(id, i && i.value.trim(), c && c.value);
+    renderAdminServidores();
+    if (typeof toast === 'function') toast('✅ Nome e cor salvos');
+  };
+
+  window.kaweDeleteServer = function(id){
+    if (SRV.list.length <= 1) { if (typeof toast === 'function') toast('⚠️ Mantenha ao menos 1 servidor'); return; }
+    if (!confirm('Apagar ' + SRV.name(id) + '? Os links que estavam nele passam a aparecer no primeiro servidor.')) return;
+    SRV.remove(id);
+    renderAdminServidores();
+    if (typeof toast === 'function') toast('🗑️ Servidor apagado');
+  };
+
+  /* ── BOOT ─────────────────────────────────────────────────── */
+  function boot(){
+    try { injectAdminTab(); } catch(e){ console.warn('[KAWE servidores] admin:', e); }
+    try { upgradeAll(); } catch(e){}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 300); });
+  else setTimeout(boot, 300);
+  [900, 2000, 4000].forEach(function(ms){ setTimeout(boot, ms); });
+  setInterval(function(){ try { upgradeAll(); } catch(e){} }, 1500);
+})();
+</script>
 </body>
 </html>
 
