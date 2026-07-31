@@ -1566,6 +1566,27 @@ header {
 #cinema h2 { color:#f7d774 !important; text-shadow:0 0 12px rgba(247,215,116,0.6); letter-spacing:2px; }
 #televisao h2 { color:#facc15 !important; text-shadow:0 0 12px rgba(250,204,21,0.7); }
 #lives h2 { color:#39ff14 !important; text-shadow:0 0 14px rgba(57,255,20,0.8); }
+
+/* ── NOVA CATEGORIA: TRAILERS — JADE IMPERIAL ── */
+.nav-link.trailers-btn {
+  border:1px solid #00A86B;
+  background: linear-gradient(135deg,#00281b 0%, #00734a 50%, #00281b 100%);
+  color:#7cf7c4 !important;
+  text-shadow: 0 0 8px rgba(0,168,107,0.75);
+  box-shadow: 0 0 12px rgba(0,168,107,0.35), inset 0 1px 0 rgba(0,168,107,0.35);
+  font-weight:800; letter-spacing:1px;
+}
+.nav-link.trailers-btn:hover { background: linear-gradient(135deg,#00A86B 0%, #00c77f 100%); color:#00160e !important; text-shadow:none; box-shadow:0 0 22px rgba(0,168,107,0.8); }
+.sidebar-link.trailers-btn {
+  color:#7cf7c4 !important;
+  border-left:3px solid #00A86B;
+  background: linear-gradient(90deg, rgba(0,168,107,0.25), transparent);
+  text-shadow: 0 0 8px rgba(0,168,107,0.55);
+  font-weight:800;
+}
+.sidebar-link.trailers-btn:hover { background: linear-gradient(90deg, rgba(0,168,107,0.55), transparent); color:#d3fff0 !important; }
+#trailers h2 { color:#00A86B !important; text-shadow:0 0 14px rgba(0,168,107,0.8); }
+
 </style>
 </head>
 <body>
@@ -1711,6 +1732,7 @@ header {
     <div class="sidebar-link cinema-btn" onclick="showSectionFromSidebar('cinema')"><svg viewBox="0 0 24 24"><path d="M4 4h3l1 3H5L4 4zm5 0h3l1 3h-3L9 4zm5 0h3l1 3h-3l-1-3zm5 0h1v3h-2l1-3zM3 8h18v12H3z"/></svg> CINEMA</div>
     <div class="sidebar-link televisao-btn" onclick="showSectionFromSidebar('televisao')"><svg viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6v2h6v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z"/></svg> TELEVISÃO</div>
     <div class="sidebar-link lives-btn" onclick="showSectionFromSidebar('lives')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> LIVES</div>
+    <div class="sidebar-link trailers-btn" onclick="showSectionFromSidebar('trailers')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9l5 3-5 3z"/></svg> TRAILERS</div>
         <div class="sidebar-link adulto-btn" onclick="showSectionFromSidebar('adulto')"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> ADULTO</div>
     <div class="sidebar-link pornografia-btn" onclick="showSectionFromSidebar('pornografia')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.7 7.6 1 12c1.7 4.4 6 7.5 11 7.5s9.3-3.1 11-7.5c-1.7-4.4-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg> PORNOGRAFIA</div>
     <div class="sidebar-link bronze-btn" onclick="openVipCategory('bronze','sidebar')"><svg viewBox="0 0 24 24"><path d="M12 2l3 6 6 .9-4.5 4.3 1.1 6.3L12 16.8 6.4 19.5l1.1-6.3L3 8.9 9 8z"/></svg> BRONZE</div>
@@ -2091,6 +2113,7 @@ header {
       <div class="nav-link cinema-btn" onclick="showSectionFromHeader('cinema')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h3l1 3H5L4 4zm5 0h3l1 3h-3L9 4zm5 0h3l1 3h-3l-1-3zm5 0h1v3h-2l1-3zM3 8h18v12H3z"/></svg> CINEMA</div>
       <div class="nav-link televisao-btn" onclick="showSectionFromHeader('televisao')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 3H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6v2h6v-2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 14H3V5h18v12z"/></svg> TELEVISÃO</div>
       <div class="nav-link lives-btn" onclick="showSectionFromHeader('lives')"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg> LIVES</div>
+      <div class="nav-link trailers-btn" onclick="showSectionFromHeader('trailers')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 8l6 4-6 4z"/></svg> TRAILERS</div>
             <div class="nav-link terror-btn" onclick="showSectionFromHeader('terror')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C7 2 4 6 4 11c0 3 1 5 2 7l2-2 2 3 2-3 2 3 2-3 2 2c1-2 2-4 2-7 0-5-3-9-8-9zm-2 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm4 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg> TERROR</div>
       <div class="nav-link" onclick="showSectionFromHeader('sobre')"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> SOBRE</div>
     </nav>
@@ -2128,6 +2151,7 @@ header {
     <span class="gn-link" data-target="cinema"       onclick="window.showSectionFromHeader('cinema')">Cinema</span>
     <span class="gn-link" data-target="televisao"    onclick="window.showSectionFromHeader('televisao')">Televisão</span>
     <span class="gn-link" data-target="lives"        onclick="window.showSectionFromHeader('lives')">Lives</span>
+    <span class="gn-link" data-target="trailers"     onclick="window.showSectionFromHeader('trailers')">Trailers</span>
     <span class="gn-link" data-target="terror"        onclick="window.showSectionFromHeader('terror')">Terror</span>
     <span class="gn-link" data-target="bronze"        onclick="window.openVipCategory('bronze','header')">Bronze</span>
     <span class="gn-link" data-target="prata"         onclick="window.openVipCategory('prata','header')">Prata</span>
@@ -2479,6 +2503,13 @@ header {
       <div class="row">
         <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#39ff14;"><circle cx="12" cy="12" r="5"/></svg> LIVES</h2>
         <div class="row-content" id="lives-content" data-category="lives"></div>
+      </div>
+    </section>
+
+    <section id="trailers" class="section" style="padding-top:20px;">
+      <div class="row">
+        <h2><svg class="icon-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#00A86B;"><path d="M4 4h16v16H4V4zm6 4v8l6-4-6-4z"/></svg> TRAILERS</h2>
+        <div class="row-content" id="trailers-content" data-category="trailers"></div>
       </div>
     </section>
 
@@ -4106,6 +4137,7 @@ window.ADMIN_CATEGORIES = [
   { id: 'cinema', label: 'Cinema' },
   { id: 'televisao', label: 'Televisão' },
   { id: 'lives', label: 'Lives' },
+  { id: 'trailers', label: 'Trailers' },
   { id: 'pedidos', label: 'Pedidos' }
 ];
 
@@ -5470,7 +5502,7 @@ async function reimportAllApiSources() {
       livros:'LIVRO', podcasts:'PODCAST', radio:'RÁDIO', adulto:'+18',
       pornografia:'+18', terror:'TERROR', esportes:'ESPORTE', 'ao-vivo':'AO VIVO',
       sitcom:'SITCOM','live-action':'LIVE ACTION', cinema:'CINEMA',
-      televisao:'TV', lives:'LIVE', jogos:'JOGO', pedidos:'PEDIDO'
+      televisao:'TV', lives:'LIVE', trailers:'TRAILER', jogos:'JOGO', pedidos:'PEDIDO'
     };
 
     function renderCards(category, page = 1) {
@@ -8033,6 +8065,7 @@ body.kawe-light .card { box-shadow:0 4px 20px rgba(0,0,0,0.08); }
     if (!Array.isArray(window.CATALOG_DATA['cinema'])) window.CATALOG_DATA['cinema'] = [];
     if (!Array.isArray(window.CATALOG_DATA['televisao'])) window.CATALOG_DATA['televisao'] = [];
     if (!Array.isArray(window.CATALOG_DATA['lives'])) window.CATALOG_DATA['lives'] = [];
+    if (!Array.isArray(window.CATALOG_DATA['trailers'])) window.CATALOG_DATA['trailers'] = [];
   } catch(e){ console.warn('[KAWE] init novas categorias:', e); }
 })();
 </script>
@@ -8416,6 +8449,7 @@ setTimeout(renderJogosFrontend, 800);
 .card.card-v2 .badge-type[data-cat="pedidos"] { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color:#000; }
 .card.card-v2 .badge-type[data-cat="ao-vivo"],
 .card.card-v2 .badge-type[data-cat="lives"] { background: linear-gradient(135deg, #000 0%, #ef4444 55%, #ef4444 100%); }
+.card.card-v2 .badge-type[data-cat="trailers"] { background: linear-gradient(135deg, #00281b 0%, #00A86B 55%, #00c77f 100%); }
 .card.card-v2 .badge-type[data-cat="adulto"],
 .card.card-v2 .badge-type[data-cat="pornografia"] { background: linear-gradient(135deg, #000 0%, #a855f7 55%, #a855f7 100%); }
 
@@ -10095,7 +10129,7 @@ setTimeout(renderJogosFrontend, 800);
     curtas: 'Curtas', sitcom: 'Sitcom', 'live-action': 'Live Action',
     cinema: 'Cinema', televisao: 'TV', terror: 'Terror', musica: 'Música',
     livros: 'Livros', podcasts: 'Podcasts', radio: 'Rádio', esportes: 'Esportes',
-    lancamentos: 'Lançamentos', jogos: 'Jogos', canais: 'Canais'
+    lancamentos: 'Lançamentos', jogos: 'Jogos', canais: 'Canais', trailers: 'Trailers'
   };
   var suggestState = { cat: 'all', q: '' };
 
