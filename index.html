@@ -11858,6 +11858,509 @@ cursor:pointer;color:#9aa3b2;opacity:.85;z-index:5;line-height:0}
 </script>
 <!--KAWE_CARGOS_CORREIO_END-->
 
+<!-- ============ KAWE PATCH v5: USUÁRIOS + NOTIFICAÇÕES + CHAT GERAL ============ -->
+<style>
+/* ── Modal "Ver informações do usuário" (verde & preto) ── */
+.kui-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);z-index:100000;display:none;align-items:center;justify-content:center;padding:18px;}
+.kui-overlay.open{display:flex;}
+.kui-box{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;background:linear-gradient(160deg,#05100a 0%,#000 60%);border:1px solid rgba(34,197,94,0.45);border-radius:18px;box-shadow:0 0 45px rgba(34,197,94,0.25);}
+.kui-box::-webkit-scrollbar{width:8px}.kui-box::-webkit-scrollbar-thumb{background:rgba(34,197,94,.4);border-radius:8px}
+.kui-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.08);border-radius:18px 18px 0 0;}
+.kui-head h3{margin:0;font-size:15px;letter-spacing:.5px;color:#22c55e;text-transform:uppercase;font-weight:900;}
+.kui-close{background:transparent;border:1px solid rgba(34,197,94,.4);color:#22c55e;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:16px;line-height:1;}
+.kui-close:hover{background:#22c55e;color:#000;}
+.kui-top{display:flex;align-items:center;gap:14px;padding:20px 22px 6px;}
+.kui-av{width:62px;height:62px;border-radius:50%;object-fit:cover;background:#0a0a0a;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;color:#22c55e;font-weight:900;font-size:24px;}
+.kui-name{color:#fff;font-weight:800;font-size:17px;}
+.kui-sub{color:#86efac;font-size:12px;opacity:.85;}
+.kui-grid{padding:14px 22px 22px;display:grid;gap:10px;}
+.kui-row{display:flex;justify-content:space-between;gap:14px;padding:11px 14px;border:1px solid rgba(34,197,94,0.18);border-radius:11px;background:rgba(34,197,94,0.05);}
+.kui-row b{color:#22c55e;font-size:11px;text-transform:uppercase;letter-spacing:.5px;min-width:120px;}
+.kui-row span{color:#e6ffe9;font-size:13px;text-align:right;word-break:break-word;}
+.kui-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;}
+.kui-tag.ok{background:rgba(34,197,94,.18);color:#22c55e;}
+.kui-tag.bad{background:rgba(239,68,68,.18);color:#f87171;}
+.user-action-btn.info{background:#22c55e;color:#00160a;border:none;font-weight:900;}
+.user-action-btn.info:hover{filter:brightness(1.15);box-shadow:0 6px 18px rgba(34,197,94,.35);}
+/* ── Notificações do painel ── */
+.kadm-notifs{margin:14px 0 6px;border:1px solid rgba(34,197,94,.25);border-radius:14px;background:rgba(0,0,0,.45);overflow:hidden;}
+.kadm-notifs h4{margin:0;padding:12px 16px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#22c55e;border-bottom:1px solid rgba(34,197,94,.2);display:flex;justify-content:space-between;align-items:center;}
+.kadm-notifs h4 button{background:transparent;border:1px solid rgba(34,197,94,.35);color:#22c55e;border-radius:8px;padding:4px 10px;font-size:10px;cursor:pointer;}
+.kadm-notif{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px;color:#d1fae5;display:flex;justify-content:space-between;gap:10px;}
+.kadm-notif small{color:#6ee7b7;opacity:.7;white-space:nowrap;}
+.kadm-notif.empty{color:#7c8b82;justify-content:center;}
+</style>
+
+<div class="kui-overlay" id="kawe-user-info-modal" onclick="if(event.target===this)kaweCloseUserInfo()">
+  <div class="kui-box">
+    <div class="kui-head"><h3>👤 Informações do usuário</h3><button class="kui-close" onclick="kaweCloseUserInfo()">✕</button></div>
+    <div id="kawe-user-info-body"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function db(){ try{ return window.kaweDB || (typeof firebase!=='undefined' && firebase.apps && firebase.apps.length ? firebase.database() : null); }catch(e){ return null; } }
+  function users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]'); }catch(e){ return []; } }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function dt(v){ if(!v) return '—'; var d=new Date(v); return isNaN(d)?String(v):d.toLocaleString('pt-BR'); }
+
+  /* ══════════ 1. VER INFORMAÇÕES DO USUÁRIO ══════════ */
+  window.kaweCloseUserInfo = function(){ var m=document.getElementById('kawe-user-info-modal'); if(m) m.classList.remove('open'); };
+  window.kaweViewUserInfo = function(id){
+    var u = users().find(function(x){ return x.id===id; });
+    if(!u){ if(typeof toast==='function') toast('⚠️ Usuário não encontrado'); return; }
+    var body = document.getElementById('kawe-user-info-body'); if(!body) return;
+    var initial = (u.username||u.email||'?').charAt(0).toUpperCase();
+    var avatar = u.photo ? '<img class="kui-av" src="'+esc(u.photo)+'" alt="avatar">' : '<div class="kui-av">'+esc(initial)+'</div>';
+    var status = u.banned ? '<span class="kui-tag bad">Banido</span>'
+               : (u.deactivated ? '<span class="kui-tag bad">Desativada</span>' : '<span class="kui-tag ok">Ativo</span>');
+    var known = {id:1,username:1,fullname:1,email:1,phone:1,password:1,method:1,banned:1,deactivated:1,deactivatedAt:1,reactivatedAt:1,createdAt:1,lastLogin:1,updatedAt:1,photo:1,cargo:1};
+    var rows = [
+      ['Nome de usuário', esc(u.username||'—')],
+      ['Nome completo', esc(u.fullname||'—')],
+      ['E-mail', esc(u.email||'—')],
+      ['Telefone', esc(u.phone||'—')],
+      ['Senha cadastrada', u.password ? esc(u.password) : '—'],
+      ['Método de cadastro', esc(u.method||'local')],
+      ['Cargo', esc(u.cargo||'—')],
+      ['Status da conta', status],
+      ['ID interno', esc(u.id||'—')],
+      ['Conta criada em', dt(u.createdAt)],
+      ['Último login', dt(u.lastLogin)],
+      ['Última atualização', dt(u.updatedAt)],
+      ['Desativada em', dt(u.deactivatedAt)],
+      ['Reativada em', dt(u.reactivatedAt)]
+    ];
+    Object.keys(u).forEach(function(k){
+      if(known[k]) return;
+      var v = u[k]; if(v && typeof v==='object') { try{ v = JSON.stringify(v); }catch(e){ v='[objeto]'; } }
+      rows.push([esc(k), esc(v)]);
+    });
+    body.innerHTML =
+      '<div class="kui-top">'+avatar+'<div><div class="kui-name">'+esc(u.username||u.email||'Usuário')+'</div>'+
+      '<div class="kui-sub">'+esc(u.email||u.phone||'sem e-mail')+'</div></div></div>'+
+      '<div class="kui-grid">'+ rows.map(function(r){
+        return '<div class="kui-row"><b>'+r[0]+'</b><span>'+r[1]+'</span></div>';
+      }).join('') +'</div>';
+    document.getElementById('kawe-user-info-modal').classList.add('open');
+  };
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') kaweCloseUserInfo(); });
+
+  /* botão verde em cada linha da tabela de usuários */
+  function injectInfoButtons(){
+    var tbody = document.getElementById('admin-users-list'); if(!tbody) return;
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr){
+      var cell = tr.lastElementChild; if(!cell || cell.querySelector('.user-action-btn.info')) return;
+      var m = (cell.innerHTML.match(/adminUsersToggleBan\('([^']+)'\)/) || cell.innerHTML.match(/adminUsersDelete\('([^']+)'\)/));
+      if(!m) return;
+      var btn = document.createElement('button');
+      btn.className = 'user-action-btn info';
+      btn.textContent = 'VER INFORMAÇÕES DO USUÁRIO';
+      btn.setAttribute('onclick', "kaweViewUserInfo('"+m[1]+"')");
+      cell.insertBefore(btn, cell.firstChild);
+    });
+  }
+  function wrapRender(){
+    var orig = window.renderAdminUsers;
+    if(typeof orig!=='function' || orig.__kaweInfoWrapped) return;
+    var fn = function(){ var r = orig.apply(this, arguments); try{ injectInfoButtons(); renderAdminNotifs(); }catch(e){} return r; };
+    fn.__kaweInfoWrapped = true; window.renderAdminUsers = fn;
+  }
+
+  /* ══════════ 2. NOTIFICAÇÕES PARA O PAINEL ADMIN ══════════ */
+  function notifs(){ try{ return JSON.parse(localStorage.getItem('kawe_admin_notifs')||'[]'); }catch(e){ return []; } }
+  function saveNotifs(l){ try{ localStorage.setItem('kawe_admin_notifs', JSON.stringify(l.slice(0,120))); }catch(e){} }
+  window.kaweAdminNotify = function(text, user){
+    var n = { id:'n_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), text:text,
+              userId:(user&&user.id)||'', username:(user&&(user.username||user.email))||'', at:new Date().toISOString() };
+    var l = notifs(); l.unshift(n); saveNotifs(l);
+    var d = db(); if(d){ try{ d.ref('kawe_admin_notifs/'+n.id).set(n); }catch(e){} }
+    try{ if(typeof toast==='function') toast('🔔 '+text); }catch(e){}
+    renderAdminNotifs();
+  };
+  window.kaweAdminClearNotifs = function(){ saveNotifs([]); var d=db(); if(d){ try{ d.ref('kawe_admin_notifs').remove(); }catch(e){} } renderAdminNotifs(); };
+  function renderAdminNotifs(){
+    var tbody = document.getElementById('admin-users-list'); if(!tbody) return;
+    var table = tbody.closest('table'); if(!table) return;
+    var box = document.getElementById('kawe-admin-notifs');
+    if(!box){
+      box = document.createElement('div'); box.className='kadm-notifs'; box.id='kawe-admin-notifs';
+      table.parentNode.insertBefore(box, table);
+    }
+    var l = notifs();
+    box.innerHTML = '<h4><span>🔔 Notificações de contas ('+l.length+')</span><button onclick="kaweAdminClearNotifs()">LIMPAR</button></h4>' +
+      (l.length ? l.slice(0,25).map(function(n){
+        return '<div class="kadm-notif"><span>'+esc(n.text)+'</span><small>'+dt(n.at)+'</small></div>';
+      }).join('') : '<div class="kadm-notif empty">Nenhuma alteração de conta registrada ainda.</div>');
+  }
+  window.kaweRenderAdminNotifs = renderAdminNotifs;
+
+  // puxa notificações salvas no Firebase (outros dispositivos)
+  function pullNotifs(){
+    var d = db(); if(!d) return;
+    try{
+      d.ref('kawe_admin_notifs').on('value', function(snap){
+        var remote = snap.val() || {}; var l = notifs();
+        Object.keys(remote).forEach(function(k){ if(!l.some(function(x){return x.id===k;})) l.push(remote[k]); });
+        l.sort(function(a,b){ return (b.at||'').localeCompare(a.at||''); });
+        saveNotifs(l); renderAdminNotifs();
+      });
+    }catch(e){}
+  }
+
+  /* hooks: troca de e-mail, desativação e exclusão de conta */
+  function currentUser(){ try{ return (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null; }catch(e){ return null; } }
+  function syncFb(u){ try{ if(u && typeof kaweSyncUserToFirebase==='function') kaweSyncUserToFirebase(u); }catch(e){} }
+
+  function installHooks(){
+    // troca de e-mail / dados do perfil
+    if(typeof window.saveKaweProfile==='function' && !window.saveKaweProfile.__kaweNotif){
+      var origSave = window.saveKaweProfile;
+      var f1 = function(){
+        var before = currentUser(); var oldEmail = before ? (before.email||'') : ''; var oldName = before ? (before.username||'') : '';
+        var r = origSave.apply(this, arguments);
+        setTimeout(function(){
+          var after = currentUser(); if(!after) return;
+          if((after.email||'') !== oldEmail) kaweAdminNotify('✉️ '+(after.username||'Usuário')+' alterou o e-mail: '+(oldEmail||'—')+' → '+(after.email||'—'), after);
+          else if((after.username||'') !== oldName) kaweAdminNotify('📝 '+(oldName||'Usuário')+' alterou o nome de usuário para '+(after.username||'—'), after);
+          syncFb(after);
+          if(typeof window.renderAdminUsers==='function'){ try{ window.renderAdminUsers(); }catch(e){} }
+        }, 60);
+        return r;
+      };
+      f1.__kaweNotif = true; window.saveKaweProfile = f1;
+    }
+    // desativar conta
+    if(typeof window.kaweConfirmDeactivateAccount==='function' && !window.kaweConfirmDeactivateAccount.__kaweNotif){
+      var origDeact = window.kaweConfirmDeactivateAccount;
+      var f2 = function(){
+        var u = currentUser();
+        var r = origDeact.apply(this, arguments);
+        setTimeout(function(){
+          var fresh = users().find(function(x){ return u && x.id===u.id; });
+          if(fresh && fresh.deactivated){ kaweAdminNotify('🔕 '+(fresh.username||fresh.email||'Usuário')+' desativou a conta', fresh); syncFb(fresh); }
+        }, 120);
+        return r;
+      };
+      f2.__kaweNotif = true; window.kaweConfirmDeactivateAccount = f2;
+    }
+    // reativar conta
+    if(typeof window.kaweConfirmReactivate==='function' && !window.kaweConfirmReactivate.__kaweNotif){
+      var origReact = window.kaweConfirmReactivate;
+      var f4 = function(){
+        var p = window.__kaweReactivatePending;
+        var r = origReact.apply(this, arguments);
+        setTimeout(function(){
+          var fresh = users().find(function(x){ return p && x.id===p.userId; });
+          if(fresh && !fresh.deactivated){ kaweAdminNotify('🔔 '+(fresh.username||fresh.email||'Usuário')+' reativou a conta', fresh); syncFb(fresh); }
+        }, 120);
+        return r;
+      };
+      f4.__kaweNotif = true; window.kaweConfirmReactivate = f4;
+    }
+    // excluir conta
+    if(typeof window.kaweConfirmDeleteAccount==='function' && !window.kaweConfirmDeleteAccount.__kaweNotif){
+      var origDel = window.kaweConfirmDeleteAccount;
+      var f3 = function(){
+        var u = currentUser();
+        var r = origDel.apply(this, arguments);
+        setTimeout(function(){
+          var still = users().some(function(x){ return u && x.id===u.id; });
+          if(u && !still) kaweAdminNotify('🗑️ '+(u.username||u.email||'Usuário')+' excluiu a conta permanentemente', u);
+        }, 150);
+        return r;
+      };
+      f3.__kaweNotif = true; window.kaweConfirmDeleteAccount = f3;
+    }
+    // admin bane/exclui → também registra e sincroniza no Firebase
+    if(typeof window.adminUsersDelete==='function' && !window.adminUsersDelete.__kaweNotif){
+      var origAD = window.adminUsersDelete;
+      var f5 = function(id){
+        var u = users().find(function(x){ return x.id===id; });
+        var r = origAD.apply(this, arguments);
+        setTimeout(function(){
+          var still = users().some(function(x){ return x.id===id; });
+          if(u && !still){
+            kaweAdminNotify('🗑️ Admin excluiu a conta de '+(u.username||u.email||'usuário'), u);
+            var d = db();
+            if(d){ try{
+              var base = (u.email||u.phone||u.username||u.id||'').toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40);
+              d.ref('kawe_users_data/'+(u.id||'')+'__'+base).remove();
+            }catch(e){} }
+          }
+        }, 80);
+        return r;
+      };
+      f5.__kaweNotif = true; window.adminUsersDelete = f5;
+    }
+  }
+
+  /* ══════════ 3. CHAT GERAL (para todos, sem resposta automática) ══════════ */
+  var CHAT_NODE = 'kawe_chat_global', chatBound = false;
+  function chatName(){
+    var u = currentUser();
+    if(u) return u.username || u.fullname || u.email || 'Usuário';
+    try{ return localStorage.getItem('kawe_user_name') || 'Visitante'; }catch(e){ return 'Visitante'; }
+  }
+  function myId(){ try{ return localStorage.getItem('kawe_current_user_id') || ('anon_'+(localStorage.getItem('kawe_anon_id')|| (function(){var a='a_'+Math.random().toString(36).slice(2,9);localStorage.setItem('kawe_anon_id',a);return a;})())); }catch(e){ return 'anon'; } }
+  function localMsgs(){ try{ return JSON.parse(localStorage.getItem('kawe_chat_local')||'[]'); }catch(e){ return []; } }
+  function saveLocalMsgs(l){ try{ localStorage.setItem('kawe_chat_local', JSON.stringify(l.slice(-200))); }catch(e){} }
+
+  function renderChatMsg(m){
+    var box = document.getElementById('chat-messages'); if(!box) return;
+    if(box.querySelector('[data-mid="'+m.id+'"]')) return;
+    var mine = m.uid === myId();
+    var el = document.createElement('div');
+    el.className = 'chat-message ' + (mine ? 'user' : 'bot');
+    el.setAttribute('data-mid', m.id);
+    var time = new Date(m.at||Date.now()).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var head = '<b style="display:block;font-size:11px;opacity:.75;margin-bottom:3px;">'+esc(m.name||'Usuário')+'</b>';
+    var content;
+    if(m.type==='image') content = '<img class="chat-img" src="'+esc(m.data)+'" alt="foto">';
+    else if(m.type==='file') content = '<a class="chat-file" href="'+esc(m.data)+'" download="'+esc(m.filename||'arquivo')+'"><span>'+esc(m.filename||'arquivo')+'</span></a>';
+    else content = esc(m.text||'');
+    el.innerHTML = head + content + '<small>' + time + '</small>';
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function publish(msg){
+    msg.id = msg.id || ('m_'+Date.now()+'_'+Math.random().toString(36).slice(2,6));
+    msg.at = msg.at || new Date().toISOString();
+    msg.uid = myId(); msg.name = chatName();
+    var d = db();
+    if(d){ try{ d.ref(CHAT_NODE+'/'+msg.id).set(msg); return; }catch(e){} }
+    var l = localMsgs(); l.push(msg); saveLocalMsgs(l); renderChatMsg(msg);
+  }
+
+  function bindChat(){
+    if(chatBound) return;
+    var box = document.getElementById('chat-messages'); if(!box) return;
+    chatBound = true;
+    box.innerHTML = '<div class="chat-message bot" style="opacity:.8;">💬 Chat geral da KAWE CINEMA — todas as mensagens aqui são públicas e vistas por todos os usuários.<small>Chat geral</small></div>';
+    var d = db();
+    if(d){
+      try{
+        d.ref(CHAT_NODE).limitToLast(200).on('child_added', function(s){ var m=s.val(); if(m) renderChatMsg(m); });
+        return;
+      }catch(e){}
+    }
+    localMsgs().forEach(renderChatMsg);
+  }
+
+  window.sendChatMessage = function(){
+    bindChat();
+    var input = document.getElementById('chat-input');
+    if(!input || !input.value.trim()) return;
+    publish({ type:'text', text: input.value.trim() });
+    input.value = '';
+  };
+  window.handleChatAttach = function(event, kind){
+    bindChat();
+    var file = event.target.files && event.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      publish(kind==='image' && file.type.indexOf('image/')===0
+        ? { type:'image', data:e.target.result }
+        : { type:'file', data:e.target.result, filename:file.name||'arquivo' });
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
+  /* ══════════ INIT ══════════ */
+  function boot(){ wrapRender(); installHooks(); bindChat(); renderAdminNotifs(); pullNotifs(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot, 400); });
+  else setTimeout(boot, 400);
+  setTimeout(boot, 1500);
+  setTimeout(boot, 3000);
+  // garante o botão verde sempre que a aba usuários for aberta
+  setInterval(function(){ try{ injectInfoButtons(); }catch(e){} }, 1200);
+})();
+</script>
+<!-- ============ FIM KAWE PATCH v5 ============ -->
+
+<!-- ============ KAWE PATCH v6: REGISTRO DE ATIVIDADES DOS USUÁRIOS ============ -->
+<style>
+.kact-sec{margin:0 22px 22px;border:1px solid rgba(34,197,94,.25);border-radius:14px;overflow:hidden;background:rgba(0,0,0,.5);}
+.kact-sec h4{margin:0;padding:11px 15px;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:#22c55e;border-bottom:1px solid rgba(34,197,94,.2);display:flex;justify-content:space-between;align-items:center;}
+.kact-item{display:flex;justify-content:space-between;gap:12px;padding:9px 15px;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px;color:#dcfce7;}
+.kact-item:last-child{border-bottom:none;}
+.kact-item small{color:#6ee7b7;opacity:.75;white-space:nowrap;font-size:11px;}
+.kact-item.empty{justify-content:center;color:#7c8b82;}
+.kact-ico{color:#22c55e;margin-right:6px;}
+.kadm-log{margin:14px 0 6px;border:1px solid rgba(34,197,94,.25);border-radius:14px;background:rgba(0,0,0,.45);overflow:hidden;max-height:340px;overflow-y:auto;}
+.kadm-log h4{margin:0;padding:12px 16px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#22c55e;border-bottom:1px solid rgba(34,197,94,.2);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#04140b;z-index:2;}
+.kadm-log h4 .kadm-log-actions{display:flex;gap:8px;}
+.kadm-log h4 button, .kadm-log h4 input{background:transparent;border:1px solid rgba(34,197,94,.35);color:#22c55e;border-radius:8px;padding:4px 10px;font-size:10.5px;cursor:pointer;font-family:inherit;}
+.kadm-log h4 input{cursor:text;min-width:150px;}
+.kadm-log-row{display:grid;grid-template-columns:150px 1fr 150px;gap:10px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px;color:#d1fae5;align-items:center;}
+.kadm-log-row b{color:#22c55e;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kadm-log-row small{color:#6ee7b7;opacity:.75;text-align:right;white-space:nowrap;}
+.kadm-log-row.empty{display:block;text-align:center;color:#7c8b82;}
+@media (max-width:640px){ .kadm-log-row{grid-template-columns:1fr;gap:2px;} .kadm-log-row small{text-align:left;} }
+</style>
+<script>
+(function(){
+  var NODE = 'kawe_user_activity', MAXL = 800;
+  function db(){ try{ return window.kaweDB || (typeof firebase!=='undefined' && firebase.apps && firebase.apps.length ? firebase.database() : null); }catch(e){ return null; } }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function fdate(v){ var d=new Date(v); return isNaN(d)?'—':(d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})); }
+  function cur(){ try{ return (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null; }catch(e){ return null; } }
+  function who(){
+    var u = cur();
+    if(u) return { id:u.id||'', name:u.username||u.fullname||u.email||'Usuário', email:u.email||'' };
+    var n=''; try{ n = localStorage.getItem('kawe_user_name')||''; }catch(e){}
+    var a=''; try{ a = localStorage.getItem('kawe_anon_id'); if(!a){ a='visitante_'+Math.random().toString(36).slice(2,8); localStorage.setItem('kawe_anon_id',a);} }catch(e){ a='visitante'; }
+    return { id:a, name:n||'Visitante (sem login)', email:'' };
+  }
+
+  function load(){ try{ return JSON.parse(localStorage.getItem('kawe_activity_log')||'[]'); }catch(e){ return []; } }
+  function save(l){ try{ localStorage.setItem('kawe_activity_log', JSON.stringify(l.slice(0, MAXL))); }catch(e){} }
+
+  var lastKey='', lastTime=0;
+  window.kaweLogActivity = function(icon, action, detail){
+    var w = who();
+    var key = w.id+'|'+action+'|'+(detail||'');
+    var now = Date.now();
+    if(key===lastKey && (now-lastTime) < 1200) return;      // evita duplicidade
+    lastKey = key; lastTime = now;
+    var ev = { id:'a_'+now+'_'+Math.random().toString(36).slice(2,6), icon:icon||'•',
+               action:action, detail:detail||'', userId:w.id, username:w.name, email:w.email,
+               at:new Date().toISOString() };
+    var l = load(); l.unshift(ev); save(l);
+    var d = db(); if(d){ try{ d.ref(NODE+'/'+ev.id).set(ev); }catch(e){} }
+    renderLog();
+  };
+  window.kaweActivityFor = function(userId){ return load().filter(function(e){ return e.userId===userId; }); };
+  window.kaweClearActivity = function(){
+    if(!confirm('Apagar todo o histórico de atividades dos usuários?')) return;
+    save([]); var d=db(); if(d){ try{ d.ref(NODE).remove(); }catch(e){} } renderLog();
+  };
+
+  /* ── painel admin: lista completa de atividades ── */
+  function renderLog(){
+    var tbody = document.getElementById('admin-users-list'); if(!tbody) return;
+    var table = tbody.closest('table'); if(!table) return;
+    var box = document.getElementById('kawe-admin-activity');
+    if(!box){
+      box = document.createElement('div'); box.className='kadm-log'; box.id='kawe-admin-activity';
+      table.parentNode.insertBefore(box, table);
+    }
+    var q = ''; var inp = document.getElementById('kawe-act-search'); if(inp) q = (inp.value||'').toLowerCase();
+    var l = load().filter(function(e){
+      if(!q) return true;
+      return (e.username||'').toLowerCase().indexOf(q)>=0 || (e.action||'').toLowerCase().indexOf(q)>=0 || (e.detail||'').toLowerCase().indexOf(q)>=0;
+    });
+    var rows = l.slice(0,200).map(function(e){
+      return '<div class="kadm-log-row"><b>'+esc(e.username||'—')+'</b><span>'+esc(e.icon||'•')+' '+esc(e.action)+(e.detail?': <i style="color:#fff;font-style:normal;">'+esc(e.detail)+'</i>':'')+'</span><small>'+fdate(e.at)+'</small></div>';
+    }).join('') || '<div class="kadm-log-row empty">Nenhuma atividade registrada ainda.</div>';
+    var focus = document.activeElement && document.activeElement.id==='kawe-act-search';
+    box.innerHTML = '<h4><span>📊 Atividades dos usuários ('+load().length+')</span><span class="kadm-log-actions">'+
+      '<input id="kawe-act-search" placeholder="Filtrar..." value="'+esc(q)+'" oninput="kaweRenderActivityLog()">'+
+      '<button onclick="kaweClearActivity()">LIMPAR</button></span></h4>' + rows;
+    if(focus){ var ni=document.getElementById('kawe-act-search'); if(ni){ ni.focus(); ni.setSelectionRange(ni.value.length, ni.value.length); } }
+  }
+  window.kaweRenderActivityLog = renderLog;
+
+  function pull(){
+    var d = db(); if(!d) return;
+    try{
+      d.ref(NODE).limitToLast(MAXL).on('value', function(snap){
+        var r = snap.val()||{}; var l = load(); var map = {};
+        l.forEach(function(e){ map[e.id]=e; });
+        Object.keys(r).forEach(function(k){ map[k]=r[k]; });
+        var all = Object.keys(map).map(function(k){ return map[k]; })
+          .sort(function(a,b){ return (b.at||'').localeCompare(a.at||''); });
+        save(all); renderLog();
+      });
+    }catch(e){}
+  }
+
+  /* ── histórico dentro do modal "Ver informações do usuário" ── */
+  function attachHistory(){
+    var orig = window.kaweViewUserInfo;
+    if(typeof orig!=='function' || orig.__kaweAct) return;
+    var fn = function(id){
+      var r = orig.apply(this, arguments);
+      try{
+        var body = document.getElementById('kawe-user-info-body'); if(!body) return r;
+        var evs = kaweActivityFor(id);
+        var sec = document.createElement('div'); sec.className='kact-sec';
+        sec.innerHTML = '<h4><span>🕓 Histórico de atividades</span><span>'+evs.length+' registro(s)</span></h4>' +
+          (evs.length ? evs.slice(0,120).map(function(e){
+            return '<div class="kact-item"><span><span class="kact-ico">'+esc(e.icon||'•')+'</span>'+esc(e.action)+(e.detail?' — <b style="color:#fff;font-weight:600;">'+esc(e.detail)+'</b>':'')+'</span><small>'+fdate(e.at)+'</small></div>';
+          }).join('') : '<div class="kact-item empty">Nenhuma atividade registrada para este usuário.</div>');
+        body.appendChild(sec);
+      }catch(e){}
+      return r;
+    };
+    fn.__kaweAct = true; window.kaweViewUserInfo = fn;
+  }
+
+  /* ── captura de eventos do site ── */
+  var LABELS = { home:'Início', lancamentos:'Lançamentos', filmes:'Filmes', series:'Séries', animes:'Animes',
+    infantil:'Infantil', curtas:'Curtas', documentarios:'Documentários', doramas:'Doramas', novelas:'Novelas',
+    canais:'Canais', adulto:'Adulto', vip:'VIP', chat:'Chat', suporte:'Suporte', downloads:'Downloads', jogos:'Jogos' };
+  function wrap(name, before){
+    var o = window[name];
+    if(typeof o!=='function' || o.__kaweActWrap) return;
+    var f = function(){ try{ before.apply(null, arguments); }catch(e){} return o.apply(this, arguments); };
+    f.__kaweActWrap = true; window[name] = f;
+  }
+  function itemTitle(cat, idx){
+    try{
+      var list = (window.CATALOG_DATA && window.CATALOG_DATA[cat]) || [];
+      var it = list[idx]; return it ? (it.title || it.name || ('item #'+idx)) : ('item #'+idx);
+    }catch(e){ return 'item #'+idx; }
+  }
+  function installCapture(){
+    wrap('showSection', function(id){ kaweLogActivity('📂','Abriu a categoria', LABELS[id]||id); });
+    wrap('showSectionFromHeader', function(id){ kaweLogActivity('📂','Abriu a categoria', LABELS[id]||id); });
+    wrap('playCatalogItem', function(cat, idx){ kaweLogActivity('▶️','Assistiu', itemTitle(cat, idx)+' ('+(LABELS[cat]||cat)+')'); });
+    wrap('openSeriesPlayer', function(cat, idx, item){ kaweLogActivity('📺','Abriu a série', ((item&&item.title)||itemTitle(cat,idx))+' ('+(LABELS[cat]||cat)+')'); });
+    wrap('closePlayer', function(){ kaweLogActivity('⏹️','Fechou o player',''); });
+    wrap('kaweUsersRegister', function(d){ setTimeout(function(){ kaweLogActivity('🆕','Criou uma conta', (d&&(d.email||d.username))||''); },80); });
+    wrap('kaweUsersLogin', function(i){ setTimeout(function(){ kaweLogActivity('🔓','Entrou na conta', i||''); },80); });
+    wrap('kaweLogout', function(){ kaweLogActivity('🚪','Saiu da conta',''); });
+    wrap('sendChatMessage', function(){ var i=document.getElementById('chat-input'); kaweLogActivity('💬','Enviou mensagem no chat geral', i&&i.value?i.value.slice(0,60):''); });
+    wrap('openAdminAuth', function(){ kaweLogActivity('🛡️','Tentou abrir o painel admin',''); });
+    wrap('doSearch', function(q){ kaweLogActivity('🔍','Pesquisou', q||''); });
+
+    if(!document.__kaweActClick){
+      document.__kaweActClick = true;
+      document.addEventListener('click', function(ev){
+        var el = ev.target && ev.target.closest ? ev.target.closest('.card,[data-title],.nav-link,.sidebar-link,.gn-link,.kdl-go,button') : null;
+        if(!el) return;
+        if(el.closest('#admin-panel') || el.closest('.kui-overlay')) return;
+        var t = el.dataset && (el.dataset.title || el.dataset.target);
+        if(el.classList.contains('card') || (el.dataset && el.dataset.title)){
+          if(t) kaweLogActivity('🎬','Clicou no conteúdo', t);
+          return;
+        }
+        if(el.classList.contains('nav-link')||el.classList.contains('sidebar-link')||el.classList.contains('gn-link')){
+          var lbl = (el.textContent||'').trim().slice(0,40);
+          if(lbl) kaweLogActivity('🧭','Navegou para', lbl);
+        }
+      }, true);
+    }
+    // sessão / páginas
+    if(!window.__kaweActBooted){
+      window.__kaweActBooted = true;
+      kaweLogActivity('🌐','Acessou o site', location.pathname);
+      window.addEventListener('beforeunload', function(){ try{ kaweLogActivity('👋','Saiu do site',''); }catch(e){} });
+    }
+  }
+
+  function boot(){ attachHistory(); installCapture(); renderLog(); pull(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(boot,600); });
+  else setTimeout(boot,600);
+  setTimeout(boot,2000); setTimeout(boot,4000);
+})();
+</script>
+<!-- ============ FIM KAWE PATCH v6 ============ -->
+
 </body>
 </html>
 
