@@ -10273,12 +10273,187 @@ function tryModeradorStartLogin(){
     }, 60);
   }
 }
+// CORRIGIDO: a tela de senha do moderador NÃO abre mais sozinha ao entrar no site.
+// Ela só aparece quando o usuário clica em MODERADOR / PAINEL ADMIN.
 (function(){
-  function boot(){ setTimeout(openModeradorStart, 200); }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
+  try {
+    var el = document.getElementById('mod-start-screen');
+    if (el) el.classList.remove('open');
+  } catch(e){}
 })();
 </script>
+
+<!-- ===== KAWE — SISTEMA DE PERFIL DO USUÁRIO (bloco aditivo) ===== -->
+<style id="kawe-profile-css">
+#kawe-profile-modal{position:fixed;inset:0;z-index:99998;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.92);padding:16px;}
+#kawe-profile-modal.open{display:flex;}
+#kawe-profile-modal .kp-box{width:min(94vw,520px);max-height:90vh;overflow-y:auto;border-radius:18px;padding:26px 24px;
+  background:linear-gradient(160deg,#0d1a12 0%,#0a0f0c 60%,#050705 100%);border:1px solid rgba(34,197,94,.45);
+  box-shadow:0 0 45px rgba(34,197,94,.25);}
+#kawe-profile-modal h2{margin:0 0 4px;color:#22c55e;font-family:'Outfit',sans-serif;font-size:20px;letter-spacing:.5px;}
+#kawe-profile-modal p.kp-sub{margin:0 0 18px;color:#9ca3af;font-size:12.5px;}
+#kawe-profile-modal label{display:block;font-size:11.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px;}
+#kawe-profile-modal input[type=text],#kawe-profile-modal input[type=email],#kawe-profile-modal input[type=tel],#kawe-profile-modal input[type=password]{
+  width:100%;padding:12px 14px;border-radius:10px;font-size:14px;outline:none;margin-bottom:14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(34,197,94,.3);color:#fff;}
+#kawe-profile-modal input:focus{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+.kp-avatar-row{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.kp-avatar{width:82px;height:82px;border-radius:50%;object-fit:cover;border:2px solid #22c55e;background:#111;box-shadow:0 0 18px rgba(34,197,94,.35);}
+.kp-avatar-actions{display:flex;flex-direction:column;gap:8px;}
+.kp-btn{padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:800;font-size:12.5px;font-family:'Outfit',sans-serif;text-transform:uppercase;letter-spacing:.5px;border:none;}
+.kp-btn-primary{background:#22c55e;color:#000;width:100%;padding:13px;}
+.kp-btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.2);color:#e5e7eb;}
+.kp-btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fca5a5;}
+.kp-close{float:right;background:transparent;border:1px solid rgba(255,255,255,.2);color:#e5e7eb;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700;}
+.kp-hint{font-size:11px;color:#6b7280;margin:-8px 0 14px;}
+</style>
+<div id="kawe-profile-modal">
+  <div class="kp-box">
+    <button class="kp-close" onclick="closeKaweProfile()">FECHAR</button>
+    <h2>&#128100; MEU PERFIL</h2>
+    <p class="kp-sub">Altere seus dados de conta a qualquer momento.</p>
+
+    <div class="kp-avatar-row">
+      <img id="kp-avatar-preview" class="kp-avatar" alt="Foto de perfil"
+        src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='82' height='82'><rect width='82' height='82' fill='%23111'/><circle cx='41' cy='32' r='14' fill='%2322c55e'/><ellipse cx='41' cy='70' rx='24' ry='16' fill='%2322c55e'/></svg>">
+      <div class="kp-avatar-actions">
+        <input type="file" id="kp-photo-input" accept="image/*" style="display:none" onchange="kaweProfilePickPhoto(this)">
+        <button class="kp-btn kp-btn-ghost" onclick="document.getElementById('kp-photo-input').click()">Trocar foto</button>
+        <button class="kp-btn kp-btn-danger" onclick="kaweProfileRemovePhoto()">Remover foto</button>
+      </div>
+    </div>
+
+    <label>Nome de usuário</label>
+    <input type="text" id="kp-username" placeholder="Seu nome de usuário">
+
+    <label>Nome completo</label>
+    <input type="text" id="kp-fullname" placeholder="Seu nome completo">
+
+    <label>E-mail</label>
+    <input type="email" id="kp-email" placeholder="seu@email.com">
+
+    <label>Telefone</label>
+    <input type="tel" id="kp-phone" placeholder="(00) 00000-0000">
+
+    <label>Nova senha</label>
+    <input type="password" id="kp-password" placeholder="Deixe em branco para manter a atual">
+    <label>Confirmar nova senha</label>
+    <input type="password" id="kp-password2" placeholder="Repita a nova senha">
+    <div class="kp-hint">A senha só é alterada se os dois campos forem preenchidos e iguais.</div>
+
+    <button class="kp-btn kp-btn-primary" onclick="saveKaweProfile()">SALVAR ALTERAÇÕES</button>
+  </div>
+</div>
+<script>
+(function(){
+  function _users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]'); }catch(e){ return []; } }
+  function _saveUsers(l){ try{ localStorage.setItem('kawe_users', JSON.stringify(l)); }catch(e){} }
+  function _msg(t){ if(typeof toast==='function') toast(t); else alert(t); }
+
+  window.kaweCurrentUser = function(){
+    var users=_users(), id=null;
+    try{ id = localStorage.getItem('kawe_current_user_id'); }catch(e){}
+    var u = id ? users.find(function(x){ return x.id===id; }) : null;
+    if(!u){
+      var name=null; try{ name = localStorage.getItem('kawe_user_name'); }catch(e){}
+      if(name) u = users.find(function(x){ return (x.username||'')===name; });
+    }
+    return u||null;
+  };
+
+  window.openKaweProfile = function(){
+    var u = window.kaweCurrentUser();
+    if(!u){ _msg('\u26A0\uFE0F Faça login para acessar seu perfil'); return; }
+    document.getElementById('kp-username').value = u.username||'';
+    document.getElementById('kp-fullname').value = u.fullname||'';
+    document.getElementById('kp-email').value    = u.email||'';
+    document.getElementById('kp-phone').value    = u.phone||'';
+    document.getElementById('kp-password').value = '';
+    document.getElementById('kp-password2').value= '';
+    if(u.photo) document.getElementById('kp-avatar-preview').src = u.photo;
+    window._kpPhoto = u.photo || '';
+    document.getElementById('kawe-profile-modal').classList.add('open');
+  };
+  window.closeKaweProfile = function(){
+    document.getElementById('kawe-profile-modal').classList.remove('open');
+  };
+  window.kaweProfilePickPhoto = function(input){
+    var f = input.files && input.files[0]; if(!f) return;
+    if(f.size > 2*1024*1024){ _msg('\u26A0\uFE0F Imagem muito grande (máx. 2MB)'); return; }
+    var r = new FileReader();
+    r.onload = function(e){
+      window._kpPhoto = e.target.result;
+      document.getElementById('kp-avatar-preview').src = window._kpPhoto;
+    };
+    r.readAsDataURL(f);
+  };
+  window.kaweProfileRemovePhoto = function(){
+    window._kpPhoto = '';
+    document.getElementById('kp-avatar-preview').src =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='82' height='82'><rect width='82' height='82' fill='%23111'/><circle cx='41' cy='32' r='14' fill='%2322c55e'/><ellipse cx='41' cy='70' rx='24' ry='16' fill='%2322c55e'/></svg>";
+  };
+  window.saveKaweProfile = function(){
+    var u = window.kaweCurrentUser(); if(!u){ _msg('\u26A0\uFE0F Faça login primeiro'); return; }
+    var users = _users();
+    var uname = (document.getElementById('kp-username').value||'').trim();
+    var email = (document.getElementById('kp-email').value||'').trim().toLowerCase();
+    var full  = (document.getElementById('kp-fullname').value||'').trim();
+    var phone = (document.getElementById('kp-phone').value||'').trim();
+    var p1 = document.getElementById('kp-password').value||'';
+    var p2 = document.getElementById('kp-password2').value||'';
+
+    if(!uname){ _msg('\u26A0\uFE0F Informe um nome de usuário'); return; }
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ _msg('\u26A0\uFE0F E-mail inválido'); return; }
+    if(users.some(function(x){ return x.id!==u.id && (x.username||'').toLowerCase()===uname.toLowerCase(); })){
+      _msg('\u26A0\uFE0F Este nome de usuário já está em uso'); return; }
+    if(email && users.some(function(x){ return x.id!==u.id && (x.email||'').toLowerCase()===email; })){
+      _msg('\u26A0\uFE0F Este e-mail já está em uso'); return; }
+    if(p1 || p2){
+      if(p1 !== p2){ _msg('\u26A0\uFE0F As senhas não coincidem'); return; }
+      if(p1.length < 4){ _msg('\u26A0\uFE0F A senha deve ter ao menos 4 caracteres'); return; }
+    }
+
+    var idx = users.findIndex(function(x){ return x.id===u.id; });
+    if(idx < 0){ users.push(u); idx = users.length-1; }
+    users[idx].username = uname;
+    users[idx].fullname = full;
+    users[idx].email    = email;
+    users[idx].phone    = phone;
+    users[idx].photo    = window._kpPhoto || '';
+    if(p1) users[idx].password = p1;
+    users[idx].updatedAt = new Date().toISOString();
+    _saveUsers(users);
+    try{
+      localStorage.setItem('kawe_user_name', uname);
+      localStorage.setItem('kawe_current_user_id', users[idx].id);
+      var ku = JSON.parse(localStorage.getItem('kaweUser')||'null');
+      if(ku){ ku.name = uname; if(email) ku.identifier = email; localStorage.setItem('kaweUser', JSON.stringify(ku)); }
+    }catch(e){}
+    if(typeof renderAdminUsers === 'function'){ try{ renderAdminUsers(); }catch(e){} }
+    _msg('\u2705 Perfil atualizado com sucesso');
+    window.closeKaweProfile();
+  };
+
+  // Adiciona o atalho "MEU PERFIL" no menu lateral
+  function injectLink(){
+    var menu = document.querySelector('#sidebar .sidebar-menu');
+    if(!menu || document.getElementById('kawe-profile-link')) return;
+    var el = document.createElement('div');
+    el.className = 'sidebar-link';
+    el.id = 'kawe-profile-link';
+    el.style.color = '#22c55e';
+    el.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.34 0-10 1.67-10 5v3h20v-3c0-3.33-6.66-5-10-5z"/></svg> MEU PERFIL';
+    el.onclick = function(){ if(typeof toggleSidebar==='function'){ try{ toggleSidebar(); }catch(e){} } window.openKaweProfile(); };
+    var first = menu.firstElementChild;
+    if(first && first.nextElementSibling) menu.insertBefore(el, first.nextElementSibling);
+    else menu.appendChild(el);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', injectLink);
+  else injectLink();
+  [500,1500,3000].forEach(function(ms){ setTimeout(injectLink, ms); });
+})();
+</script>
+
 </body>
 </html>
 
