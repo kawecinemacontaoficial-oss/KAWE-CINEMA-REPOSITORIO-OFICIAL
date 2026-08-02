@@ -1719,6 +1719,70 @@ body.kawe-xmas .card::after{content:"🎅";position:absolute;top:-10px;right:-12
 body.kawe-xmas .card::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;z-index:4;border-radius:8px 8px 0 0;
  background:repeating-linear-gradient(90deg,#c62828 0 10px,#fff 10px 20px);opacity:.9}
 body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
+
+/* ================= TEMA HALLOWEEN ================= */
+body.kawe-hallow{--hw-orange:#ff7a18;--hw-purple:#7b2ff7}
+body.kawe-hallow::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2147481000;background:
+ radial-gradient(circle at 10% 6%, rgba(255,122,24,.18), transparent 45%),
+ radial-gradient(circle at 90% 8%, rgba(123,47,247,.20), transparent 48%);}
+body.kawe-hallow #kawe-garland{display:flex;background:repeating-linear-gradient(90deg,#ff7a18 0 18px,#0a0a0a 18px 36px,#7b2ff7 36px 54px)}
+body.kawe-hallow button::after,body.kawe-hallow .btn::after{content:"🎃";position:absolute;top:-10px;right:-6px;font-size:13px;pointer-events:none;filter:drop-shadow(0 0 5px #ff7a18)}
+body.kawe-hallow button:nth-of-type(2n)::after,body.kawe-hallow .btn:nth-of-type(2n)::after{content:"🕷️"}
+body.kawe-hallow button:nth-of-type(3n)::after,body.kawe-hallow .btn:nth-of-type(3n)::after{content:"👻"}
+body.kawe-hallow button,body.kawe-hallow .btn,body.kawe-hallow .float-btn,body.kawe-hallow .sidebar a{position:relative}
+body.kawe-hallow .sidebar a::after{content:"🕸️";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+body.kawe-hallow .card{position:relative;overflow:visible}
+body.kawe-hallow .card::after{content:"🎃";position:absolute;top:-10px;right:-12px;font-size:24px;z-index:5;filter:drop-shadow(0 2px 6px rgba(255,122,24,.7));animation:kawe-float-a 2.8s ease-in-out infinite}
+body.kawe-hallow .card::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;z-index:4;border-radius:8px 8px 0 0;
+ background:repeating-linear-gradient(90deg,#ff7a18 0 10px,#1a0a24 10px 20px);opacity:.9}
+body.kawe-hallow .kawe-notif{border-color:#ff7a18;border-left-color:#7b2ff7}
+
+/* ================= TEMA DIA DOS NAMORADOS ================= */
+body.kawe-love{--lv-pink:#ff4d8d;--lv-red:#e01e5a}
+body.kawe-love::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2147481000;background:
+ radial-gradient(circle at 15% 8%, rgba(255,77,141,.18), transparent 45%),
+ radial-gradient(circle at 85% 10%, rgba(224,30,90,.18), transparent 48%);}
+body.kawe-love #kawe-garland{display:flex;background:repeating-linear-gradient(90deg,#ff4d8d 0 16px,#ffd9e6 16px 32px,#e01e5a 32px 48px)}
+body.kawe-love button,body.kawe-love .btn,body.kawe-love .float-btn,body.kawe-love .sidebar a{position:relative}
+body.kawe-love button::after,body.kawe-love .btn::after{content:"❤️";position:absolute;top:-9px;right:-6px;font-size:13px;pointer-events:none;filter:drop-shadow(0 0 5px #ff4d8d)}
+body.kawe-love button:nth-of-type(2n)::after,body.kawe-love .btn:nth-of-type(2n)::after{content:"💌"}
+body.kawe-love button:nth-of-type(3n)::after,body.kawe-love .btn:nth-of-type(3n)::after{content:"🌹"}
+body.kawe-love .sidebar a::after{content:"💕";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+body.kawe-love .card{position:relative;overflow:visible}
+body.kawe-love .card::after{content:"💖";position:absolute;top:-10px;right:-12px;font-size:24px;z-index:5;filter:drop-shadow(0 2px 6px rgba(255,77,141,.7));animation:kawe-beat 1.4s ease-in-out infinite}
+body.kawe-love .card::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;z-index:4;border-radius:8px 8px 0 0;
+ background:repeating-linear-gradient(90deg,#ff4d8d 0 10px,#ffd9e6 10px 20px);opacity:.9}
+body.kawe-love .kawe-notif{border-color:#ff4d8d;border-left-color:#e01e5a}
+@keyframes kawe-beat{0%,100%{transform:scale(1)}45%{transform:scale(1.22)}70%{transform:scale(.96)}}
+
+/* ================= TEMA SÃO JOÃO ================= */
+body.kawe-sjoao{--sj-yellow:#ffd21e;--sj-red:#e63946}
+body.kawe-sjoao::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2147481000;background:
+ radial-gradient(circle at 12% 10%, rgba(255,210,30,.16), transparent 45%),
+ radial-gradient(circle at 88% 12%, rgba(230,57,70,.16), transparent 48%);}
+#kawe-bandeirinhas{display:none;position:fixed;top:0;left:0;right:0;height:26px;z-index:2147481300;pointer-events:none;overflow:hidden}
+body.kawe-sjoao #kawe-bandeirinhas{display:block}
+#kawe-bandeirinhas i{position:absolute;top:0;width:20px;height:20px;display:block;
+ clip-path:polygon(0 0,100% 0,100% 60%,50% 100%,0 60%);animation:kawe-wave 2.4s ease-in-out infinite}
+@keyframes kawe-wave{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+body.kawe-sjoao button,body.kawe-sjoao .btn,body.kawe-sjoao .float-btn,body.kawe-sjoao .sidebar a{position:relative}
+body.kawe-sjoao button::after,body.kawe-sjoao .btn::after{content:"🌽";position:absolute;top:-9px;right:-6px;font-size:13px;pointer-events:none;filter:drop-shadow(0 0 5px #ffd21e)}
+body.kawe-sjoao button:nth-of-type(2n)::after,body.kawe-sjoao .btn:nth-of-type(2n)::after{content:"🎆"}
+body.kawe-sjoao button:nth-of-type(3n)::after,body.kawe-sjoao .btn:nth-of-type(3n)::after{content:"🪅"}
+body.kawe-sjoao .sidebar a::after{content:"🔥";position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+body.kawe-sjoao .card{position:relative;overflow:visible}
+body.kawe-sjoao .card::after{content:"🤠";position:absolute;top:-10px;right:-12px;font-size:24px;z-index:5;filter:drop-shadow(0 2px 6px rgba(255,210,30,.7));animation:kawe-float-a 2.6s ease-in-out infinite}
+body.kawe-sjoao .card::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;z-index:4;border-radius:8px 8px 0 0;
+ background:repeating-linear-gradient(45deg,#ffd21e 0 8px,#e63946 8px 16px,#2a9d8f 16px 24px);opacity:.9}
+body.kawe-sjoao .kawe-notif{border-color:#ffd21e;border-left-color:#e63946}
+
+/* ===== CAMADA DE PARTÍCULAS GENÉRICA (usada pelos temas) ===== */
+#kawe-fx{position:fixed;inset:0;pointer-events:none;z-index:2147481200;overflow:hidden;display:none}
+body.kawe-hallow #kawe-fx,body.kawe-love #kawe-fx,body.kawe-sjoao #kawe-fx{display:block}
+.kawe-particle{position:absolute;top:-8vh;animation:kawe-fall linear infinite}
+@keyframes kawe-float-a{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(6deg)}}
+.ktm-grid{grid-template-columns:1fr 1fr}
+
 </style>
 
 
@@ -1742,6 +1806,8 @@ body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
 
 <div id="kawe-notif-stack"></div>
 <div id="kawe-snow"></div>
+<div id="kawe-fx"></div>
+<div id="kawe-bandeirinhas"></div>
 <div id="kawe-garland"></div>
 <button id="kawe-theme-fab" type="button" title="Temas" aria-label="Temas">🎨</button>
 <div id="kawe-theme-modal">
@@ -1751,7 +1817,11 @@ body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
     <div class="ktm-grid">
       <div class="ktm-card" data-theme="default"><span class="ktm-emo">🟢</span><b>Padrão</b><small>Verde &amp; Preto</small></div>
       <div class="ktm-card" data-theme="xmas"><span class="ktm-emo">🎄</span><b>Natal</b><small>Neve, presentes e Papai Noel</small></div>
+      <div class="ktm-card" data-theme="hallow"><span class="ktm-emo">🎃</span><b>Halloween</b><small>Abóboras, morcegos e fantasmas</small></div>
+      <div class="ktm-card" data-theme="love"><span class="ktm-emo">❤️</span><b>Dia dos Namorados</b><small>Corações, rosas e cartinhas</small></div>
+      <div class="ktm-card" data-theme="sjoao"><span class="ktm-emo">🌽</span><b>São João</b><small>Bandeirinhas, fogueira e forró</small></div>
     </div>
+    <button class="ktm-paintbtn" type="button" id="kawe-paint-open">🖌️ PERSONALIZAR BOTÕES</button>
     <button class="ktm-close" type="button" id="kawe-wall-open" style="margin-top:14px;background:rgba(23,217,74,.12);color:#17d94a">🖼️ PAPEL DE PAREDE</button>
     <button class="ktm-close" type="button">Fechar</button>
   </div>
@@ -1802,9 +1872,50 @@ body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
   /* ---------- TEMAS ---------- */
   var KEY='kawe_theme';
   function currentTheme(){try{return localStorage.getItem(KEY)||'default'}catch(_){return 'default'}}
+  var THEMES={
+    'default':{cls:'',msg:'Tema padrão aplicado'},
+    'xmas'  :{cls:'kawe-xmas',  msg:'Tema de Natal ativado! 🎄 Boas festas!',        chars:['❄','❅','❆','•','✻'], color:'#fff'},
+    'hallow':{cls:'kawe-hallow',msg:'Tema Halloween ativado! 🎃 Doces ou travessuras?', chars:['🦇','🎃','👻','🕷️','🍬'], color:'#ff7a18'},
+    'love'  :{cls:'kawe-love',  msg:'Tema Dia dos Namorados ativado! 💖',            chars:['❤️','💕','🌹','💌','✨'], color:'#ff4d8d'},
+    'sjoao' :{cls:'kawe-sjoao', msg:'Tema São João ativado! 🌽 Arraiaá do KAWE!',      chars:['🌽','🎆','🥅','🎶','🔥'], color:'#ffd21e'}
+  };
   function applyTheme(t){
-    document.body.classList.toggle('kawe-xmas',t==='xmas');
-    if(t==='xmas')buildSnow();else clearSnow();
+    var cfg=THEMES[t]||THEMES['default'];
+    Object.keys(THEMES).forEach(function(k){
+      var c=THEMES[k].cls; if(c) document.body.classList.toggle(c,k===t);
+    });
+    clearSnow(); clearFX(); clearFlags();
+    if(t==='xmas'){buildSnow();}
+    else if(cfg.chars){buildFX(cfg.chars);}
+    if(t==='sjoao') buildFlags();
+  }
+  function clearFX(){var b=document.getElementById('kawe-fx');if(b)b.innerHTML='';}
+  function buildFX(chars){
+    var box=document.getElementById('kawe-fx');if(!box)return;box.innerHTML='';
+    for(var i=0;i<42;i++){
+      var f=document.createElement('span');
+      f.className='kawe-particle';
+      f.textContent=chars[i%chars.length];
+      f.style.left=(Math.random()*100)+'vw';
+      f.style.fontSize=(10+Math.random()*18)+'px';
+      f.style.animationDuration=(7+Math.random()*11)+'s';
+      f.style.animationDelay=(-Math.random()*14)+'s';
+      f.style.opacity=(0.35+Math.random()*0.6);
+      box.appendChild(f);
+    }
+  }
+  function clearFlags(){var b=document.getElementById('kawe-bandeirinhas');if(b)b.innerHTML='';}
+  function buildFlags(){
+    var box=document.getElementById('kawe-bandeirinhas');if(!box)return;box.innerHTML='';
+    var cols=['#ffd21e','#e63946','#2a9d8f','#457b9d','#f4a261'];
+    var n=Math.ceil(window.innerWidth/22)+2;
+    for(var i=0;i<n;i++){
+      var f=document.createElement('i');
+      f.style.left=(i*22)+'px';
+      f.style.background=cols[i%cols.length];
+      f.style.animationDelay=(i*0.08)+'s';
+      box.appendChild(f);
+    }
   }
   var snowBuilt=false;
   function buildSnow(){
@@ -1826,8 +1937,9 @@ body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
   function clearSnow(){var b=document.getElementById('kawe-snow');if(b)b.innerHTML='';snowBuilt=false;}
 
   function boot(){
-    applyTheme(currentTheme());
-    if(currentTheme()==='xmas'){setTimeout(function(){kaweNotify('Tema de Natal ativado! 🎄 Boas festas!','🎁','TEMA')},900);}
+    var t=currentTheme();
+    applyTheme(t);
+    if(t!=='default'&&THEMES[t]){setTimeout(function(){kaweNotify(THEMES[t].msg,'🎨','TEMA')},900);}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 
@@ -1928,12 +2040,292 @@ body.kawe-xmas .kawe-notif{border-color:#c62828;border-left-color:#c62828}
     card.addEventListener('click',function(){
       var t=card.dataset.theme;
       try{localStorage.setItem(KEY,t)}catch(_){}
-      kaweNotify(t==='xmas'?'Tema de Natal aplicado, reiniciando...':'Tema padrão aplicado, reiniciando...','🔄','TEMA');
+      var nm={'default':'Padrão','xmas':'Natal','hallow':'Halloween','love':'Dia dos Namorados','sjoao':'São João'}[t]||t;
+      kaweNotify('Tema '+nm+' aplicado, reiniciando...','🔄','TEMA');
       setTimeout(function(){location.reload()},900);
     });
   });
 })();
 </script>
+<!--KAWE_PAINT_STUDIO_START-->
+<style id="kawe-paint-css">
+#kawe-paint-modal{position:fixed;inset:0;z-index:2147482700;background:rgba(0,0,0,.82);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:16px}
+#kawe-paint-modal.open{display:flex}
+.kps-box{width:min(620px,96vw);max-height:90vh;overflow:auto;background:linear-gradient(160deg,#070c07,#0d160d);border:1px solid #17d94a;border-radius:18px;padding:18px;color:#e7ffe9;font-family:system-ui,sans-serif;box-shadow:0 0 44px rgba(23,217,74,.25)}
+.kps-box h3{margin:0 0 4px;color:#17d94a;font-size:18px;letter-spacing:1px}
+.kps-box p.kps-sub{margin:0 0 14px;font-size:12.5px;opacity:.75}
+.kps-sec{margin-top:16px}
+.kps-sec>b{display:block;font-size:11.5px;letter-spacing:1px;text-transform:uppercase;color:#17d94a;margin-bottom:8px}
+.kps-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.kps-tool{cursor:pointer;border:1px solid rgba(23,217,74,.3);background:#050805;border-radius:12px;padding:9px 4px;text-align:center;font-size:10.5px;font-weight:700;transition:.18s;color:#cfe9d3}
+.kps-tool span{display:block;font-size:20px;margin-bottom:3px}
+.kps-tool:hover{transform:translateY(-2px);border-color:#17d94a}
+.kps-tool.active{border-color:#17d94a;background:rgba(23,217,74,.14);color:#17d94a;box-shadow:0 0 12px rgba(23,217,74,.28)}
+.kps-pal-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.kps-pal-tab{cursor:pointer;font-size:11px;font-weight:700;padding:6px 10px;border-radius:20px;border:1px solid rgba(23,217,74,.28);background:transparent;color:#cfe9d3}
+.kps-pal-tab.active{background:rgba(23,217,74,.16);border-color:#17d94a;color:#17d94a}
+.kps-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:7px}
+.kps-sw{height:38px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.18s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.kps-sw:hover{transform:scale(1.09)}
+.kps-sw.active{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.45)}
+.kps-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.kps-lbl{font-size:11.5px;opacity:.85;min-width:120px}
+.kps-range{flex:1;min-width:130px;accent-color:#17d94a}
+.kps-pick{width:46px;height:34px;border:1px solid rgba(23,217,74,.4);background:#050805;border-radius:8px;padding:2px;cursor:pointer}
+.kps-txt{flex:1;min-width:120px;padding:8px 10px;border-radius:9px;border:1px solid rgba(23,217,74,.3);background:#050805;color:#e7ffe9;font-size:12px}
+.kps-preview{margin-top:14px;border:1px dashed rgba(23,217,74,.35);border-radius:14px;padding:16px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;background:repeating-conic-gradient(#0b0f0b 0% 25%,#070a07 0% 50%) 50%/18px 18px}
+.kps-actions{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+.kps-btn{flex:1;min-width:130px;padding:11px;border-radius:10px;border:1px solid #17d94a;background:rgba(23,217,74,.14);color:#17d94a;font-weight:800;cursor:pointer;font-size:12.5px}
+.kps-btn.ghost{border-color:rgba(23,217,74,.32);background:transparent;color:#cfe9d3}
+.kps-btn.danger{border-color:rgba(255,80,80,.5);background:rgba(255,80,80,.1);color:#ff8a8a}
+.kps-hint{font-size:11px;opacity:.6;margin-top:8px;line-height:1.45}
+.ktm-paintbtn{margin-top:14px;width:100%;padding:10px;border-radius:10px;border:1px solid #17d94a;background:linear-gradient(90deg,rgba(23,217,74,.18),rgba(123,47,247,.22));color:#17d94a;cursor:pointer;font-weight:800}
+.kps-preview button::after,.kps-preview .btn::after{content:none !important}
+</style>
+
+<div id="kawe-paint-modal">
+  <div class="kps-box">
+    <h3>🖌️ ESTÚDIO DE PINTURA DOS BOTÕES</h3>
+    <p class="kps-sub">Escolha um material de pintura, uma cor de qualquer paleta e pinte os botões do site do jeito que você quiser.</p>
+
+    <div class="kps-sec">
+      <b>Materiais de pintura</b>
+      <div class="kps-tools" id="kps-tools"></div>
+    </div>
+
+    <div class="kps-sec">
+      <b>Paletas de cores</b>
+      <div class="kps-pal-tabs" id="kps-pal-tabs"></div>
+      <div class="kps-swatches" id="kps-swatches"></div>
+      <div class="kps-row">
+        <span class="kps-lbl">Cor livre (conta-gotas)</span>
+        <input type="color" class="kps-pick" id="kps-pick" value="#17d94a">
+        <input type="text" class="kps-txt" id="kps-hex" placeholder="#17d94a ou rgb(...)">
+      </div>
+    </div>
+
+    <div class="kps-sec">
+      <b>Ajustes finos</b>
+      <div class="kps-row"><span class="kps-lbl">Arredondar cantos</span><input type="range" class="kps-range" id="kps-radius" min="0" max="40" value="10"></div>
+      <div class="kps-row"><span class="kps-lbl">Brilho / neon</span><input type="range" class="kps-range" id="kps-glow" min="0" max="40" value="0"></div>
+      <div class="kps-row"><span class="kps-lbl">Espessura do contorno</span><input type="range" class="kps-range" id="kps-bw" min="0" max="6" value="1"></div>
+      <div class="kps-row"><span class="kps-lbl">Inclinação do degradê</span><input type="range" class="kps-range" id="kps-angle" min="0" max="360" value="135"></div>
+      <div class="kps-row"><span class="kps-lbl">Transparência</span><input type="range" class="kps-range" id="kps-alpha" min="20" max="100" value="100"></div>
+    </div>
+
+    <div class="kps-sec">
+      <b>Pré-visualização</b>
+      <div class="kps-preview" id="kps-preview">
+        <button type="button" class="btn">BOTÃO EXEMPLO</button>
+        <button type="button" class="btn">▶ ASSISTIR</button>
+        <button type="button" class="btn">SALVAR</button>
+      </div>
+      <div class="kps-hint" id="kps-hint">Material selecionado: 🖌️ Pincel — pinta o fundo dos botões.</div>
+    </div>
+
+    <div class="kps-actions">
+      <button class="kps-btn" type="button" id="kps-save">✅ APLICAR NO SITE</button>
+      <button class="kps-btn ghost" type="button" id="kps-random">🎲 SURPREENDA-ME</button>
+      <button class="kps-btn danger" type="button" id="kps-reset">🧽 APAGAR TUDO</button>
+      <button class="kps-btn ghost" type="button" id="kps-close">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script id="kawe-paint-js">
+(function(){
+  var LS='kawe_btnskin_v1';
+  var DEF={bg1:'',bg2:'',grad:false,text:'',border:'',glowColor:'',radius:10,glow:0,bw:1,angle:135,alpha:100};
+  function notify(m,i,t){ if(window.kaweNotify) window.kaweNotify(m,i||'🖌️',t||'BOTÕES'); }
+  function load(){ try{ return Object.assign({},DEF,JSON.parse(localStorage.getItem(LS)||'{}')); }catch(_){ return Object.assign({},DEF); } }
+  var S=load();
+
+  /* ---- paletas ---- */
+  var PALETTES=[
+    {n:'Neon',    c:['#17d94a','#00e5ff','#ff00e0','#faff00','#ff6b00','#00ff9d','#7b2ff7','#ff1744']},
+    {n:'Pastel',  c:['#ffd6e0','#c9f7d4','#cde5ff','#fff3c4','#e6d9ff','#ffe0c7','#d7f9f7','#f3e8d8']},
+    {n:'Cyber',   c:['#0ff1ce','#ff2e97','#5f27cd','#00d2d3','#1e272e','#48dbfb','#341f97','#c8d6e5']},
+    {n:'Terra',   c:['#8d6e63','#a1887f','#6d4c41','#bcaaa4','#4e342e','#c5a880','#7f5539','#ddb892']},
+    {n:'Metálico',c:['#c0c0c0','#d4af37','#b08d57','#8e8e8e','#e5e4e2','#cd7f32','#4f4f4f','#f7e7ce']},
+    {n:'Doces',   c:['#ff6f91','#ff9671','#ffc75f','#f9f871','#845ec2','#d65db1','#2c73d2','#00c9a7']},
+    {n:'Oceano',  c:['#023e8a','#0077b6','#0096c7','#00b4d8','#48cae4','#90e0ef','#ade8f4','#caf0f8']},
+    {n:'Fogo',    c:['#03071e','#370617','#6a040f','#9d0208','#d00000','#dc2f02','#f48c06','#ffba08']},
+    {n:'Floresta',c:['#081c15','#1b4332','#2d6a4f','#40916c','#52b788','#74c69d','#95d5b2','#b7e4c7']},
+    {n:'Halloween',c:['#ff7a18','#7b2ff7','#0a0a0a','#39ff14','#4b0082','#ffb700','#1a0a24','#e0e0e0']},
+    {n:'Namorados',c:['#ff4d8d','#e01e5a','#ffd9e6','#c9184a','#ff8fab','#800f2f','#ffb3c1','#fff0f3']},
+    {n:'São João',c:['#ffd21e','#e63946','#2a9d8f','#457b9d','#f4a261','#e76f51','#8ab17d','#fefae0']},
+    {n:'Cinza',   c:['#ffffff','#e0e0e0','#9e9e9e','#616161','#424242','#212121','#111111','#000000']}
+  ];
+  var TOOLS=[
+    {id:'brush',  emo:'🖌️', n:'Pincel',    h:'pinta o fundo dos botões.'},
+    {id:'bucket', emo:'🪣', n:'Balde',     h:'preenche o fundo com um degradê (2ª cor).'},
+    {id:'spray',  emo:'🧴', n:'Spray',     h:'aplica a cor com transparência suave no fundo.'},
+    {id:'pen',    emo:'✒️', n:'Contorno',  h:'pinta apenas a borda dos botões.'},
+    {id:'marker', emo:'🖍️', n:'Texto',     h:'pinta o texto/ícone dos botões.'},
+    {id:'glow',   emo:'✨', n:'Brilho',    h:'define a cor do brilho neon ao redor.'},
+    {id:'roller', emo:'🎨', n:'Rolo',      h:'pinta fundo + borda + brilho com a mesma cor.'},
+    {id:'eraser', emo:'🧽', n:'Borracha',  h:'apaga a pintura do que você clicar na paleta.'}
+  ];
+  var tool='brush', pal=0, curColor='#17d94a';
+
+  function hexToRgba(c,a){
+    if(a>=100) return c;
+    var m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(c);
+    if(!m) return c;
+    return 'rgba('+parseInt(m[1],16)+','+parseInt(m[2],16)+','+parseInt(m[3],16)+','+(a/100)+')';
+  }
+
+  function cssFor(st,sel){
+    var bg='';
+    if(st.grad&&st.bg1&&st.bg2) bg='linear-gradient('+st.angle+'deg,'+hexToRgba(st.bg1,st.alpha)+','+hexToRgba(st.bg2,st.alpha)+')';
+    else if(st.bg1) bg=hexToRgba(st.bg1,st.alpha);
+    var d=[];
+    if(bg) d.push('background:'+bg+' !important');
+    if(st.text) d.push('color:'+st.text+' !important');
+    if(st.border) d.push('border:'+(st.bw||1)+'px solid '+st.border+' !important');
+    d.push('border-radius:'+st.radius+'px !important');
+    if(st.glow>0) d.push('box-shadow:0 0 '+st.glow+'px '+(st.glowColor||st.bg1||'#17d94a')+' !important');
+    if(!d.length) return '';
+    return sel+'{'+d.join(';')+';}';
+  }
+
+  var LIVE_SEL='body.kawe-btnskin button,body.kawe-btnskin .btn,body.kawe-btnskin .float-btn,body.kawe-btnskin input[type="submit"]';
+  var EXCL='#kawe-paint-modal,#kawe-theme-modal,#kawe-wall-modal,#kawe-theme-fab,#kawe-notif-stack';
+  function applyLive(st){
+    var tag=document.getElementById('kawe-btnskin-style');
+    if(!tag){ tag=document.createElement('style'); tag.id='kawe-btnskin-style'; document.head.appendChild(tag); }
+    var css=cssFor(st,LIVE_SEL);
+    if(!css){ tag.textContent=''; document.body.classList.remove('kawe-btnskin'); return; }
+    /* protege os painéis do próprio sistema */
+    css+='\n'+EXCL.split(',').map(function(x){return x+' button,'+x+' .btn,'+x+'.ktm-close';}).join(',')+
+      '{background:initial;color:initial;border-radius:initial;box-shadow:initial}';
+    tag.textContent=css;
+    document.body.classList.add('kawe-btnskin');
+  }
+  function applyPreview(st){
+    var tag=document.getElementById('kawe-btnskin-preview');
+    if(!tag){ tag=document.createElement('style'); tag.id='kawe-btnskin-preview'; document.head.appendChild(tag); }
+    tag.textContent=cssFor(st,'#kps-preview button')||'#kps-preview button{}';
+  }
+
+  /* ---- UI ---- */
+  var modal=document.getElementById('kawe-paint-modal');
+  var toolBox=document.getElementById('kps-tools');
+  var tabBox=document.getElementById('kps-pal-tabs');
+  var swBox=document.getElementById('kps-swatches');
+  var hint=document.getElementById('kps-hint');
+
+  TOOLS.forEach(function(t){
+    var d=document.createElement('div');
+    d.className='kps-tool'+(t.id===tool?' active':'');
+    d.dataset.id=t.id;
+    d.innerHTML='<span>'+t.emo+'</span>'+t.n;
+    d.addEventListener('click',function(){
+      tool=t.id;
+      toolBox.querySelectorAll('.kps-tool').forEach(function(x){x.classList.toggle('active',x.dataset.id===tool)});
+      hint.textContent='Material selecionado: '+t.emo+' '+t.n+' — '+t.h;
+    });
+    toolBox.appendChild(d);
+  });
+
+  PALETTES.forEach(function(p,i){
+    var b=document.createElement('button');
+    b.type='button'; b.className='kps-pal-tab'+(i===0?' active':''); b.textContent=p.n;
+    b.addEventListener('click',function(){ pal=i; drawTabs(); drawSwatches(); });
+    tabBox.appendChild(b);
+  });
+  function drawTabs(){ tabBox.querySelectorAll('.kps-pal-tab').forEach(function(b,i){b.classList.toggle('active',i===pal)}); }
+  function drawSwatches(){
+    swBox.innerHTML='';
+    PALETTES[pal].c.forEach(function(c){
+      var d=document.createElement('div');
+      d.className='kps-sw'+(c===curColor?' active':'');
+      d.style.background=c; d.title=c;
+      d.addEventListener('click',function(){ paintWith(c); });
+      swBox.appendChild(d);
+    });
+  }
+
+  function paintWith(c){
+    curColor=c;
+    document.getElementById('kps-pick').value=/^#[0-9a-f]{6}$/i.test(c)?c:'#17d94a';
+    document.getElementById('kps-hex').value=c;
+    if(tool==='brush'){ S.bg1=c; S.grad=false; }
+    else if(tool==='bucket'){ if(!S.bg1){S.bg1=c;} else {S.bg2=c; S.grad=true;} }
+    else if(tool==='spray'){ S.bg1=c; S.grad=false; S.alpha=Math.min(S.alpha,70); document.getElementById('kps-alpha').value=S.alpha; }
+    else if(tool==='pen'){ S.border=c; if(!S.bw) S.bw=1, document.getElementById('kps-bw').value=1; }
+    else if(tool==='marker'){ S.text=c; }
+    else if(tool==='glow'){ S.glowColor=c; if(!S.glow){S.glow=18; document.getElementById('kps-glow').value=18;} }
+    else if(tool==='roller'){ S.bg1=c; S.grad=false; S.border=c; S.glowColor=c; if(!S.glow){S.glow=16; document.getElementById('kps-glow').value=16;} }
+    else if(tool==='eraser'){ S.bg1=''; S.bg2=''; S.grad=false; S.border=''; S.text=''; S.glowColor=''; S.glow=0; S.alpha=100;
+      document.getElementById('kps-glow').value=0; document.getElementById('kps-alpha').value=100; }
+    drawSwatches(); applyPreview(S);
+  }
+
+  function bindRange(id,key){
+    var el=document.getElementById(id);
+    el.addEventListener('input',function(){ S[key]=+el.value; applyPreview(S); });
+  }
+  bindRange('kps-radius','radius'); bindRange('kps-glow','glow');
+  bindRange('kps-bw','bw'); bindRange('kps-angle','angle'); bindRange('kps-alpha','alpha');
+
+  document.getElementById('kps-pick').addEventListener('input',function(){ paintWith(this.value); });
+  document.getElementById('kps-hex').addEventListener('change',function(){ var v=this.value.trim(); if(v) paintWith(v); });
+
+  document.getElementById('kps-random').addEventListener('click',function(){
+    var p=PALETTES[Math.floor(Math.random()*PALETTES.length)];
+    var a=p.c[Math.floor(Math.random()*p.c.length)], b=p.c[Math.floor(Math.random()*p.c.length)];
+    S.bg1=a; S.bg2=b; S.grad=true; S.angle=Math.floor(Math.random()*360);
+    S.border=b; S.text='#ffffff'; S.glowColor=a; S.glow=16; S.radius=Math.floor(Math.random()*26); S.alpha=100;
+    document.getElementById('kps-angle').value=S.angle;
+    document.getElementById('kps-glow').value=S.glow;
+    document.getElementById('kps-radius').value=S.radius;
+    document.getElementById('kps-alpha').value=100;
+    applyPreview(S); notify('Combinação aleatória gerada na paleta '+p.n,'🎲');
+  });
+
+  document.getElementById('kps-save').addEventListener('click',function(){
+    try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(_){}
+    applyLive(S); notify('Pintura dos botões aplicada no site!','✅');
+    modal.classList.remove('open');
+  });
+  document.getElementById('kps-reset').addEventListener('click',function(){
+    S=Object.assign({},DEF);
+    try{ localStorage.removeItem(LS); }catch(_){}
+    ['kps-radius','kps-glow','kps-bw','kps-angle','kps-alpha'].forEach(function(id,i){
+      document.getElementById(id).value=[10,0,1,135,100][i];
+    });
+    applyPreview(S); applyLive(S); drawSwatches();
+    notify('Pintura apagada — botões voltaram ao padrão','🧽');
+  });
+  document.getElementById('kps-close').addEventListener('click',function(){ modal.classList.remove('open'); });
+  modal.addEventListener('click',function(e){ if(e.target===modal) modal.classList.remove('open'); });
+
+  function openStudio(){
+    document.getElementById('kps-radius').value=S.radius;
+    document.getElementById('kps-glow').value=S.glow;
+    document.getElementById('kps-bw').value=S.bw;
+    document.getElementById('kps-angle').value=S.angle;
+    document.getElementById('kps-alpha').value=S.alpha;
+    drawTabs(); drawSwatches(); applyPreview(S);
+    modal.classList.add('open');
+    notify('Você acessou a função "Personalizar Botões"','🖌️','AÇÃO');
+  }
+  window.kaweOpenPaintStudio=openStudio;
+
+  function boot(){
+    var op=document.getElementById('kawe-paint-open');
+    if(op) op.addEventListener('click',function(){
+      var tm=document.getElementById('kawe-theme-modal'); if(tm) tm.classList.remove('open');
+      openStudio();
+    });
+    applyLive(S);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
+<!--KAWE_PAINT_STUDIO_END-->
+
 <!--KAWE_NOTIF_THEME_END-->
 
 
@@ -18324,3 +18716,582 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
 })();
 </script>
 <!--KAWE_SOCIAL_END-->
+
+<!--KAWE_IA_START-->
+<style id="kawe-ia-css">
+:root{--kia-gold:#f5c542;--kia-gold-2:#b8860b;--kia-dark:#0b0803}
+.kia-gold-btn{background:linear-gradient(135deg,#f9e08a,#f5c542 45%,#b8860b)!important;color:#1a1200!important;border:1px solid #f5c542!important;font-weight:900!important;text-shadow:none!important;box-shadow:0 0 14px rgba(245,197,66,.45)!important}
+a.nav-link.kia-nav,a.sidebar-link.kia-nav{color:#f5c542!important;font-weight:900;letter-spacing:.4px;position:relative}
+a.nav-link.kia-nav svg,a.sidebar-link.kia-nav svg{fill:#f5c542}
+a.nav-link.kia-nav:hover,a.sidebar-link.kia-nav:hover{background:rgba(245,197,66,.14)!important;color:#ffe9a8!important;text-shadow:0 0 10px rgba(245,197,66,.6)}
+.admin-tab.kia-tab{color:#f5c542!important;border-color:rgba(245,197,66,.45)!important}
+.admin-tab.kia-tab.active{background:linear-gradient(135deg,#f9e08a,#f5c542 45%,#b8860b)!important;color:#1a1200!important;border-color:#f5c542!important;box-shadow:0 4px 20px rgba(245,197,66,.4)!important}
+
+/* botão flutuante dourado */
+#kia-fab{position:fixed;right:16px;bottom:86px;z-index:2147482300;width:54px;height:54px;border-radius:50%;border:1px solid #f5c542;background:radial-gradient(circle at 30% 28%,#fff3c9,#f5c542 45%,#7a5a06);color:#1a1200;font-size:23px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(0,0,0,.65),0 0 20px rgba(245,197,66,.45)}
+#kia-fab:hover{transform:scale(1.07)}
+
+/* ═══ modal do chat (estilo ChatGPT) ═══ */
+#kia-modal{position:fixed;inset:0;z-index:2147482800;background:rgba(0,0,0,.84);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:14px}
+#kia-modal.open{display:flex}
+.kia-box{width:min(760px,96vw);height:min(88vh,820px);display:flex;flex-direction:column;background:linear-gradient(165deg,#0b0803,#141005);border:1px solid rgba(245,197,66,.55);border-radius:20px;overflow:hidden;color:#f2eee4;font-family:system-ui,-apple-system,Segoe UI,sans-serif;box-shadow:0 0 46px rgba(245,197,66,.22)}
+.kia-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(245,197,66,.2);background:rgba(0,0,0,.35)}
+.kia-head .kia-logo{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:radial-gradient(circle at 30% 28%,#fff3c9,#f5c542 45%,#7a5a06);color:#1a1200;flex:none}
+.kia-hbtn{background:transparent;border:1px solid rgba(245,197,66,.28);color:#ffe9a8;border-radius:10px;height:34px;padding:0 10px;cursor:pointer;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.kia-hbtn:hover{background:rgba(245,197,66,.14)}
+.kia-hbtn.icon{width:34px;padding:0;justify-content:center;font-size:15px}
+#kia-modelbtn{max-width:44vw;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.kia-spacer{flex:1}
+.kia-status{font-size:11px;opacity:.65;color:#ffe9a8;white-space:nowrap}
+
+/* menu de modelos estilo ChatGPT */
+.kia-menu{position:absolute;top:52px;left:12px;z-index:5;width:min(340px,88%);max-height:60%;overflow:auto;background:#16120a;border:1px solid rgba(245,197,66,.4);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.7);padding:6px;display:none}
+.kia-menu.open{display:block}
+.kia-menu-grp{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:#f5c542;opacity:.8;padding:8px 10px 4px;font-weight:900}
+.kia-menu-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:13px}
+.kia-menu-item:hover{background:rgba(245,197,66,.12)}
+.kia-menu-item small{display:block;font-size:11px;opacity:.6}
+.kia-menu-item .kia-check{margin-left:auto;color:#f5c542;font-weight:900;opacity:0}
+.kia-menu-item.sel .kia-check{opacity:1}
+.kia-menu-item.locked{opacity:.45}
+
+.kia-body{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.kia-msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.kia-row{display:flex;gap:10px;align-items:flex-start}
+.kia-row.me{justify-content:flex-end}
+.kia-av{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;background:radial-gradient(circle at 30% 28%,#fff3c9,#f5c542 45%,#7a5a06);color:#1a1200}
+.kia-msg{max-width:80%;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.kia-msg.bot{color:#f2eee4}
+.kia-msg.me{background:rgba(245,197,66,.16);border:1px solid rgba(245,197,66,.3);color:#fff6dd;padding:10px 14px;border-radius:16px}
+.kia-msg.err{color:#ffc9c9;background:rgba(255,80,80,.12);border:1px solid rgba(255,90,90,.4);padding:10px 13px;border-radius:14px}
+.kia-msg img.kia-att{max-width:200px;border-radius:10px;display:block;margin:6px 0;border:1px solid rgba(245,197,66,.3)}
+.kia-typing{font-size:12.5px;color:#f5c542;opacity:.85;padding-left:38px}
+.kia-sugs{display:flex;gap:7px;flex-wrap:wrap;padding:0 14px 8px}
+.kia-sug{font-size:11.5px;padding:7px 11px;border-radius:20px;border:1px solid rgba(245,197,66,.35);background:transparent;color:#ffe9a8;cursor:pointer}
+.kia-sug:hover{background:rgba(245,197,66,.15)}
+
+/* composer estilo ChatGPT */
+.kia-comp{padding:10px 12px 12px;border-top:1px solid rgba(245,197,66,.18);background:rgba(0,0,0,.3)}
+.kia-files{display:flex;gap:8px;flex-wrap:wrap;padding:0 2px 8px}
+.kia-chip{display:flex;align-items:center;gap:7px;background:rgba(245,197,66,.12);border:1px solid rgba(245,197,66,.35);border-radius:12px;padding:6px 9px;font-size:11.5px;max-width:220px}
+.kia-chip img{width:28px;height:28px;object-fit:cover;border-radius:7px}
+.kia-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kia-chip button{background:transparent;border:0;color:#ffb4b4;cursor:pointer;font-size:13px;line-height:1}
+.kia-bar{display:flex;align-items:flex-end;gap:8px;background:#15110a;border:1px solid rgba(245,197,66,.4);border-radius:24px;padding:6px 8px}
+.kia-round{width:36px;height:36px;flex:none;border-radius:50%;border:1px solid rgba(245,197,66,.4);background:transparent;color:#f5c542;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.kia-round:hover{background:rgba(245,197,66,.15)}
+.kia-in{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f2eee4;font-size:14px;padding:9px 4px;resize:none;max-height:140px;font-family:inherit}
+.kia-send{width:36px;height:36px;flex:none;border-radius:50%;border:1px solid #f5c542;background:linear-gradient(135deg,#f9e08a,#f5c542 45%,#b8860b);color:#1a1200;font-weight:900;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.kia-send:disabled{opacity:.5;cursor:not-allowed}
+.kia-foot{padding:8px 4px 0;font-size:10.5px;opacity:.5;text-align:center}
+
+/* painel admin */
+.kia-adm-grid{display:grid;gap:12px;margin-top:12px}
+.kia-adm-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kia-adm-lbl{font-size:12px;color:#f5c542;min-width:170px;font-weight:700}
+.kia-adm-in{flex:1;min-width:180px;padding:10px;border-radius:9px;border:1px solid rgba(245,197,66,.35);background:#0b0803;color:#fff6dd;font-size:12.5px}
+textarea.kia-adm-in{min-height:90px}
+.kia-adm-btn{padding:10px 14px;border-radius:10px;border:1px solid #f5c542;background:rgba(245,197,66,.14);color:#f5c542;font-weight:800;cursor:pointer;font-size:12.5px}
+.kia-adm-btn.solid{background:linear-gradient(135deg,#f9e08a,#f5c542 45%,#b8860b);color:#1a1200}
+.kia-adm-btn.danger{border-color:rgba(255,90,90,.5);background:rgba(255,80,80,.1);color:#ff9d9d}
+.kia-adm-note{font-size:11.5px;line-height:1.55;opacity:.8;border-left:3px solid #f5c542;padding:8px 12px;background:rgba(245,197,66,.07);border-radius:0 8px 8px 0}
+.kia-badge{display:inline-block;font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;border:1px solid rgba(245,197,66,.45);color:#f5c542}
+.kia-badge.ok{border-color:#22c55e;color:#22c55e}
+.kia-badge.off{border-color:#ef4444;color:#ef4444}
+</style>
+
+<button id="kia-fab" type="button" title="KAWE CINEMA Inteligência Artificial" aria-label="KAWE IA">✨</button>
+<div id="kia-modal">
+  <div class="kia-box">
+    <div class="kia-head">
+      <div class="kia-logo">✨</div>
+      <button class="kia-hbtn" type="button" id="kia-modelbtn" title="Escolher modelo de IA">KAWE IA <span style="opacity:.7">▾</span></button>
+      <div class="kia-spacer"></div>
+      <span class="kia-status" id="kia-status">Pronta para conversar</span>
+      <button class="kia-hbtn icon" type="button" id="kia-new" title="Nova conversa">✎</button>
+      <button class="kia-hbtn icon" type="button" id="kia-close" title="Fechar">✕</button>
+    </div>
+    <div class="kia-body">
+      <div class="kia-menu" id="kia-menu"></div>
+      <div class="kia-msgs" id="kia-msgs"></div>
+      <div class="kia-sugs" id="kia-sugs"></div>
+      <div class="kia-comp">
+        <div class="kia-files" id="kia-files"></div>
+        <div class="kia-bar">
+          <button class="kia-round" type="button" id="kia-attach" title="Anexar arquivo ou imagem">＋</button>
+          <input type="file" id="kia-file" multiple accept="image/*,.txt,.md,.json,.csv,.log,.html,.js,.css,.srt,.vtt" style="display:none">
+          <textarea class="kia-in" id="kia-input" rows="1" placeholder="Pergunte algo ou envie um arquivo..."></textarea>
+          <button class="kia-send" type="button" id="kia-send" title="Enviar">➤</button>
+        </div>
+        <div class="kia-foot">A IA pode errar. Confira informações importantes.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="kawe-ia-js">
+(function(){
+  var CFG_KEY='kawe_ia_cfg_v1', HIST_KEY='kawe_ia_hist_v1', KEY_KEY='kawe_ia_apikey_v1', KEYS_KEY='kawe_ia_keys_v2';
+
+  /* ═════════ PROVEDORES DE IA ═════════ */
+  var PROV={
+    openai:{label:'OpenAI · ChatGPT',kind:'openai',url:'https://api.openai.com/v1/chat/completions',ph:'sk-...',site:'platform.openai.com',
+      models:[['gpt-4o-mini','Rápido e barato'],['gpt-4o','Mais inteligente · vê imagens'],['gpt-4.1-mini','Equilibrado'],['gpt-4.1','Avançado']]},
+    gemini:{label:'Google · Gemini',kind:'gemini',ph:'AIza...',site:'aistudio.google.com',
+      models:[['gemini-2.0-flash','Rápido · vê imagens'],['gemini-1.5-flash','Econômico'],['gemini-1.5-pro','Avançado']]},
+    claude:{label:'Anthropic · Claude',kind:'anthropic',url:'https://api.anthropic.com/v1/messages',ph:'sk-ant-...',site:'console.anthropic.com',
+      models:[['claude-3-5-haiku-latest','Rápido'],['claude-3-5-sonnet-latest','Avançado · vê imagens']]},
+    deepseek:{label:'DeepSeek',kind:'openai',url:'https://api.deepseek.com/chat/completions',ph:'sk-...',site:'platform.deepseek.com',
+      models:[['deepseek-chat','Conversa geral'],['deepseek-reasoner','Raciocínio profundo']]},
+    groq:{label:'Groq · Llama',kind:'openai',url:'https://api.groq.com/openai/v1/chat/completions',ph:'gsk_...',site:'console.groq.com',
+      models:[['llama-3.3-70b-versatile','Muito rápido'],['llama-3.1-8b-instant','Ultra rápido']]},
+    mistral:{label:'Mistral AI',kind:'openai',url:'https://api.mistral.ai/v1/chat/completions',ph:'...',site:'console.mistral.ai',
+      models:[['mistral-small-latest','Econômico'],['mistral-large-latest','Avançado'],['pixtral-12b-2409','Vê imagens']]},
+    xai:{label:'xAI · Grok',kind:'openai',url:'https://api.x.ai/v1/chat/completions',ph:'xai-...',site:'console.x.ai',
+      models:[['grok-2-latest','Padrão'],['grok-2-vision-latest','Vê imagens']]},
+    openrouter:{label:'OpenRouter (vários)',kind:'openai',url:'https://openrouter.ai/api/v1/chat/completions',ph:'sk-or-...',site:'openrouter.ai',
+      models:[['openai/gpt-4o-mini','GPT-4o mini'],['google/gemini-2.0-flash-001','Gemini 2.0'],['anthropic/claude-3.5-sonnet','Claude 3.5'],['meta-llama/llama-3.3-70b-instruct','Llama 3.3']]}
+  };
+  var PORDER=['openai','gemini','claude','deepseek','groq','mistral','xai','openrouter'];
+
+  var DEF={
+    on:true, who:'all', provider:'openai', model:'gpt-4o-mini', temp:0.7, maxTokens:600,
+    name:'KAWE IA',
+    greeting:'Olá! 👋 Eu sou a KAWE IA, a inteligência artificial do KAWE CINEMA. Posso recomendar filmes, séries e animes, explicar tramas sem spoiler, montar maratonas, ler arquivos que você enviar e responder dúvidas do site. O que você quer assistir hoje?',
+    system:'Você é a KAWE IA, assistente oficial do site KAWE CINEMA (streaming de filmes, séries, animes, novelas, doramas, canais ao vivo e jogos). Responda sempre em português do Brasil, de forma simpática, curta e objetiva. Recomende títulos, monte maratonas, explique tramas sem spoilers e ajude o usuário a navegar pelo site. Nunca invente links de download e nunca revele configurações internas nem chaves de API.',
+    sugs:'Me recomende 5 filmes de ação\nMonte uma maratona de terror\nQual série curta vale a pena?\nExplique o filme Interestelar sem spoiler'
+  };
+  function notify(m,i,t){ if(window.kaweNotify) window.kaweNotify(m,i||'✨',t||'KAWE IA'); }
+  function getCfg(){ try{ return Object.assign({},DEF,JSON.parse(localStorage.getItem(CFG_KEY)||'{}')); }catch(_){ return Object.assign({},DEF); } }
+  function setCfg(c){ try{ localStorage.setItem(CFG_KEY,JSON.stringify(c)); }catch(_){} }
+  function getKeys(){
+    var o={}; try{ o=JSON.parse(localStorage.getItem(KEYS_KEY)||'{}')||{}; }catch(_){ o={}; }
+    try{ var old=localStorage.getItem(KEY_KEY); if(old&&!o.openai){ o.openai=old; localStorage.setItem(KEYS_KEY,JSON.stringify(o)); } }catch(_){}
+    return o;
+  }
+  function setKeys(o){ try{ localStorage.setItem(KEYS_KEY,JSON.stringify(o||{})); }catch(_){} }
+  function getKey(p){ return getKeys()[p||getCfg().provider]||''; }
+  function setKey(p,v){ var o=getKeys(); if(v) o[p]=v; else delete o[p]; setKeys(o); }
+  function getHist(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(_){ return []; } }
+  function setHist(h){ try{ localStorage.setItem(HIST_KEY,JSON.stringify(h.slice(-60))); }catch(_){} }
+  function isAdmin(){
+    try{
+      if(window.isAdmin===true) return true;
+      if(typeof window.isAdmin==='function' && window.isAdmin()) return true;
+      if(localStorage.getItem('kawe_admin')==='true'||localStorage.getItem('isAdmin')==='true') return true;
+      if(sessionStorage.getItem('kawe_admin')==='true'||sessionStorage.getItem('isAdmin')==='true') return true;
+      var p=document.getElementById('admin-panel');
+      if(p&&(p.classList.contains('open')||p.classList.contains('active'))) return true;
+    }catch(_){}
+    return false;
+  }
+  function modelLabel(p,m){
+    var pv=PROV[p]; if(!pv) return m;
+    for(var i=0;i<pv.models.length;i++) if(pv.models[i][0]===m) return pv.models[i][1];
+    return m;
+  }
+
+  /* ═════════ ELEMENTOS ═════════ */
+  var modal=document.getElementById('kia-modal');
+  var msgsBox=document.getElementById('kia-msgs');
+  var input=document.getElementById('kia-input');
+  var sendBtn=document.getElementById('kia-send');
+  var statusEl=document.getElementById('kia-status');
+  var sugBox=document.getElementById('kia-sugs');
+  var menuBox=document.getElementById('kia-menu');
+  var modelBtn=document.getElementById('kia-modelbtn');
+  var fileInput=document.getElementById('kia-file');
+  var filesBox=document.getElementById('kia-files');
+  var busy=false, attachments=[];
+
+  /* ═════════ MENU DE MODELOS (estilo ChatGPT) ═════════ */
+  function renderMenu(){
+    var c=getCfg(), keys=getKeys(), html='';
+    PORDER.forEach(function(p){
+      var pv=PROV[p], has=!!keys[p];
+      html+='<div class="kia-menu-grp">'+pv.label+(has?'':' · sem chave')+'</div>';
+      pv.models.forEach(function(m){
+        var sel=(c.provider===p&&c.model===m[0]);
+        html+='<div class="kia-menu-item'+(sel?' sel':'')+(has?'':' locked')+'" data-p="'+p+'" data-m="'+m[0]+'">'
+          +'<span style="flex:1"><b>'+m[0]+'</b><small>'+m[1]+'</small></span><span class="kia-check">✔</span></div>';
+      });
+    });
+    menuBox.innerHTML=html;
+    Array.prototype.forEach.call(menuBox.querySelectorAll('.kia-menu-item'),function(it){
+      it.addEventListener('click',function(){
+        var p=it.getAttribute('data-p'), m=it.getAttribute('data-m'), cc=getCfg();
+        cc.provider=p; cc.model=m; setCfg(cc);
+        menuBox.classList.remove('open'); syncModelBtn();
+        if(!getKey(p)) notify('Salve a chave da '+PROV[p].label+' no Painel Admin → KAWE IA','🔑');
+        else notify('Modelo alterado para '+m,'🤖');
+        if(typeof window.renderAdminIA==='function') try{ window.renderAdminIA(); }catch(_){}
+      });
+    });
+  }
+  function syncModelBtn(){
+    var c=getCfg();
+    modelBtn.innerHTML='KAWE IA · '+c.model+' <span style="opacity:.7">▾</span>';
+    modelBtn.title=(PROV[c.provider]?PROV[c.provider].label:'')+' — '+modelLabel(c.provider,c.model);
+  }
+  modelBtn.addEventListener('click',function(e){ e.stopPropagation(); renderMenu(); menuBox.classList.toggle('open'); });
+  document.addEventListener('click',function(e){ if(menuBox.classList.contains('open')&&!menuBox.contains(e.target)&&e.target!==modelBtn) menuBox.classList.remove('open'); });
+
+  /* ═════════ ANEXOS ═════════ */
+  document.getElementById('kia-attach').addEventListener('click',function(){ fileInput.click(); });
+  fileInput.addEventListener('change',function(){
+    var fs=Array.prototype.slice.call(fileInput.files||[]);
+    fs.forEach(function(f){
+      if(f.size>8*1024*1024){ notify('Arquivo muito grande (máx. 8MB): '+f.name,'⚠️'); return; }
+      var isImg=/^image\//.test(f.type);
+      var rd=new FileReader();
+      rd.onload=function(){
+        attachments.push({name:f.name,type:f.type||'text/plain',img:isImg,data:rd.result});
+        renderFiles();
+      };
+      if(isImg) rd.readAsDataURL(f); else rd.readAsText(f);
+    });
+    fileInput.value='';
+  });
+  function renderFiles(){
+    filesBox.innerHTML='';
+    attachments.forEach(function(a,i){
+      var d=document.createElement('div'); d.className='kia-chip';
+      d.innerHTML=(a.img?'<img src="'+a.data+'" alt="">':'<span style="font-size:15px">📄</span>')+'<span>'+a.name+'</span>';
+      var b=document.createElement('button'); b.type='button'; b.textContent='✕';
+      b.addEventListener('click',function(){ attachments.splice(i,1); renderFiles(); });
+      d.appendChild(b); filesBox.appendChild(d);
+    });
+  }
+
+  /* ═════════ MENSAGENS ═════════ */
+  function bubble(role,text,cls,atts){
+    var row=document.createElement('div'); row.className='kia-row'+(role==='user'?' me':'');
+    if(role!=='user'){ var av=document.createElement('div'); av.className='kia-av'; av.textContent='✨'; row.appendChild(av); }
+    var d=document.createElement('div');
+    d.className='kia-msg '+(cls||(role==='user'?'me':'bot'));
+    (atts||[]).forEach(function(a){
+      if(a.img){ var im=document.createElement('img'); im.className='kia-att'; im.src=a.data; d.appendChild(im); }
+      else { var t=document.createElement('div'); t.style.fontSize='11.5px'; t.style.opacity='.75'; t.textContent='📄 '+a.name; d.appendChild(t); }
+    });
+    var sp=document.createElement('div'); sp.textContent=text; d.appendChild(sp);
+    row.appendChild(d);
+    msgsBox.appendChild(row);
+    msgsBox.scrollTop=msgsBox.scrollHeight;
+    return row;
+  }
+  function renderHist(){
+    var cfg=getCfg();
+    msgsBox.innerHTML='';
+    bubble('assistant',cfg.greeting);
+    getHist().forEach(function(m){ bubble(m.role,m.content,null,m.atts); });
+    sugBox.innerHTML='';
+    (cfg.sugs||'').split('\n').map(function(s){return s.trim()}).filter(Boolean).slice(0,6).forEach(function(s){
+      var b=document.createElement('button'); b.type='button'; b.className='kia-sug'; b.textContent=s;
+      b.addEventListener('click',function(){ input.value=s; ask(); });
+      sugBox.appendChild(b);
+    });
+    syncModelBtn();
+  }
+
+  /* ═════════ CHAMADA ÀS APIs ═════════ */
+  function buildRequest(cfg,key,history,atts){
+    var pv=PROV[cfg.provider]||PROV.openai;
+    var imgs=(atts||[]).filter(function(a){return a.img;});
+    var last=history[history.length-1];
+
+    if(pv.kind==='gemini'){
+      var contents=history.map(function(m){ return {role:(m.role==='assistant'?'model':'user'),parts:[{text:m.content}]}; });
+      if(imgs.length&&contents.length){
+        imgs.forEach(function(a){
+          var b64=String(a.data).split(',')[1]||'';
+          contents[contents.length-1].parts.push({inlineData:{mimeType:a.type||'image/png',data:b64}});
+        });
+      }
+      return {
+        url:'https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(cfg.model)+':generateContent?key='+encodeURIComponent(key),
+        headers:{'Content-Type':'application/json'},
+        body:{contents:contents,systemInstruction:{parts:[{text:cfg.system}]},generationConfig:{temperature:+cfg.temp,maxOutputTokens:+cfg.maxTokens}},
+        read:function(j){ try{ return j.candidates[0].content.parts.map(function(p){return p.text||'';}).join(''); }catch(_){ return ''; } },
+        err:function(j){ return j&&j.error&&j.error.message; }
+      };
+    }
+    if(pv.kind==='anthropic'){
+      var ms=history.map(function(m){ return {role:(m.role==='assistant'?'assistant':'user'),content:m.content}; });
+      if(imgs.length&&ms.length){
+        var parts=imgs.map(function(a){ return {type:'image',source:{type:'base64',media_type:a.type||'image/png',data:String(a.data).split(',')[1]||''}}; });
+        parts.push({type:'text',text:ms[ms.length-1].content});
+        ms[ms.length-1].content=parts;
+      }
+      return {
+        url:pv.url,
+        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:{model:cfg.model,system:cfg.system,messages:ms,temperature:+cfg.temp,max_tokens:+cfg.maxTokens},
+        read:function(j){ try{ return j.content.map(function(p){return p.text||'';}).join(''); }catch(_){ return ''; } },
+        err:function(j){ return j&&j.error&&j.error.message; }
+      };
+    }
+    /* padrão OpenAI-compatível */
+    var msgs=[{role:'system',content:cfg.system}].concat(history.map(function(m){ return {role:m.role,content:m.content}; }));
+    if(imgs.length&&msgs.length>1){
+      var i=msgs.length-1;
+      var arr=[{type:'text',text:msgs[i].content}];
+      imgs.forEach(function(a){ arr.push({type:'image_url',image_url:{url:a.data}}); });
+      msgs[i]={role:'user',content:arr};
+    }
+    var hd={'Content-Type':'application/json','Authorization':'Bearer '+key};
+    if(cfg.provider==='openrouter'){ hd['HTTP-Referer']=location.origin; hd['X-Title']='KAWE CINEMA'; }
+    return {
+      url:pv.url,headers:hd,
+      body:{model:cfg.model,messages:msgs,temperature:+cfg.temp,max_tokens:+cfg.maxTokens},
+      read:function(j){ try{ return j.choices[0].message.content; }catch(_){ return ''; } },
+      err:function(j){ return j&&j.error&&(j.error.message||j.error); }
+    };
+  }
+
+  function ask(){
+    if(busy) return;
+    var cfg=getCfg();
+    var text=(input.value||'').trim();
+    var atts=attachments.slice();
+    if(!text&&!atts.length) return;
+    var key=getKey(cfg.provider);
+    if(!key){
+      bubble('assistant','A '+(PROV[cfg.provider]?PROV[cfg.provider].label:'IA')+' ainda não foi ativada. O administrador precisa salvar a chave da API no Painel Admin → aba IA (KAWE IA).','err');
+      return;
+    }
+    input.value=''; input.style.height='auto';
+    attachments=[]; renderFiles();
+    bubble('user',text,null,atts);
+
+    var full=text;
+    atts.filter(function(a){return !a.img;}).forEach(function(a){
+      full+='\n\n[Arquivo enviado: '+a.name+']\n'+String(a.data).slice(0,12000);
+    });
+    if(atts.filter(function(a){return a.img;}).length&&!text) full='Analise a(s) imagem(ns) enviada(s).'+full;
+
+    var hist=getHist();
+    hist.push({role:'user',content:full,atts:atts.map(function(a){return {name:a.name,img:a.img,data:a.img?a.data:''};})});
+    setHist(hist);
+
+    busy=true; sendBtn.disabled=true; statusEl.textContent='Pensando...';
+    var typing=document.createElement('div'); typing.className='kia-typing'; typing.textContent='KAWE IA está digitando...';
+    msgsBox.appendChild(typing); msgsBox.scrollTop=msgsBox.scrollHeight;
+
+    var history=getHist().slice(-16).map(function(m){ return {role:m.role,content:m.content}; });
+    var req=buildRequest(cfg,key,history,atts);
+
+    fetch(req.url,{method:'POST',headers:req.headers,body:JSON.stringify(req.body)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(res){
+        typing.remove();
+        if(!res.ok){
+          bubble('assistant','⚠️ '+(req.err(res.j)||'Falha na requisição'),'err');
+          statusEl.textContent='Erro na API';
+          return;
+        }
+        var out=req.read(res.j)||'(sem resposta)';
+        bubble('assistant',out);
+        var h=getHist(); h.push({role:'assistant',content:out}); setHist(h);
+        statusEl.textContent='Pronta para conversar';
+      })
+      .catch(function(e){
+        typing.remove();
+        bubble('assistant','⚠️ Não foi possível falar com a IA agora. Verifique a conexão ou a chave da API. ('+(e&&e.message||'erro')+')','err');
+        statusEl.textContent='Erro de conexão';
+      })
+      .then(function(){ busy=false; sendBtn.disabled=false; try{ input.focus(); }catch(_){} });
+  }
+
+  sendBtn.addEventListener('click',ask);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); ask(); } });
+  input.addEventListener('input',function(){ input.style.height='auto'; input.style.height=Math.min(140,input.scrollHeight)+'px'; });
+  document.getElementById('kia-close').addEventListener('click',function(){ modal.classList.remove('open'); });
+  document.getElementById('kia-new').addEventListener('click',function(){ setHist([]); attachments=[]; renderFiles(); renderHist(); notify('Nova conversa iniciada','✎'); });
+  modal.addEventListener('click',function(e){ if(e.target===modal) modal.classList.remove('open'); });
+
+  function openIA(){
+    var cfg=getCfg();
+    if(!cfg.on && !isAdmin()){ notify('A KAWE IA está desativada pelo administrador','🚫'); return; }
+    if(cfg.who==='admin' && !isAdmin()){ notify('A KAWE IA está disponível apenas para o administrador','🔒'); return; }
+    renderHist();
+    modal.classList.add('open');
+    setTimeout(function(){ try{ input.focus(); }catch(_){} },120);
+    notify('Você acessou a "KAWE CINEMA Inteligência Artificial"','✨','AÇÃO');
+  }
+  window.kaweOpenIA=openIA;
+  document.getElementById('kia-fab').addEventListener('click',openIA);
+
+  /* ═════════ MENUS (cabeçalho + menu de 3 barras) ═════════ */
+  var ICON='<svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2l2.2 5.6L20 10l-5.8 2.4L12 18l-2.2-5.6L4 10l5.8-2.4L12 2zm6.5 11l1.1 2.7L22.5 17l-2.9 1.3L18.5 21l-1.1-2.7L14.5 17l3-1.3L18.5 13z"/></svg>';
+  var ICON_SIDE=ICON.replace('class="nav-icon" ','').replace('width="18" height="18"','width="22" height="22"');
+
+  function ensureMenus(){
+    if(!document.getElementById('kia-nav-link')){
+      var ref=document.getElementById('embed-nav-link')||document.getElementById('biblioteca-nav-link')||document.querySelector('.nav-link');
+      if(ref&&ref.parentNode){
+        var a=document.createElement('a');
+        a.id='kia-nav-link'; a.className='nav-link kia-nav';
+        a.setAttribute('title','KAWE CINEMA Inteligência Artificial');
+        a.style.cursor='pointer';
+        a.innerHTML=ICON+' KAWE IA';
+        a.addEventListener('click',function(e){ e.preventDefault(); openIA(); });
+        ref.parentNode.insertBefore(a,ref.nextSibling);
+      }
+    }
+    if(!document.getElementById('kia-side-link')){
+      var sref=document.getElementById('embed-side-link')||document.getElementById('biblioteca-sidebar-link')||document.querySelector('.sidebar-link');
+      if(sref&&sref.parentNode){
+        var s=document.createElement('a');
+        s.id='kia-side-link'; s.className='sidebar-link kia-nav';
+        s.setAttribute('title','KAWE CINEMA Inteligência Artificial');
+        s.style.cursor='pointer';
+        s.innerHTML=ICON_SIDE+' KAWE IA';
+        s.addEventListener('click',function(e){ e.preventDefault(); try{ if(typeof closeSidebar==='function') closeSidebar(); }catch(_){} openIA(); });
+        sref.parentNode.insertBefore(s,sref.nextSibling);
+      }
+    }
+  }
+
+  /* ═════════ PAINEL ADMIN ═════════ */
+  function provOptions(sel){
+    return PORDER.map(function(p){ return '<option value="'+p+'"'+(p===sel?' selected':'')+'>'+PROV[p].label+'</option>'; }).join('');
+  }
+  function modelOptions(p,sel){
+    var pv=PROV[p]||PROV.openai;
+    return pv.models.map(function(m){ return '<option value="'+m[0]+'"'+(m[0]===sel?' selected':'')+'>'+m[0]+' — '+m[1]+'</option>'; }).join('');
+  }
+  function ensureAdmin(){
+    var tabs=document.querySelector('#admin-panel .admin-tabs')||document.querySelector('.admin-tabs');
+    if(tabs && !document.getElementById('admin-tab-ia')){
+      var t=document.createElement('div');
+      t.id='admin-tab-ia'; t.className='admin-tab kia-tab';
+      t.innerHTML=ICON.replace('nav-icon','icon-svg')+' KAWE IA';
+      t.addEventListener('click',function(){
+        try{ if(typeof switchAdminTab==='function') switchAdminTab('ia'); }catch(_){}
+        renderAdminIA();
+      });
+      tabs.appendChild(t);
+    }
+    if(!document.getElementById('admin-ia')){
+      var anchor=document.getElementById('admin-embed')||document.getElementById('admin-biblioteca')||document.querySelector('.admin-content-section');
+      var box=document.createElement('div');
+      box.id='admin-ia'; box.className='admin-content-section';
+      box.innerHTML=
+        '<h3>✨ KAWE CINEMA · Inteligência Artificial</h3>'+
+        '<p class="admin-subtitle">Ative, configure e gerencie a IA do site. As chaves ficam salvas apenas neste dispositivo (nunca dentro do HTML público).</p>'+
+        '<div class="kia-adm-note">🔐 <b>Segurança:</b> nunca cole a chave dentro do arquivo HTML — qualquer visitante conseguiria copiá-la e gastar seus créditos. Salve aqui no painel: ela é guardada no navegador deste aparelho.</div>'+
+        '<div class="kia-adm-grid">'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Status</span><span id="kia-adm-status" class="kia-badge">—</span></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Provedor de IA</span><select class="kia-adm-in" id="kia-adm-prov"></select></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Modelo</span><select class="kia-adm-in" id="kia-adm-model"></select></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Chave da API deste provedor</span><input class="kia-adm-in" id="kia-adm-key" type="password" placeholder="cole a chave aqui" autocomplete="off"></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl"></span><button class="kia-adm-btn solid" type="button" id="kia-adm-savekey">💾 SALVAR CHAVE</button><button class="kia-adm-btn" type="button" id="kia-adm-test">🔌 TESTAR CONEXÃO</button><button class="kia-adm-btn danger" type="button" id="kia-adm-delkey">🗑️ REMOVER CHAVE</button></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Chaves salvas</span><span id="kia-adm-keys" style="font-size:12px;opacity:.85"></span></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">IA ligada</span><select class="kia-adm-in" id="kia-adm-on"><option value="1">Sim — visível para os usuários</option><option value="0">Não — desligada</option></select></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Quem pode usar</span><select class="kia-adm-in" id="kia-adm-who"><option value="all">Todos os visitantes</option><option value="admin">Somente o administrador</option></select></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Criatividade (0–1)</span><input class="kia-adm-in" id="kia-adm-temp" type="number" min="0" max="1" step="0.1"></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Tamanho da resposta</span><input class="kia-adm-in" id="kia-adm-max" type="number" min="100" max="4000" step="50"></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Mensagem de boas-vindas</span><textarea class="kia-adm-in" id="kia-adm-greet"></textarea></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Personalidade / instruções</span><textarea class="kia-adm-in" id="kia-adm-system"></textarea></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Sugestões (1 por linha)</span><textarea class="kia-adm-in" id="kia-adm-sugs"></textarea></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl"></span><button class="kia-adm-btn solid" type="button" id="kia-adm-save">✅ SALVAR CONFIGURAÇÕES</button><button class="kia-adm-btn" type="button" id="kia-adm-open">✨ ABRIR A IA</button><button class="kia-adm-btn danger" type="button" id="kia-adm-clear">🧹 LIMPAR CONVERSA</button></div>'+
+          '<div class="kia-adm-row"><span class="kia-adm-lbl">Mensagens salvas</span><span id="kia-adm-count" class="kia-badge">0</span></div>'+
+        '</div>';
+      if(anchor&&anchor.parentNode) anchor.parentNode.insertBefore(box,anchor.nextSibling);
+      else document.body.appendChild(box);
+      wireAdmin();
+    }
+  }
+
+  function wireAdmin(){
+    function $(id){ return document.getElementById(id); }
+    $('kia-adm-prov').addEventListener('change',function(){
+      var p=$('kia-adm-prov').value, c=getCfg();
+      c.provider=p; c.model=PROV[p].models[0][0]; setCfg(c);
+      renderAdminIA(); syncModelBtn();
+    });
+    $('kia-adm-model').addEventListener('change',function(){
+      var c=getCfg(); c.model=$('kia-adm-model').value; setCfg(c); syncModelBtn();
+    });
+    $('kia-adm-savekey').addEventListener('click',function(){
+      var p=$('kia-adm-prov').value, v=($('kia-adm-key').value||'').trim();
+      if(!v){ notify('Cole a chave da API antes de salvar','⚠️'); return; }
+      setKey(p,v); $('kia-adm-key').value='';
+      notify('Chave da '+PROV[p].label+' salva neste dispositivo','🔐');
+      renderAdminIA();
+    });
+    $('kia-adm-delkey').addEventListener('click',function(){ setKey($('kia-adm-prov').value,''); notify('Chave removida','🗑️'); renderAdminIA(); });
+    $('kia-adm-test').addEventListener('click',function(){
+      var c=getCfg(), key=getKey(c.provider);
+      if(!key){ notify('Salve a chave primeiro','⚠️'); return; }
+      var b=$('kia-adm-test'), old=b.textContent; b.textContent='⏳ TESTANDO...'; b.disabled=true;
+      var req=buildRequest(c,key,[{role:'user',content:'Responda apenas: OK'}],[]);
+      fetch(req.url,{method:'POST',headers:req.headers,body:JSON.stringify(req.body)})
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+        .then(function(res){
+          if(res.ok) notify('Conexão OK com '+PROV[c.provider].label+' 🎉','✅');
+          else notify('Falha: '+(req.err(res.j)||'chave inválida'),'⚠️');
+        }).catch(function(e){ notify('Erro de conexão: '+(e&&e.message||''),'⚠️'); })
+        .then(function(){ b.textContent=old; b.disabled=false; renderAdminIA(); });
+    });
+    $('kia-adm-save').addEventListener('click',function(){
+      var c=getCfg();
+      c.on=$('kia-adm-on').value==='1';
+      c.who=$('kia-adm-who').value;
+      c.provider=$('kia-adm-prov').value;
+      c.model=$('kia-adm-model').value;
+      c.temp=Math.min(1,Math.max(0,+$('kia-adm-temp').value||0.7));
+      c.maxTokens=Math.min(4000,Math.max(100,+$('kia-adm-max').value||600));
+      c.greeting=$('kia-adm-greet').value||DEF.greeting;
+      c.system=$('kia-adm-system').value||DEF.system;
+      c.sugs=$('kia-adm-sugs').value||'';
+      setCfg(c); notify('Configurações da KAWE IA salvas','✅'); renderAdminIA(); applyVisibility(); syncModelBtn();
+    });
+    $('kia-adm-open').addEventListener('click',openIA);
+    $('kia-adm-clear').addEventListener('click',function(){ setHist([]); notify('Histórico da conversa apagado','🧹'); renderAdminIA(); });
+  }
+
+  window.renderAdminIA=function(){
+    ensureAdmin();
+    var c=getCfg(), keys=getKeys(), has=!!keys[c.provider];
+    function $(id){ return document.getElementById(id); }
+    if(!$('kia-adm-status')) return;
+    $('kia-adm-prov').innerHTML=provOptions(c.provider);
+    $('kia-adm-model').innerHTML=modelOptions(c.provider,c.model);
+    $('kia-adm-key').placeholder=(PROV[c.provider].ph||'cole a chave aqui')+'  ·  '+PROV[c.provider].site;
+    $('kia-adm-keys').innerHTML=PORDER.map(function(p){
+      return '<span class="kia-badge '+(keys[p]?'ok':'off')+'" style="margin:2px 4px 2px 0">'+PROV[p].label.split(' · ')[0]+(keys[p]?' ✔':' —')+'</span>';
+    }).join('');
+    var st=$('kia-adm-status');
+    st.className='kia-badge '+(has&&c.on?'ok':'off');
+    st.textContent=has?(c.on?'ATIVA · '+c.model:'CHAVE SALVA · IA desligada'):'SEM CHAVE para '+PROV[c.provider].label;
+    $('kia-adm-on').value=c.on?'1':'0';
+    $('kia-adm-who').value=c.who;
+    $('kia-adm-temp').value=c.temp;
+    $('kia-adm-max').value=c.maxTokens;
+    $('kia-adm-greet').value=c.greeting;
+    $('kia-adm-system').value=c.system;
+    $('kia-adm-sugs').value=c.sugs;
+    $('kia-adm-count').textContent=getHist().length;
+  };
+
+  function applyVisibility(){
+    var c=getCfg(), show=c.on&&(c.who==='all'||isAdmin());
+    ['kia-nav-link','kia-side-link','kia-fab'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.style.display=show?'':'none';
+    });
+  }
+
+  function init(){
+    try{ ensureMenus(); }catch(_){}
+    try{ ensureAdmin(); }catch(_){}
+    try{ applyVisibility(); }catch(_){}
+    try{ syncModelBtn(); }catch(_){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  [600,1500,3000,6000].forEach(function(ms){ setTimeout(init,ms); });
+  setInterval(init,3000);
+  console.log('[KAWE-IA] módulo v2 carregado (multi-modelos + anexos, estilo ChatGPT)');
+})();
+</script>
+<!--KAWE_IA_END-->
