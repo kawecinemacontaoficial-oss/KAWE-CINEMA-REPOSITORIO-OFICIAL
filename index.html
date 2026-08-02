@@ -11422,6 +11422,442 @@ cursor:pointer;color:#9aa3b2;opacity:.85;z-index:5;line-height:0}
 </script>
 <!-- ═══════════ FIM CLUBES + NÍVEIS ═══════════ -->
 
+<!--KAWE_CARGOS_CORREIO_START-->
+<!-- ═══════════════════════════════════════════════════════
+     KAWE • GERENCIAR CARGOS (Bronze/Prata/Platina/Ouro/Diamante/Premium)
+           + CAIXA DE CORREIO (Admin/Moderador -> Usuários)
+     Bloco 100% aditivo — não altera nada do restante do site.
+     ═══════════════════════════════════════════════════════ -->
+<style id="kawe-cargo-mail-css">
+.kcg-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;
+  font-family:'Outfit',sans-serif;font-weight:900;font-size:11px;letter-spacing:.6px;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.22);color:#0b0b0b;white-space:nowrap;}
+.kcg-badge.bronze  {background:linear-gradient(135deg,#f0b27a,#a04f16);color:#1a0d02;border-color:#cd7f32;}
+.kcg-badge.prata   {background:linear-gradient(135deg,#f1f5f9,#94a3b8);color:#111;border-color:#cbd5e1;}
+.kcg-badge.platina {background:linear-gradient(135deg,#e6fffb,#67e8f9);color:#062c30;border-color:#22d3ee;}
+.kcg-badge.ouro    {background:linear-gradient(135deg,#fde68a,#d97706);color:#241500;border-color:#fbbf24;}
+.kcg-badge.diamante{background:linear-gradient(135deg,#bfdbfe,#818cf8);color:#0b1030;border-color:#a5b4fc;}
+.kcg-badge.premium {background:linear-gradient(135deg,#f472b6,#7c3aed);color:#fff;border-color:#c084fc;}
+
+.kcg-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:11px 12px;margin-bottom:9px;
+  border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);}
+.kcg-row input,.kcg-row select,.kcg-row textarea{padding:9px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.38);color:#fff;font-size:12.5px;outline:none;font-family:inherit;}
+.kcg-row input:focus,.kcg-row select:focus,.kcg-row textarea:focus{border-color:#facc15;}
+.kcg-btn{cursor:pointer;border:none;border-radius:9px;padding:9px 14px;font-weight:900;font-size:12px;color:#111;
+  background:linear-gradient(135deg,#fde68a,#f59e0b);}
+.kcg-btn.blue{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;}
+.kcg-btn.red{background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;}
+.kcg-btn:hover{filter:brightness(1.12);}
+.admin-tab.kcg-tab{border:1px solid #facc15 !important;background:linear-gradient(135deg,#2b1c00,#a16207) !important;color:#fef9c3 !important;}
+.admin-tab.kmail-tab{border:1px solid #38bdf8 !important;background:linear-gradient(135deg,#062b3d,#0369a1) !important;color:#e0f2fe !important;}
+.kcg-table{width:100%;border-collapse:collapse;font-size:13px;}
+.kcg-table th,.kcg-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;}
+.kcg-table th{color:#facc15;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;}
+
+/* Botão cabeçalho / menu */
+.kmail-header-btn{display:inline-flex;align-items:center;gap:7px;cursor:pointer;position:relative;
+  margin-left:10px;padding:8px 14px;border-radius:10px;font-family:'Outfit',sans-serif;font-weight:900;
+  font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#04121f;border:1px solid #38bdf8;
+  background:linear-gradient(135deg,#7dd3fc 0%,#38bdf8 55%,#0284c7 100%);
+  box-shadow:0 6px 18px rgba(56,189,248,.28);transition:.25s;}
+.kmail-header-btn:hover{transform:translateY(-2px);filter:brightness(1.1);}
+.kmail-nav-item{color:#38bdf8 !important;font-weight:900 !important;}
+.kmail-dot{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+  background:#ef4444;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+
+#kmail-overlay{position:fixed;inset:0;z-index:100001;display:none;overflow-y:auto;padding:26px 14px;
+  background:radial-gradient(1100px 600px at 50% 0%, rgba(56,189,248,.16), rgba(0,0,0,.92) 60%), rgba(0,0,0,.94);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+#kmail-overlay.open{display:block;}
+.kmail-modal{max-width:940px;margin:0 auto;border-radius:22px;overflow:hidden;
+  background:linear-gradient(180deg,#03131d 0%,#050505 100%);border:1px solid rgba(56,189,248,.38);
+  box-shadow:0 30px 90px rgba(0,0,0,.75);}
+.kmail-head{position:relative;padding:24px 26px 20px;text-align:center;border-bottom:1px solid rgba(56,189,248,.28);
+  background:linear-gradient(90deg,#062b3d 0%,#0b0b0b 55%,#062b3d 100%);}
+.kmail-head h2{margin:0;font-family:'Outfit',sans-serif;font-size:25px;font-weight:900;letter-spacing:1px;
+  background:linear-gradient(90deg,#bae6fd,#38bdf8,#bae6fd);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.kmail-head p{margin:8px auto 0;max-width:620px;color:#94a3b8;font-size:13.5px;line-height:1.6;}
+.kmail-close{position:absolute;top:14px;right:16px;width:38px;height:38px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.6);color:#fff;font-size:20px;font-weight:900;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Outfit',Arial,sans-serif;}
+.kmail-close:hover{background:#ef4444;border-color:#ef4444;}
+.kmail-body{padding:22px 24px 28px;}
+.kmail-item{padding:14px 16px;border-radius:14px;margin-bottom:10px;cursor:pointer;
+  background:linear-gradient(180deg,rgba(56,189,248,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(56,189,248,.20);transition:.2s;}
+.kmail-item:hover{border-color:#38bdf8;transform:translateY(-2px);}
+.kmail-item.unread{border-left:4px solid #ef4444;}
+.kmail-item h4{margin:0 0 4px;font-size:15px;color:#fff;font-family:'Outfit',sans-serif;font-weight:800;}
+.kmail-item .kmail-meta{font-size:11.5px;color:#94a3b8;}
+.kmail-item p{margin:8px 0 0;font-size:13px;color:#cbd5e1;line-height:1.55;white-space:pre-wrap;}
+.kmail-empty{text-align:center;color:#64748b;font-size:13.5px;padding:26px 10px;}
+.kmail-compose{margin-top:18px;padding:16px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);}
+.kmail-compose h3{margin:0 0 12px;color:#38bdf8;font-size:15px;font-family:'Outfit',sans-serif;}
+.kmail-compose input,.kmail-compose select,.kmail-compose textarea{width:100%;margin-bottom:9px;padding:10px 12px;
+  border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.4);color:#fff;font-size:13px;
+  outline:none;font-family:inherit;}
+.kmail-compose textarea{min-height:110px;resize:vertical;}
+</style>
+
+<script id="kawe-cargo-mail-js">
+(function(){
+  if (window.__KAWE_CARGO_MAIL_V1) return; window.__KAWE_CARGO_MAIL_V1 = true;
+
+  var MAILKEY = 'kawe_mail_v1';
+  var CARGOS = ['bronze','prata','platina','ouro','diamante','premium'];
+  var ICONE = { bronze:'🥉', prata:'🥈', platina:'💠', ouro:'🥇', diamante:'💎', premium:'👑' };
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function LS(k,d){ try{ return JSON.parse(localStorage.getItem(k)||'null') || d; }catch(e){ return d; } }
+  function SS(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function T(m){ try{ if(typeof toast==='function') return toast(m); }catch(e){} try{ alert(m); }catch(e){} }
+
+  function users(){ return LS('kawe_users',[]) || []; }
+  function saveUsers(l){ SS('kawe_users', l); }
+
+  function meId(){
+    try{ var id = localStorage.getItem('kawe_current_user_id'); if(id) return id; }catch(e){}
+    try{ var u = JSON.parse(localStorage.getItem('kaweUser')||'null'); if(u && (u.id||u.identifier)) return String(u.id||u.identifier); }catch(e){}
+    return '';
+  }
+  function meName(){
+    try{ var n = localStorage.getItem('kawe_user_name'); if(n) return n; }catch(e){}
+    try{ var u = JSON.parse(localStorage.getItem('kaweUser')||'null'); if(u) return u.name||u.identifier||''; }catch(e){}
+    return '';
+  }
+  function isStaff(){
+    try{
+      if (window.__KAWE_PANEL_ROLE) return true;
+      if (localStorage.getItem('kawe_admin_logado')==='1') return true;
+      if (localStorage.getItem('kawe_is_admin')==='1') return true;
+      if (localStorage.getItem('kawe_mod_logado')==='1') return true;
+      var p = document.getElementById('admin-panel');
+      if (p && p.classList.contains('open')) return true;
+    }catch(e){}
+    return false;
+  }
+  function quem(){ return (window.__KAWE_PANEL_ROLE==='moderador' ? 'MODERADOR' : 'ADMIN'); }
+
+  /* ════════════ CARGOS ════════════ */
+  function badgeHTML(cargo){
+    cargo = String(cargo||'').toLowerCase();
+    if (CARGOS.indexOf(cargo) < 0) return '';
+    return '<span class="kcg-badge '+cargo+'">'+ICONE[cargo]+' '+cargo.toUpperCase()+'</span>';
+  }
+  window.kaweCargoBadge = badgeHTML;
+  window.kaweCargoDoUsuario = function(id){
+    var L = users();
+    for (var i=0;i<L.length;i++) if (String(L[i].id)===String(id)) return L[i].cargo||'';
+    return '';
+  };
+
+  window.kaweSetCargo = function(id, cargo){
+    var L = users(), ok=false;
+    for (var i=0;i<L.length;i++){ if (String(L[i].id)===String(id)){ L[i].cargo = cargo||''; L[i].cargoPor = quem(); L[i].cargoEm = Date.now(); ok=true; } }
+    if(!ok) return;
+    saveUsers(L);
+    try{ if (window.kaweDB) window.kaweDB.ref('kawe_users').set(L); }catch(e){}
+    renderCargos();
+    T(cargo ? ('🏅 Cargo '+cargo.toUpperCase()+' aplicado') : '🏅 Cargo removido');
+  };
+  window.kaweLimparCargos = function(){
+    if(!confirm('Remover o cargo de TODOS os usuários?')) return;
+    var L = users(); L.forEach(function(u){ u.cargo=''; }); saveUsers(L); renderCargos(); T('Cargos removidos');
+  };
+  window.kaweRenderCargos = renderCargos;
+
+  function renderCargos(){
+    var wrap = document.getElementById('kcg-users'); if(!wrap) return;
+    var q = ((document.getElementById('kcg-search')||{}).value||'').toLowerCase().trim();
+    var f = ((document.getElementById('kcg-filter')||{}).value||'all');
+    var L = users();
+
+    var st = document.getElementById('kcg-stats');
+    if (st) st.innerHTML = '<div class="kcg-row">' + CARGOS.map(function(c){
+      var n = L.filter(function(u){ return String(u.cargo||'').toLowerCase()===c; }).length;
+      return '<span class="kcg-badge '+c+'">'+ICONE[c]+' '+c.toUpperCase()+': '+n+'</span>';
+    }).join('') + '</div>';
+
+    var lista = L.filter(function(u){
+      var hay = ((u.username||'')+' '+(u.email||'')+' '+(u.id||'')).toLowerCase();
+      if (q && hay.indexOf(q)<0) return false;
+      if (f==='sem') return !u.cargo;
+      if (f!=='all') return String(u.cargo||'').toLowerCase()===f;
+      return true;
+    });
+
+    wrap.innerHTML = lista.length
+      ? '<table class="kcg-table"><thead><tr><th>Usuário</th><th>Contato</th><th>Cargo atual</th><th>Definir cargo</th></tr></thead><tbody>'
+        + lista.map(function(u){
+            var id = esc(String(u.id||''));
+            return '<tr><td><b>'+esc(u.username||'—')+'</b><br><span style="font-size:11px;opacity:.5">'+id+'</span></td>'
+              + '<td style="font-size:12px;opacity:.75">'+esc(u.email||'—')+'</td>'
+              + '<td>'+(badgeHTML(u.cargo)||'<span style="opacity:.5;font-size:12px">Sem cargo</span>')+'</td>'
+              + '<td><select class="admin-input" style="max-width:170px" onchange="kaweSetCargo(\''+id+'\', this.value)">'
+              +   '<option value="">— Sem cargo —</option>'
+              +   CARGOS.map(function(c){
+                    return '<option value="'+c+'"'+(String(u.cargo||'').toLowerCase()===c?' selected':'')+'>'+ICONE[c]+' '+c.toUpperCase()+'</option>';
+                  }).join('')
+              + '</select></td></tr>';
+          }).join('')
+        + '</tbody></table>'
+      : '<p class="admin-subtitle">Nenhum usuário encontrado com esse filtro.</p>';
+  }
+
+  function cargosHTML(){
+    return ''
+    + '<h3>🏅 Gerenciar Cargos</h3>'
+    + '<p class="admin-subtitle">Dê símbolos especiais aos membros: Bronze, Prata, Platina, Ouro, Diamante e Premium. O símbolo aparece no perfil e na caixa de correio do usuário.</p>'
+    + '<div id="kcg-stats"></div>'
+    + '<div class="kcg-row">'
+    +   '<input type="text" id="kcg-search" class="admin-input" placeholder="Buscar por nome, e-mail ou ID..." oninput="kaweRenderCargos()" style="flex:1 1 260px">'
+    +   '<select id="kcg-filter" class="admin-input" onchange="kaweRenderCargos()">'
+    +     '<option value="all">Todos os cargos</option><option value="sem">Sem cargo</option>'
+    +     CARGOS.map(function(c){ return '<option value="'+c+'">'+ICONE[c]+' '+c.toUpperCase()+'</option>'; }).join('')
+    +   '</select>'
+    +   '<button class="kcg-btn red" onclick="kaweLimparCargos()">🗑 LIMPAR TODOS</button>'
+    + '</div>'
+    + '<div id="kcg-users"></div>';
+  }
+
+  /* ════════════ CAIXA DE CORREIO ════════════ */
+  function mails(){ return LS(MAILKEY,[]) || []; }
+  function saveMails(l){ SS(MAILKEY,l); try{ if(window.kaweDB) window.kaweDB.ref(MAILKEY).set(l); }catch(e){} }
+
+  function minhas(){
+    var id = meId(), nome = (meName()||'').toLowerCase();
+    return mails().filter(function(m){
+      if (m.para==='*') return true;
+      if (id && String(m.para)===String(id)) return true;
+      if (nome && String(m.paraNome||'').toLowerCase()===nome) return true;
+      return false;
+    }).sort(function(a,b){ return (b.t||0)-(a.t||0); });
+  }
+  function naoLidas(){
+    var id = meId() || meName() || 'anon';
+    return minhas().filter(function(m){ return (m.lidoPor||[]).indexOf(id) < 0; }).length;
+  }
+  window.kaweMarcarLida = function(mid){
+    var id = meId() || meName() || 'anon';
+    var L = mails();
+    for (var i=0;i<L.length;i++) if (String(L[i].id)===String(mid)){
+      L[i].lidoPor = (L[i].lidoPor||[]); if (L[i].lidoPor.indexOf(id)<0) L[i].lidoPor.push(id);
+    }
+    saveMails(L); renderMailbox(); atualizarBadge();
+  };
+  window.kaweApagarMensagem = function(mid){
+    if(!isStaff()){ T('Apenas a equipe pode apagar mensagens.'); return; }
+    if(!confirm('Apagar esta mensagem?')) return;
+    saveMails(mails().filter(function(m){ return String(m.id)!==String(mid); }));
+    renderMailbox(); renderAdminMail(); T('Mensagem apagada');
+  };
+
+  window.kaweEnviarMensagem = function(prefixo){
+    prefixo = prefixo || 'kmail';
+    var para  = (document.getElementById(prefixo+'-para')  ||{}).value || '*';
+    var tit   = (document.getElementById(prefixo+'-titulo')||{}).value || '';
+    var corpo = (document.getElementById(prefixo+'-corpo') ||{}).value || '';
+    if (!tit.trim() || !corpo.trim()){ T('Preencha o título e a mensagem.'); return; }
+    var alvoNome = 'Todos os usuários';
+    if (para !== '*'){
+      var U = users();
+      for (var i=0;i<U.length;i++) if (String(U[i].id)===String(para)) alvoNome = U[i].username || U[i].email || para;
+    }
+    var L = mails();
+    L.unshift({ id:'m'+Date.now()+Math.floor(Math.random()*999), para:para, paraNome:alvoNome,
+                titulo:tit.trim(), corpo:corpo.trim(), de:quem(), t:Date.now(), lidoPor:[] });
+    saveMails(L);
+    ['-titulo','-corpo'].forEach(function(s){ var el=document.getElementById(prefixo+s); if(el) el.value=''; });
+    renderAdminMail(); renderMailbox(); atualizarBadge();
+    T('📬 Mensagem enviada para '+alvoNome);
+  };
+
+  function selectUsuarios(id){
+    return '<select id="'+id+'"><option value="*">📢 Todos os usuários</option>'
+      + users().map(function(u){ return '<option value="'+esc(String(u.id||''))+'">'+esc(u.username||u.email||u.id)+'</option>'; }).join('')
+      + '</select>';
+  }
+
+  function buildOverlay(){
+    if (document.getElementById('kmail-overlay')) return;
+    var ov = document.createElement('div');
+    ov.id = 'kmail-overlay';
+    ov.innerHTML = ''
+      + '<div class="kmail-modal">'
+      +   '<div class="kmail-head">'
+      +     '<button class="kmail-close" type="button" onclick="kaweFecharCorreio()">×</button>'
+      +     '<h2>📬 CAIXA DE CORREIO</h2>'
+      +     '<p>Mensagens oficiais da equipe KAWE CINEMA para você.</p>'
+      +   '</div>'
+      +   '<div class="kmail-body"><div id="kmail-list"></div><div id="kmail-staff"></div></div>'
+      + '</div>';
+    ov.addEventListener('click', function(e){ if (e.target===ov) kaweFecharCorreio(); });
+    document.body.appendChild(ov);
+  }
+
+  function renderMailbox(){
+    var list = document.getElementById('kmail-list'); if(!list) return;
+    var id = meId() || meName() || 'anon';
+    var cargo = badgeHTML(window.kaweCargoDoUsuario(meId()));
+    var M = minhas();
+    list.innerHTML = (cargo ? '<div style="margin-bottom:14px">Seu cargo: '+cargo+'</div>' : '')
+      + (M.length
+        ? M.map(function(m){
+            var lida = (m.lidoPor||[]).indexOf(id) >= 0;
+            return '<div class="kmail-item '+(lida?'':'unread')+'" onclick="kaweMarcarLida(\''+esc(m.id)+'\')">'
+              + '<h4>'+(lida?'':'🔴 ')+esc(m.titulo)+'</h4>'
+              + '<div class="kmail-meta">De: <b>'+esc(m.de||'ADMIN')+'</b> · '+new Date(m.t||Date.now()).toLocaleString('pt-BR')
+              + (m.para==='*'?' · 📢 Aviso geral':'')+'</div>'
+              + '<p>'+esc(m.corpo)+'</p>'
+              + (isStaff()?'<div style="margin-top:9px"><button class="kcg-btn red" onclick="event.stopPropagation();kaweApagarMensagem(\''+esc(m.id)+'\')">🗑 Apagar</button></div>':'')
+              + '</div>';
+          }).join('')
+        : '<div class="kmail-empty">Você ainda não tem mensagens na sua caixa de correio.</div>');
+
+    var staff = document.getElementById('kmail-staff');
+    if (staff) staff.innerHTML = isStaff()
+      ? '<div class="kmail-compose"><h3>✉️ Enviar mensagem (Admin / Moderador)</h3>'
+        + selectUsuarios('kmail-para')
+        + '<input id="kmail-titulo" placeholder="Título da mensagem">'
+        + '<textarea id="kmail-corpo" placeholder="Escreva a mensagem para o usuário..."></textarea>'
+        + '<button class="kcg-btn blue" onclick="kaweEnviarMensagem(\'kmail\')">📤 ENVIAR MENSAGEM</button></div>'
+      : '';
+  }
+
+  window.kaweAbrirCorreio = function(){
+    buildOverlay(); renderMailbox();
+    var ov = document.getElementById('kmail-overlay'); if(ov) ov.classList.add('open');
+    document.body.style.overflow='hidden';
+  };
+  window.kaweFecharCorreio = function(){
+    var ov = document.getElementById('kmail-overlay'); if(ov) ov.classList.remove('open');
+    document.body.style.overflow='';
+    atualizarBadge();
+  };
+
+  function atualizarBadge(){
+    var n = naoLidas();
+    var b = document.getElementById('kmail-header-btn');
+    if (b){
+      var dot = b.querySelector('.kmail-dot');
+      if (n>0){ if(!dot){ dot=document.createElement('span'); dot.className='kmail-dot'; b.appendChild(dot); } dot.textContent = n>99?'99+':n; }
+      else if (dot) dot.remove();
+    }
+  }
+
+  /* ════════════ Aba admin: CAIXA DE CORREIO ════════════ */
+  function mailAdminHTML(){
+    return ''
+    + '<h3>📬 Caixa de Correio</h3>'
+    + '<p class="admin-subtitle">Envie mensagens para um usuário específico ou um aviso geral para todos. As mensagens aparecem na Caixa de Correio do usuário (cabeçalho e menu).</p>'
+    + '<div class="kcg-row" style="flex-direction:column;align-items:stretch">'
+    +   '<div style="display:flex;gap:9px;flex-wrap:wrap">'
+    +     '<span id="kmx-para-wrap" style="flex:1 1 240px"></span>'
+    +     '<input type="text" id="kmx-titulo" class="admin-input" placeholder="Título" style="flex:1 1 240px">'
+    +   '</div>'
+    +   '<textarea id="kmx-corpo" class="admin-input" placeholder="Escreva a mensagem..." style="min-height:110px;margin-top:9px"></textarea>'
+    +   '<div style="margin-top:9px"><button class="kcg-btn blue" onclick="kaweEnviarMensagem(\'kmx\')">📤 ENVIAR</button></div>'
+    + '</div>'
+    + '<h3 style="margin-top:22px">Mensagens enviadas</h3>'
+    + '<div id="kmx-list"></div>';
+  }
+  function renderAdminMail(){
+    var pw = document.getElementById('kmx-para-wrap');
+    if (pw && !document.getElementById('kmx-para')) pw.innerHTML = selectUsuarios('kmx-para').replace('<select','<select class="admin-input" style="width:100%"');
+    var box = document.getElementById('kmx-list'); if(!box) return;
+    var L = mails();
+    box.innerHTML = L.length
+      ? '<table class="kcg-table"><thead><tr><th>Data</th><th>Para</th><th>Título</th><th>Enviado por</th><th>Lida por</th><th></th></tr></thead><tbody>'
+        + L.map(function(m){
+            return '<tr><td style="font-size:11.5px">'+new Date(m.t||Date.now()).toLocaleString('pt-BR')+'</td>'
+              + '<td>'+esc(m.paraNome||m.para)+'</td><td><b>'+esc(m.titulo)+'</b><br><span style="font-size:11.5px;opacity:.6">'+esc((m.corpo||'').slice(0,80))+'</span></td>'
+              + '<td>'+esc(m.de||'ADMIN')+'</td><td>'+((m.lidoPor||[]).length)+'</td>'
+              + '<td><button class="kcg-btn red" onclick="kaweApagarMensagem(\''+esc(m.id)+'\')">🗑</button></td></tr>';
+          }).join('')
+        + '</tbody></table>'
+      : '<p class="admin-subtitle">Nenhuma mensagem enviada ainda.</p>';
+  }
+  window.kaweRenderAdminMail = renderAdminMail;
+
+  /* ════════════ Injeções ════════════ */
+  function addTabs(){
+    var tabs = document.querySelector('#admin-panel .admin-tabs');
+    var box  = document.querySelector('#admin-panel .admin-box');
+    if(!tabs || !box) return;
+
+    function novaAba(id, classe, texto, html, onOpen){
+      if (document.getElementById(id)) return;
+      var tab = document.createElement('div');
+      tab.className = 'admin-tab ' + classe;
+      tab.textContent = texto;
+      tab.onclick = function(){
+        document.querySelectorAll('#admin-panel .admin-tab').forEach(function(t){ t.classList.remove('active'); });
+        document.querySelectorAll('#admin-panel .admin-content-section').forEach(function(s){ s.classList.remove('active'); });
+        tab.classList.add('active');
+        var s = document.getElementById(id); if(s) s.classList.add('active');
+        try{ onOpen(); }catch(e){}
+      };
+      tabs.appendChild(tab);
+      var sec = document.createElement('div');
+      sec.id = id; sec.className = 'admin-content-section';
+      sec.innerHTML = html;
+      box.appendChild(sec);
+    }
+
+    novaAba('admin-kawe-cargos', 'kcg-tab',  '🏅 GERENCIAR CARGOS',  cargosHTML(),   renderCargos);
+    novaAba('admin-kawe-correio','kmail-tab','📬 CAIXA DE CORREIO',  mailAdminHTML(), renderAdminMail);
+  }
+
+  function injectEntries(){
+    var left = document.querySelector('header .header-left');
+    if (left && !document.getElementById('kmail-header-btn')){
+      var b = document.createElement('button');
+      b.id='kmail-header-btn'; b.type='button'; b.className='kmail-header-btn';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg> CORREIO';
+      b.onclick = function(){ kaweAbrirCorreio(); };
+      left.appendChild(b);
+    }
+    var firstNav = document.querySelector('.nav-link[onclick*="showSectionFromHeader"]');
+    if (firstNav && firstNav.parentElement && !document.getElementById('kmail-nav-item')){
+      var d = document.createElement('div');
+      d.id='kmail-nav-item'; d.className='nav-link kmail-nav-item';
+      d.innerHTML = '<svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg> CAIXA DE CORREIO';
+      d.onclick = function(){ kaweAbrirCorreio(); };
+      firstNav.parentElement.insertBefore(d, firstNav);
+    }
+    var sb = document.querySelector('.sidebar-link');
+    if (sb && sb.parentElement && !document.getElementById('kmail-sidebar-item')){
+      var s2 = document.createElement('div');
+      s2.id='kmail-sidebar-item'; s2.className='sidebar-link';
+      s2.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg> CAIXA DE CORREIO';
+      s2.onclick = function(){ kaweAbrirCorreio(); };
+      sb.parentElement.insertBefore(s2, sb);
+    }
+    var gnav = document.getElementById('green-navbar');
+    if (gnav && !document.getElementById('kmail-gn-item')){
+      var g = document.createElement('span');
+      g.id='kmail-gn-item'; g.className='gn-link'; g.textContent='📬 Correio';
+      g.onclick = function(){ kaweAbrirCorreio(); };
+      gnav.appendChild(g);
+    }
+    atualizarBadge();
+  }
+
+  function init(){
+    try{ buildOverlay(); }catch(e){}
+    try{ injectEntries(); }catch(e){}
+    try{ addTabs(); }catch(e){}
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(init,600); });
+  else setTimeout(init,600);
+  [1500,3000,6000].forEach(function(ms){ setTimeout(init,ms); });
+  setInterval(function(){ try{ injectEntries(); addTabs(); }catch(e){} }, 2500);
+})();
+</script>
+<!--KAWE_CARGOS_CORREIO_END-->
+
 </body>
 </html>
 
@@ -16578,3 +17014,501 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
 })();
 </script>
 <!--KAWE_DOWNLOADS_END-->
+<!--KAWE_SOCIAL_START-->
+<style id="kawe-social-css">
+#ksoc-wrap *{box-sizing:border-box}
+.ksoc-modal{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-start;justify-content:center;background:rgba(0,0,0,.93);padding:14px;overflow-y:auto;}
+.ksoc-modal.open{display:flex;}
+.ksoc-box{width:min(96vw,620px);margin:auto;border-radius:18px;padding:20px 18px 26px;background:#0b0b0b;border:1px solid rgba(34,197,94,.28);box-shadow:0 24px 70px rgba(0,0,0,.8);color:#fff;font-family:'Outfit',system-ui,sans-serif;position:relative;}
+.ksoc-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;font-size:16px;cursor:pointer;line-height:1;}
+.ksoc-x:hover{background:#ef4444;border-color:#ef4444;}
+.ksoc-title{margin:0 0 4px;font-size:19px;font-weight:800;color:#22c55e;letter-spacing:.4px;}
+.ksoc-sub{margin:0 0 16px;font-size:12.5px;color:#9ca3af;}
+.ksoc-input{width:100%;padding:11px 13px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:#141414;color:#fff;font-size:14px;outline:none;font-family:inherit;}
+.ksoc-input:focus{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);}
+textarea.ksoc-input{min-height:78px;resize:vertical;}
+.ksoc-btn{border:none;border-radius:11px;padding:10px 16px;font-weight:800;font-size:12.5px;letter-spacing:.4px;cursor:pointer;background:#22c55e;color:#04140a;font-family:inherit;text-transform:uppercase;}
+.ksoc-btn:hover{filter:brightness(1.12);}
+.ksoc-btn.ghost{background:rgba(255,255,255,.07);color:#fff;border:1px solid rgba(255,255,255,.16);}
+.ksoc-btn.gray{background:#2a2a2a;color:#e5e7eb;}
+.ksoc-btn.sm{padding:7px 12px;font-size:11.5px;}
+.ksoc-row{display:flex;gap:10px;align-items:center;}
+.ksoc-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#111;border:2px solid #22c55e;flex:none;}
+.ksoc-avatar.big{width:88px;height:88px;}
+.ksoc-userline{display:flex;align-items:center;gap:12px;padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:#111;margin-bottom:9px;}
+.ksoc-userline b{display:block;font-size:14px;}
+.ksoc-userline small{color:#9ca3af;font-size:11.5px;}
+.ksoc-stats{display:flex;gap:26px;margin:14px 0 8px;}
+.ksoc-stat{text-align:center;cursor:pointer;}
+.ksoc-stat b{display:block;font-size:17px;color:#22c55e;}
+.ksoc-stat span{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;}
+.ksoc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px;}
+.ksoc-cell{position:relative;padding-top:100%;background:#161616;border-radius:6px;overflow:hidden;cursor:pointer;}
+.ksoc-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.ksoc-cell .txt{position:absolute;inset:0;padding:8px;font-size:11.5px;color:#d1d5db;overflow:hidden;display:flex;align-items:center;text-align:center;justify-content:center;}
+.ksoc-cell .lk{position:absolute;bottom:4px;right:6px;font-size:11px;color:#fff;text-shadow:0 1px 4px #000;}
+.ksoc-post{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#101010;margin-bottom:14px;overflow:hidden;}
+.ksoc-post .ph{display:flex;gap:10px;align-items:center;padding:10px 12px;}
+.ksoc-post .ph img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:1.5px solid #22c55e;cursor:pointer;}
+.ksoc-post .ph b{font-size:13.5px;cursor:pointer;}
+.ksoc-post .ph small{display:block;color:#9ca3af;font-size:11px;}
+.ksoc-post .pimg{width:100%;display:block;max-height:520px;object-fit:cover;background:#000;}
+.ksoc-post .pbody{padding:10px 12px;font-size:14px;color:#e5e7eb;white-space:pre-wrap;word-break:break-word;}
+.ksoc-post .pacts{display:flex;gap:8px;padding:0 12px 12px;flex-wrap:wrap;}
+.ksoc-like{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;}
+.ksoc-like.on{color:#ef4444;}
+.ksoc-cmt{padding:0 12px 10px;font-size:12.5px;color:#cbd5e1;}
+.ksoc-cmt div{margin-bottom:4px;}
+.ksoc-empty{padding:26px 10px;text-align:center;color:#6b7280;font-size:13px;}
+.ksoc-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.ksoc-tab{padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#141414;color:#cbd5e1;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.4px;}
+.ksoc-tab.active{background:#22c55e;color:#04140a;border-color:#22c55e;}
+.ksoc-chat{height:320px;overflow-y:auto;background:#0e0e0e;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:10px;}
+.ksoc-bub{max-width:78%;padding:8px 12px;border-radius:14px;margin-bottom:8px;font-size:13.5px;word-break:break-word;white-space:pre-wrap;}
+.ksoc-bub.me{margin-left:auto;background:#22c55e;color:#04140a;border-bottom-right-radius:4px;}
+.ksoc-bub.you{background:#1f1f1f;color:#e5e7eb;border-bottom-left-radius:4px;}
+.ksoc-bub small{display:block;font-size:9.5px;opacity:.65;margin-top:3px;}
+.ksoc-badge{display:inline-block;min-width:17px;height:17px;line-height:17px;padding:0 5px;border-radius:9px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;text-align:center;margin-left:5px;}
+.auth-header-btn.ksoc-hb{background:rgba(34,197,94,.10);color:#22c55e;border:1px solid #22c55e;}
+.auth-header-btn.ksoc-hb:hover{background:#22c55e;color:#000;}
+.sidebar-link.ksoc-sb{color:#22c55e;}
+.sidebar-link.ksoc-sb:hover{background:rgba(34,197,94,.12);}
+@media(max-width:640px){.ksoc-box{padding:18px 13px 22px}.ksoc-avatar.big{width:70px;height:70px}}
+</style>
+
+<div id="ksoc-wrap">
+  <div class="ksoc-modal" id="ksoc-profile-modal">
+    <div class="ksoc-box">
+      <button class="ksoc-x" onclick="ksocClose('ksoc-profile-modal')">✕</button>
+      <div id="ksoc-profile-body"></div>
+    </div>
+  </div>
+  <div class="ksoc-modal" id="ksoc-discover-modal">
+    <div class="ksoc-box">
+      <button class="ksoc-x" onclick="ksocClose('ksoc-discover-modal')">✕</button>
+      <h2 class="ksoc-title">🔎 DESCOBRIR</h2>
+      <p class="ksoc-sub">Procure pessoas que criaram conta no site, siga e veja os posts delas.</p>
+      <div class="ksoc-tabs">
+        <div class="ksoc-tab active" data-dtab="pessoas" onclick="ksocDiscoverTab('pessoas')">Pessoas</div>
+        <div class="ksoc-tab" data-dtab="feed" onclick="ksocDiscoverTab('feed')">Feed</div>
+        <div class="ksoc-tab" data-dtab="seguindo" onclick="ksocDiscoverTab('seguindo')">Seguindo</div>
+      </div>
+      <input class="ksoc-input" id="ksoc-search" placeholder="Buscar usuário por nome ou email..." oninput="ksocRenderDiscover()" style="margin-bottom:14px">
+      <div id="ksoc-discover-body"></div>
+    </div>
+  </div>
+  <div class="ksoc-modal" id="ksoc-msg-modal">
+    <div class="ksoc-box">
+      <button class="ksoc-x" onclick="ksocClose('ksoc-msg-modal')">✕</button>
+      <h2 class="ksoc-title">💬 MENSAGENS</h2>
+      <p class="ksoc-sub">Converse em tempo real com outros usuários do KAWE CINEMA.</p>
+      <div id="ksoc-msg-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════ KAWE SOCIAL v1 — Seguidores, Posts, Descobrir e Mensagens ═══════════ */
+(function(){
+  var ROOT = 'kawe_social';
+  var DEF_AV = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='82' height='82'><rect width='82' height='82' fill='%23111'/><circle cx='41' cy='32' r='14' fill='%2322c55e'/><ellipse cx='41' cy='70' rx='24' ry='16' fill='%2322c55e'/></svg>";
+  var S = { posts:{}, follows:{}, dm:{}, view:{ tab:'pessoas', profileId:null, chatWith:null } };
+
+  function db(){ try{ return window.kaweDB || (typeof firebase!=='undefined' && firebase.apps && firebase.apps.length ? firebase.database() : null); }catch(e){ return null; } }
+  function msg(t){ if(typeof toast==='function'){ try{ return toast(t); }catch(e){} } alert(t); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]')||[]; }catch(e){ return []; } }
+  function me(){ try{ return (typeof window.kaweCurrentUser==='function') ? window.kaweCurrentUser() : null; }catch(e){ return null; } }
+  function userById(id){ return users().find(function(u){ return u.id===id; }) || null; }
+  function avatarOf(u){ return (u && (u.photo||u.avatar)) ? u.photo||u.avatar : DEF_AV; }
+  function nameOf(u){ return (u && (u.username || u.fullname || (u.email||'').split('@')[0])) || 'Usuário'; }
+  function when(ts){ try{ var d=new Date(ts); var s=(Date.now()-d.getTime())/1000;
+      if(s<60) return 'agora'; if(s<3600) return Math.floor(s/60)+' min'; if(s<86400) return Math.floor(s/3600)+' h';
+      if(s<604800) return Math.floor(s/86400)+' d'; return d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
+  function need(){ var u=me(); if(!u){ msg('🔒 Faça login para usar essa função'); try{ if(typeof openAuthModal==='function') openAuthModal('login'); }catch(e){} return null; } return u; }
+
+  /* ── LOCAL CACHE + FIREBASE ─────────────────────────────── */
+  function lsGet(k,d){ try{ return JSON.parse(localStorage.getItem('ksoc_'+k)||'null') || d; }catch(e){ return d; } }
+  function lsSet(k,v){ try{ localStorage.setItem('ksoc_'+k, JSON.stringify(v)); }catch(e){} }
+  S.posts = lsGet('posts',{}); S.follows = lsGet('follows',{}); S.dm = lsGet('dm',{});
+
+  function push(path, key, val){
+    var d = db();
+    if(d){ d.ref(ROOT+'/'+path+'/'+key).set(val).catch(function(e){ console.warn('[KSOC]', e && e.message); }); }
+  }
+  function remove(path){ var d=db(); if(d) d.ref(ROOT+'/'+path).remove().catch(function(){}); }
+
+  function listen(){
+    var d = db(); if(!d){ setTimeout(listen, 1500); return; }
+    d.ref(ROOT+'/posts').on('value', function(s){ S.posts = s.val()||{}; lsSet('posts',S.posts); refresh(); });
+    d.ref(ROOT+'/follows').on('value', function(s){ S.follows = s.val()||{}; lsSet('follows',S.follows); refresh(); });
+    d.ref(ROOT+'/dm').on('value', function(s){ S.dm = s.val()||{}; lsSet('dm',S.dm); refresh(); ksocBadges(); });
+  }
+
+  /* ── FOLLOW ─────────────────────────────────────────────── */
+  function followers(id){ return Object.keys(S.follows||{}).filter(function(f){ return S.follows[f] && S.follows[f][id]; }); }
+  function following(id){ return Object.keys((S.follows||{})[id]||{}); }
+  function isFollowing(a,b){ return !!((S.follows||{})[a]||{})[b]; }
+
+  window.ksocToggleFollow = function(targetId){
+    var u = need(); if(!u) return;
+    if(u.id===targetId){ msg('😅 Você não pode seguir a si mesmo'); return; }
+    S.follows[u.id] = S.follows[u.id] || {};
+    if(S.follows[u.id][targetId]){
+      delete S.follows[u.id][targetId];
+      remove('follows/'+u.id+'/'+targetId);
+      msg('Deixou de seguir');
+    } else {
+      S.follows[u.id][targetId] = Date.now();
+      push('follows/'+u.id, targetId, Date.now());
+      msg('✅ Seguindo ' + nameOf(userById(targetId)));
+    }
+    lsSet('follows', S.follows); refresh();
+  };
+
+  /* ── POSTS ──────────────────────────────────────────────── */
+  function postList(filterFn){
+    return Object.keys(S.posts||{}).map(function(k){ var p=S.posts[k]||{}; p.id=k; return p; })
+      .filter(function(p){ return p && p.userId && (!filterFn || filterFn(p)); })
+      .sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+  }
+
+  window.ksocCreatePost = function(){
+    var u = need(); if(!u) return;
+    var txt = (document.getElementById('ksoc-post-text')||{}).value || '';
+    var img = window.__ksocPendingImg || '';
+    if(!txt.trim() && !img){ msg('Escreva algo ou escolha uma imagem'); return; }
+    var id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    var post = { id:id, userId:u.id, username:nameOf(u), photo:avatarOf(u), text:txt.trim(), image:img, ts:Date.now(), likes:{}, comments:{} };
+    S.posts[id] = post; lsSet('posts', S.posts); push('posts', id, post);
+    window.__ksocPendingImg = '';
+    var t = document.getElementById('ksoc-post-text'); if(t) t.value='';
+    var pv = document.getElementById('ksoc-post-preview'); if(pv){ pv.innerHTML=''; }
+    msg('✅ Post publicado!'); refresh();
+  };
+
+  window.ksocPickImage = function(input){
+    var f = input.files && input.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(ev){
+      var im = new Image();
+      im.onload = function(){
+        var max = 900, w = im.width, h = im.height;
+        if(w>max || h>max){ if(w>h){ h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; } }
+        var c = document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(im,0,0,w,h);
+        window.__ksocPendingImg = c.toDataURL('image/jpeg', .72);
+        var pv = document.getElementById('ksoc-post-preview');
+        if(pv) pv.innerHTML = '<img src="'+window.__ksocPendingImg+'" style="max-height:150px;border-radius:10px;margin-top:8px">';
+      };
+      im.src = ev.target.result;
+    };
+    r.readAsDataURL(f);
+  };
+
+  window.ksocLike = function(pid){
+    var u = need(); if(!u) return;
+    var p = S.posts[pid]; if(!p) return;
+    p.likes = p.likes || {};
+    if(p.likes[u.id]) delete p.likes[u.id]; else p.likes[u.id] = 1;
+    lsSet('posts',S.posts); push('posts', pid, p); refresh();
+  };
+  window.ksocComment = function(pid){
+    var u = need(); if(!u) return;
+    var txt = prompt('Seu comentário:'); if(!txt || !txt.trim()) return;
+    var p = S.posts[pid]; if(!p) return;
+    p.comments = p.comments || {};
+    p.comments['c_'+Date.now()] = { userId:u.id, username:nameOf(u), text:txt.trim(), ts:Date.now() };
+    lsSet('posts',S.posts); push('posts', pid, p); refresh();
+  };
+  window.ksocDeletePost = function(pid){
+    var u = need(); if(!u) return;
+    var p = S.posts[pid]; if(!p || p.userId!==u.id) return;
+    if(!confirm('Excluir este post?')) return;
+    delete S.posts[pid]; lsSet('posts',S.posts); remove('posts/'+pid); refresh();
+  };
+
+  function postCard(p){
+    var u = me();
+    var liked = u && p.likes && p.likes[u.id];
+    var nLikes = p.likes ? Object.keys(p.likes).length : 0;
+    var cmts = p.comments ? Object.keys(p.comments).map(function(k){ return p.comments[k]; }).sort(function(a,b){return a.ts-b.ts;}) : [];
+    var owner = userById(p.userId);
+    return '<div class="ksoc-post">'
+      + '<div class="ph"><img src="'+esc(avatarOf(owner)||p.photo||DEF_AV)+'" onclick="ksocOpenProfile(\''+p.userId+'\')" alt="">'
+      + '<div><b onclick="ksocOpenProfile(\''+p.userId+'\')">'+esc(owner?nameOf(owner):p.username)+'</b><small>'+when(p.ts)+'</small></div></div>'
+      + (p.image ? '<img class="pimg" src="'+esc(p.image)+'" alt="post">' : '')
+      + (p.text ? '<div class="pbody">'+esc(p.text)+'</div>' : '')
+      + '<div class="pacts">'
+      +   '<button class="ksoc-like '+(liked?'on':'')+'" onclick="ksocLike(\''+p.id+'\')">'+(liked?'❤️':'🤍')+' '+nLikes+'</button>'
+      +   '<button class="ksoc-like" onclick="ksocComment(\''+p.id+'\')">💬 '+cmts.length+'</button>'
+      +   ((u && u.id===p.userId) ? '<button class="ksoc-like" onclick="ksocDeletePost(\''+p.id+'\')">🗑️ excluir</button>' : '')
+      +   ((u && u.id!==p.userId) ? '<button class="ksoc-like" onclick="ksocOpenChat(\''+p.userId+'\')">✉️ mensagem</button>' : '')
+      + '</div>'
+      + (cmts.length ? '<div class="ksoc-cmt">'+cmts.slice(-4).map(function(c){ return '<div><b>'+esc(c.username)+'</b> '+esc(c.text)+'</div>'; }).join('')+'</div>' : '')
+      + '</div>';
+  }
+
+  /* ── PERFIL (estilo Instagram) ──────────────────────────── */
+  window.ksocOpenProfile = function(id){
+    var u = me();
+    id = id || (u && u.id);
+    if(!id){ need(); return; }
+    S.view.profileId = id;
+    ksocOpen('ksoc-profile-modal');
+    renderProfile();
+  };
+  function renderProfile(){
+    var el = document.getElementById('ksoc-profile-body'); if(!el) return;
+    var id = S.view.profileId; var u = me();
+    var p = userById(id);
+    if(!p){ el.innerHTML = '<div class="ksoc-empty">Usuário não encontrado.</div>'; return; }
+    var own = u && u.id===id;
+    var posts = postList(function(x){ return x.userId===id; });
+    var fers = followers(id).length, fing = following(id).length;
+    var html = ''
+      + '<div class="ksoc-row" style="gap:16px;align-items:center">'
+      +   '<img class="ksoc-avatar big" src="'+esc(avatarOf(p))+'" alt="">'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<h2 class="ksoc-title" style="margin:0">'+esc(nameOf(p))+'</h2>'
+      +     '<p class="ksoc-sub" style="margin:2px 0 0">'+esc(p.fullname||p.email||'')+'</p>'
+      +     '<div class="ksoc-stats">'
+      +       '<div class="ksoc-stat"><b>'+posts.length+'</b><span>Posts</span></div>'
+      +       '<div class="ksoc-stat" onclick="ksocShowList(\'followers\',\''+id+'\')"><b>'+fers+'</b><span>Seguidores</span></div>'
+      +       '<div class="ksoc-stat" onclick="ksocShowList(\'following\',\''+id+'\')"><b>'+fing+'</b><span>Seguindo</span></div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
+
+    if(own){
+      html += '<div style="margin-top:14px;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;background:#101010">'
+        + '<textarea class="ksoc-input" id="ksoc-post-text" placeholder="No que você está pensando? Compartilhe um filme, série ou foto..."></textarea>'
+        + '<div id="ksoc-post-preview"></div>'
+        + '<div class="ksoc-row" style="margin-top:10px;flex-wrap:wrap">'
+        +   '<label class="ksoc-btn ghost sm" style="cursor:pointer">🖼️ Imagem<input type="file" accept="image/*" onchange="ksocPickImage(this)" style="display:none"></label>'
+        +   '<button class="ksoc-btn sm" onclick="ksocCreatePost()">PUBLICAR</button>'
+        + '</div></div>';
+    } else {
+      html += '<div class="ksoc-row" style="margin-top:12px">'
+        + '<button class="ksoc-btn '+(u && isFollowing(u.id,id)?'gray':'')+'" onclick="ksocToggleFollow(\''+id+'\')">'+(u && isFollowing(u.id,id)?'SEGUINDO ✓':'SEGUIR')+'</button>'
+        + '<button class="ksoc-btn ghost" onclick="ksocOpenChat(\''+id+'\')">✉️ MENSAGEM</button></div>';
+    }
+
+    html += '<div class="ksoc-tabs" style="margin-top:16px">'
+      + '<div class="ksoc-tab '+(S.view.ptab!=='lista'?'active':'')+'" onclick="ksocProfileTab(\'grade\')">Grade</div>'
+      + '<div class="ksoc-tab '+(S.view.ptab==='lista'?'active':'')+'" onclick="ksocProfileTab(\'lista\')">Publicações</div></div>';
+
+    if(!posts.length){ html += '<div class="ksoc-empty">Nenhum post ainda.</div>'; }
+    else if(S.view.ptab==='lista'){ html += posts.map(postCard).join(''); }
+    else {
+      html += '<div class="ksoc-grid">' + posts.map(function(x){
+        var n = x.likes ? Object.keys(x.likes).length : 0;
+        return '<div class="ksoc-cell" onclick="ksocProfileTab(\'lista\')">'
+          + (x.image ? '<img src="'+esc(x.image)+'" alt="">' : '<div class="txt">'+esc((x.text||'').slice(0,90))+'</div>')
+          + '<span class="lk">❤ '+n+'</span></div>';
+      }).join('') + '</div>';
+    }
+    el.innerHTML = html;
+  }
+  window.ksocProfileTab = function(t){ S.view.ptab = t; renderProfile(); };
+
+  window.ksocShowList = function(kind, id){
+    var ids = kind==='followers' ? followers(id) : following(id);
+    var el = document.getElementById('ksoc-profile-body'); if(!el) return;
+    el.innerHTML = '<h2 class="ksoc-title">'+(kind==='followers'?'Seguidores':'Seguindo')+'</h2>'
+      + '<p class="ksoc-sub">'+ids.length+' pessoa(s)</p>'
+      + (ids.length ? ids.map(function(x){ return userLine(userById(x)); }).join('') : '<div class="ksoc-empty">Ninguém por aqui ainda.</div>')
+      + '<button class="ksoc-btn ghost" style="margin-top:12px" onclick="ksocOpenProfile(\''+id+'\')">← VOLTAR</button>';
+  };
+
+  function userLine(p){
+    if(!p) return '';
+    var u = me();
+    var f = u && isFollowing(u.id, p.id);
+    return '<div class="ksoc-userline">'
+      + '<img class="ksoc-avatar" style="width:44px;height:44px" src="'+esc(avatarOf(p))+'" onclick="ksocOpenProfile(\''+p.id+'\')" alt="">'
+      + '<div style="flex:1;min-width:0;cursor:pointer" onclick="ksocOpenProfile(\''+p.id+'\')"><b>'+esc(nameOf(p))+'</b>'
+      +   '<small>'+followers(p.id).length+' seguidores · '+postList(function(x){return x.userId===p.id;}).length+' posts</small></div>'
+      + ((u && u.id===p.id) ? '<span style="font-size:11px;color:#6b7280">você</span>'
+         : '<button class="ksoc-btn sm '+(f?'gray':'')+'" onclick="ksocToggleFollow(\''+p.id+'\')">'+(f?'SEGUINDO':'SEGUIR')+'</button>'
+           + '<button class="ksoc-btn sm ghost" onclick="ksocOpenChat(\''+p.id+'\')">✉️</button>')
+      + '</div>';
+  }
+
+  /* ── DESCOBRIR ──────────────────────────────────────────── */
+  window.ksocOpenDiscover = function(){ ksocOpen('ksoc-discover-modal'); try{ if(typeof window.kawePullUsersFromFirebase==='function') window.kawePullUsersFromFirebase().then(ksocRenderDiscover); }catch(e){} ksocRenderDiscover(); };
+  window.ksocDiscoverTab = function(t){
+    S.view.tab = t;
+    document.querySelectorAll('#ksoc-discover-modal .ksoc-tab').forEach(function(el){ el.classList.toggle('active', el.getAttribute('data-dtab')===t); });
+    var s = document.getElementById('ksoc-search'); if(s) s.style.display = (t==='feed'?'none':'block');
+    ksocRenderDiscover();
+  };
+  window.ksocRenderDiscover = function(){
+    var el = document.getElementById('ksoc-discover-body'); if(!el) return;
+    var u = me();
+    var q = ((document.getElementById('ksoc-search')||{}).value||'').trim().toLowerCase();
+    if(S.view.tab==='feed'){
+      var ids = u ? following(u.id) : [];
+      var feed = postList(function(p){ return !u || ids.indexOf(p.userId)>=0 || p.userId===u.id; });
+      el.innerHTML = feed.length ? feed.map(postCard).join('')
+        : '<div class="ksoc-empty">Seu feed está vazio. Siga pessoas na aba <b>Pessoas</b> para ver os posts delas aqui.</div>';
+      return;
+    }
+    var list = users().filter(function(p){ return p && p.id && !p.banned; });
+    if(S.view.tab==='seguindo' && u){ var fl = following(u.id); list = list.filter(function(p){ return fl.indexOf(p.id)>=0; }); }
+    if(q) list = list.filter(function(p){ return (nameOf(p)+' '+(p.email||'')).toLowerCase().indexOf(q)>=0; });
+    list.sort(function(a,b){ return followers(b.id).length - followers(a.id).length; });
+    el.innerHTML = list.length ? list.map(userLine).join('')
+      : '<div class="ksoc-empty">Nenhum usuário encontrado.</div>';
+  };
+
+  /* ── MENSAGENS ──────────────────────────────────────────── */
+  function chatId(a,b){ return [a,b].sort().join('__'); }
+  function chatMsgs(a,b){ var c = (S.dm||{})[chatId(a,b)]||{}; return Object.keys(c).map(function(k){ var m=c[k]; m._k=k; return m; }).sort(function(x,y){ return x.ts-y.ts; }); }
+
+  window.ksocOpenMessages = function(){ var u=need(); if(!u) return; S.view.chatWith=null; ksocOpen('ksoc-msg-modal'); renderMessages(); };
+  window.ksocOpenChat = function(id){ var u=need(); if(!u) return; S.view.chatWith=id; ksocClose('ksoc-profile-modal'); ksocClose('ksoc-discover-modal'); ksocOpen('ksoc-msg-modal'); renderMessages(); };
+  window.ksocBackToInbox = function(){ S.view.chatWith=null; renderMessages(); };
+
+  window.ksocSendMsg = function(){
+    var u = need(); if(!u) return;
+    var to = S.view.chatWith; if(!to) return;
+    var inp = document.getElementById('ksoc-msg-input');
+    var txt = (inp && inp.value || '').trim(); if(!txt) return;
+    var cid = chatId(u.id,to), key = 'm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+    var m = { from:u.id, to:to, text:txt, ts:Date.now(), read:false };
+    S.dm[cid] = S.dm[cid]||{}; S.dm[cid][key] = m; lsSet('dm',S.dm);
+    push('dm/'+cid, key, m);
+    if(inp) inp.value='';
+    renderMessages();
+  };
+
+  function renderMessages(){
+    var el = document.getElementById('ksoc-msg-body'); if(!el) return;
+    var u = me(); if(!u){ el.innerHTML='<div class="ksoc-empty">Faça login para usar as mensagens.</div>'; return; }
+    if(!S.view.chatWith){
+      var partners = {};
+      Object.keys(S.dm||{}).forEach(function(cid){
+        var parts = cid.split('__'); if(parts.indexOf(u.id)<0) return;
+        var other = parts[0]===u.id ? parts[1] : parts[0];
+        var ms = chatMsgs(u.id, other); if(!ms.length) return;
+        partners[other] = ms[ms.length-1];
+      });
+      var keys = Object.keys(partners).sort(function(a,b){ return partners[b].ts - partners[a].ts; });
+      el.innerHTML = '<button class="ksoc-btn ghost sm" style="margin-bottom:12px" onclick="ksocOpenDiscover()">＋ NOVA CONVERSA</button>'
+        + (keys.length ? keys.map(function(id){
+            var p = userById(id), last = partners[id];
+            var unread = chatMsgs(u.id,id).filter(function(m){ return m.to===u.id && !m.read; }).length;
+            return '<div class="ksoc-userline" style="cursor:pointer" onclick="ksocOpenChat(\''+id+'\')">'
+              + '<img class="ksoc-avatar" style="width:44px;height:44px" src="'+esc(avatarOf(p))+'" alt="">'
+              + '<div style="flex:1;min-width:0"><b>'+esc(p?nameOf(p):'Usuário')+(unread?'<span class="ksoc-badge">'+unread+'</span>':'')+'</b>'
+              + '<small style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc((last.from===u.id?'Você: ':'')+last.text)+'</small></div>'
+              + '<small style="color:#6b7280">'+when(last.ts)+'</small></div>';
+          }).join('') : '<div class="ksoc-empty">Nenhuma conversa ainda. Use <b>Descobrir</b> para encontrar pessoas.</div>');
+      return;
+    }
+    var other = userById(S.view.chatWith);
+    var ms = chatMsgs(u.id, S.view.chatWith);
+    // marca como lidas
+    var cid = chatId(u.id, S.view.chatWith); var changed=false;
+    ms.forEach(function(m){ if(m.to===u.id && !m.read){ m.read=true; changed=true; push('dm/'+cid, m._k, {from:m.from,to:m.to,text:m.text,ts:m.ts,read:true}); } });
+    if(changed){ lsSet('dm',S.dm); ksocBadges(); }
+
+    el.innerHTML = '<div class="ksoc-row" style="margin-bottom:10px">'
+      + '<button class="ksoc-btn ghost sm" onclick="ksocBackToInbox()">←</button>'
+      + '<img class="ksoc-avatar" style="width:38px;height:38px" src="'+esc(avatarOf(other))+'" alt="">'
+      + '<b style="cursor:pointer" onclick="ksocOpenProfile(\''+S.view.chatWith+'\')">'+esc(other?nameOf(other):'Usuário')+'</b></div>'
+      + '<div class="ksoc-chat" id="ksoc-chat-scroll">'
+      + (ms.length ? ms.map(function(m){ return '<div class="ksoc-bub '+(m.from===u.id?'me':'you')+'">'+esc(m.text)+'<small>'+when(m.ts)+'</small></div>'; }).join('')
+                   : '<div class="ksoc-empty">Diga olá 👋</div>')
+      + '</div>'
+      + '<div class="ksoc-row"><input class="ksoc-input" id="ksoc-msg-input" placeholder="Escreva uma mensagem..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();ksocSendMsg();}">'
+      + '<button class="ksoc-btn" onclick="ksocSendMsg()">ENVIAR</button></div>';
+    var sc = document.getElementById('ksoc-chat-scroll'); if(sc) sc.scrollTop = sc.scrollHeight;
+  }
+
+  /* ── MODAIS ─────────────────────────────────────────────── */
+  window.ksocOpen = function(id){ var m=document.getElementById(id); if(m) m.classList.add('open'); };
+  window.ksocClose = function(id){ var m=document.getElementById(id); if(m) m.classList.remove('open'); };
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.classList && e.target.classList.contains('ksoc-modal')) e.target.classList.remove('open');
+  });
+
+  function refresh(){
+    var pm = document.getElementById('ksoc-profile-modal');
+    if(pm && pm.classList.contains('open') && S.view.profileId) renderProfile();
+    var dm = document.getElementById('ksoc-discover-modal');
+    if(dm && dm.classList.contains('open')) ksocRenderDiscover();
+    var mm = document.getElementById('ksoc-msg-modal');
+    if(mm && mm.classList.contains('open')) renderMessages();
+    ksocBadges();
+  }
+
+  window.ksocBadges = function(){
+    var u = me(); var n = 0;
+    if(u){ Object.keys(S.dm||{}).forEach(function(cid){
+      var c = S.dm[cid]||{};
+      Object.keys(c).forEach(function(k){ var m=c[k]; if(m && m.to===u.id && !m.read) n++; });
+    }); }
+    ['ksoc-hdr-msg','ksoc-sb-msg'].forEach(function(id){
+      var el = document.getElementById(id); if(!el) return;
+      var b = el.querySelector('.ksoc-badge');
+      if(n>0){ if(!b){ b=document.createElement('span'); b.className='ksoc-badge'; el.appendChild(b); } b.textContent = n; }
+      else if(b) b.remove();
+    });
+  };
+
+  /* ── INJETA BOTÕES NO CABEÇALHO E NO MENU ───────────────── */
+  function injectHeader(){
+    var left = document.querySelector('header .header-left'); if(!left) return;
+    if(!document.getElementById('ksoc-hdr-disc')){
+      var b1 = document.createElement('button');
+      b1.id='ksoc-hdr-disc'; b1.className='auth-header-btn ksoc-hb'; b1.title='Descobrir pessoas';
+      b1.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.5 6.5l-2.1 5-5 2.1 2.1-5 5-2.1z"/></svg> DESCOBRIR';
+      b1.onclick = function(){ ksocOpenDiscover(); };
+      left.appendChild(b1);
+    }
+    if(!document.getElementById('ksoc-hdr-msg')){
+      var b2 = document.createElement('button');
+      b2.id='ksoc-hdr-msg'; b2.className='auth-header-btn ksoc-hb'; b2.title='Mensagens';
+      b2.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg> MENSAGENS';
+      b2.onclick = function(){ ksocOpenMessages(); };
+      left.appendChild(b2);
+    }
+    if(!document.getElementById('ksoc-hdr-prof')){
+      var b3 = document.createElement('button');
+      b3.id='ksoc-hdr-prof'; b3.className='auth-header-btn ksoc-hb'; b3.title='Meu perfil social';
+      b3.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> MEU PERFIL';
+      b3.onclick = function(){ if(need()) ksocOpenProfile(); };
+      left.appendChild(b3);
+    }
+  }
+  function injectSidebar(){
+    var menu = document.querySelector('#sidebar .sidebar-menu'); if(!menu) return;
+    function add(id, label, icon, fn){
+      if(document.getElementById(id)) return;
+      var d = document.createElement('div');
+      d.id = id; d.className = 'sidebar-link ksoc-sb';
+      d.innerHTML = '<svg viewBox="0 0 24 24">'+icon+'</svg> '+label;
+      d.onclick = fn;
+      menu.insertBefore(d, menu.children[1] || null);
+    }
+    add('ksoc-sb-prof','MEU PERFIL','<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} if(need()) ksocOpenProfile(); });
+    add('ksoc-sb-msg','MENSAGENS','<path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} ksocOpenMessages(); });
+    add('ksoc-sb-disc','DESCOBRIR','<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.5 6.5l-2.1 5-5 2.1 2.1-5 5-2.1z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} ksocOpenDiscover(); });
+  }
+
+  function init(){
+    try{ injectHeader(); }catch(e){}
+    try{ injectSidebar(); }catch(e){}
+    try{ ksocBadges(); }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ init(); setTimeout(init,800); });
+  else { init(); setTimeout(init,800); }
+  [1500,3000,6000].forEach(function(ms){ setTimeout(init, ms); });
+  setInterval(init, 3000);
+  listen();
+  console.log('[KAWE-SOCIAL] módulo social carregado (seguidores, posts, descobrir, mensagens)');
+})();
+</script>
+<!--KAWE_SOCIAL_END-->
