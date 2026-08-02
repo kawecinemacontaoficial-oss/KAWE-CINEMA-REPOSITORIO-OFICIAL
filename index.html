@@ -15850,6 +15850,21 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', injectZone);
   else injectZone();
   [400,1200,2500,5000].forEach(function(ms){ setTimeout(injectZone, ms); });
+  window.kaweEnsureAccountZone = injectZone;
+  (function hookProfileOpen(){
+    var tries = 0;
+    var t = setInterval(function(){
+      tries++;
+      var orig = window.openKaweProfile;
+      if(typeof orig==='function' && !orig.__kaccHooked){
+        var f = function(){ var r = orig.apply(this, arguments); try{ injectZone(); }catch(e){} return r; };
+        f.__kaccHooked = true;
+        window.openKaweProfile = f;
+        clearInterval(t);
+      }
+      if(tries > 40) clearInterval(t);
+    }, 250);
+  })();
 
   window.kaweStartDelete = function(){
     var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
@@ -17475,11 +17490,11 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
       b2.onclick = function(){ ksocOpenMessages(); };
       left.appendChild(b2);
     }
-    if(!document.getElementById('ksoc-hdr-prof')){
+    if(!document.getElementById('kawe-hdr-prof')){
       var b3 = document.createElement('button');
-      b3.id='ksoc-hdr-prof'; b3.className='auth-header-btn ksoc-hb'; b3.title='Meu perfil social';
+      b3.id='kawe-hdr-prof'; b3.className='auth-header-btn ksoc-hb'; b3.title='Meu perfil';
       b3.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> MEU PERFIL';
-      b3.onclick = function(){ if(need()) ksocOpenProfile(); };
+      b3.onclick = function(){ if(typeof openKaweProfile==='function') openKaweProfile(); };
       left.appendChild(b3);
     }
   }
@@ -17493,7 +17508,6 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
       d.onclick = fn;
       menu.insertBefore(d, menu.children[1] || null);
     }
-    add('ksoc-sb-prof','MEU PERFIL','<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} if(need()) ksocOpenProfile(); });
     add('ksoc-sb-msg','MENSAGENS','<path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} ksocOpenMessages(); });
     add('ksoc-sb-disc','DESCOBRIR','<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm3.5 6.5l-2.1 5-5 2.1 2.1-5 5-2.1z"/>', function(){ try{ if(typeof toggleSidebar==='function') toggleSidebar(); }catch(e){} ksocOpenDiscover(); });
   }
