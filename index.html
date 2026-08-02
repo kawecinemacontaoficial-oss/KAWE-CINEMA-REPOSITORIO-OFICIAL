@@ -14077,3 +14077,501 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
   setTimeout(init, 3000);
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     KAWE AUTH SESSION v3 — Sessão + botão SAIR + Perfil sincronizado
+     com Firebase Realtime Database. Bloco puramente aditivo.
+     ═══════════════════════════════════════════════════════════════ -->
+<style id="kawe-auth-session-css">
+.auth-header-btn.logout-btn{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border-color:transparent;}
+.auth-header-btn.logout-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(239,68,68,.45);}
+.auth-header-btn.profile-btn{background:rgba(34,197,94,.10);color:#22c55e;border-color:#22c55e;}
+.auth-header-btn.profile-btn:hover{background:#22c55e;color:#000;}
+.kawe-hidden{display:none !important;}
+.kawe-userchip{display:inline-flex;align-items:center;gap:8px;margin-left:8px;padding:4px 10px 4px 4px;border-radius:999px;
+  background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.45);color:#d1fae5;font-family:'Outfit',sans-serif;
+  font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;}
+.kawe-userchip img{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid #22c55e;background:#111;}
+@media (max-width:768px){ .kawe-userchip span{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} }
+</style>
+<script>
+(function(){
+  var CONNECTOR = 'kawe_users_data';           // nó do RTDB com os perfis
+  var DEF_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='82' height='82'><rect width='82' height='82' fill='%23111'/><circle cx='41' cy='32' r='14' fill='%2322c55e'/><ellipse cx='41' cy='70' rx='24' ry='16' fill='%2322c55e'/></svg>";
+
+  function msg(t){ if(typeof toast==='function'){ try{ return toast(t); }catch(e){} } console.log('[KAWE]',t); }
+  function users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]'); }catch(e){ return []; } }
+  function saveUsers(l){ try{ localStorage.setItem('kawe_users', JSON.stringify(l)); }catch(e){} }
+  function db(){ return window.kaweDB || (typeof firebase!=='undefined' && firebase.apps && firebase.apps.length ? firebase.database() : null); }
+
+  /* ── SESSÃO ─────────────────────────────────────────────── */
+  window.kaweIsLogged = function(){
+    try{ if(localStorage.getItem('kawe_user_authed')!=='1') return false; }catch(e){ return false; }
+    return !!(typeof window.kaweCurrentUser==='function' ? window.kaweCurrentUser() : null);
+  };
+
+  window.kaweLogout = function(){
+    try{
+      localStorage.removeItem('kawe_current_user_id');
+      localStorage.removeItem('kawe_user_authed');
+      localStorage.removeItem('kawe_user_name');
+      localStorage.removeItem('kaweUser');
+    }catch(e){}
+    try{ if(typeof closeKaweProfile==='function') closeKaweProfile(); }catch(e){}
+    kaweRefreshAuthUI();
+    msg('👋 Você saiu da sua conta');
+  };
+
+  /* ── SINCRONIZAÇÃO COM O FIREBASE ───────────────────────── */
+  function fbKey(u){
+    var base = (u.email || u.phone || u.username || u.id || '').toLowerCase();
+    return (u.id || '') + '__' + base.replace(/[^a-z0-9]/g,'_').slice(0,40);
+  }
+  window.kaweSyncUserToFirebase = function(u){
+    var d = db(); if(!d || !u) return Promise.resolve();
+    var payload = {
+      id: u.id||'', username: u.username||'', fullname: u.fullname||'',
+      email: u.email||'', phone: u.phone||'', photo: u.photo||'',
+      method: u.method||'local', banned: !!u.banned,
+      password: u.password||'',
+      createdAt: u.createdAt||'', lastLogin: u.lastLogin||'', updatedAt: new Date().toISOString()
+    };
+    return d.ref(CONNECTOR + '/' + fbKey(u)).set(payload)
+      .then(function(){ console.log('[KAWE] perfil sincronizado no Firebase:', payload.username); })
+      .catch(function(e){ console.warn('[KAWE] falha ao sincronizar perfil:', e); });
+  };
+
+  // Traz todas as contas do Firebase para o dispositivo atual (login em qualquer aparelho)
+  window.kawePullUsersFromFirebase = function(){
+    var d = db(); if(!d) return Promise.resolve([]);
+    return d.ref(CONNECTOR).once('value').then(function(snap){
+      var remote = snap.val() || {};
+      var list = users();
+      Object.keys(remote).forEach(function(k){
+        var r = remote[k]; if(!r || !r.id) return;
+        var i = list.findIndex(function(x){ return x.id===r.id; });
+        if(i<0) list.push(r);
+        else {
+          var localT = Date.parse(list[i].updatedAt||list[i].lastLogin||list[i].createdAt||0)||0;
+          var remoteT = Date.parse(r.updatedAt||r.lastLogin||r.createdAt||0)||0;
+          if(remoteT >= localT) list[i] = Object.assign({}, list[i], r);
+        }
+      });
+      saveUsers(list);
+      if(typeof renderAdminUsers==='function'){ try{ renderAdminUsers(); }catch(e){} }
+      kaweRefreshAuthUI();
+      return list;
+    }).catch(function(e){ console.warn('[KAWE] falha ao carregar usuários:', e); return []; });
+  };
+
+  /* ── WRAPPERS: cadastro / login / perfil ────────────────── */
+  function wrap(name, after){
+    var orig = window[name];
+    if(typeof orig!=='function' || orig.__kaweWrapped) return;
+    var fn = function(){
+      var res = orig.apply(this, arguments);
+      try{ after(res, arguments); }catch(e){ console.warn('[KAWE]', e); }
+      return res;
+    };
+    fn.__kaweWrapped = true;
+    window[name] = fn;
+  }
+
+  function afterAuth(res){
+    var u = (res && res.ok && res.user) ? res.user : (typeof kaweCurrentUser==='function' ? kaweCurrentUser() : null);
+    if(!u) return;
+    // puxa dados remotos (foto, nome completo, telefone) e mescla no perfil local
+    var d = db();
+    var done = function(){ kaweRefreshAuthUI(); window.kaweSyncUserToFirebase(u); };
+    if(d){
+      d.ref(CONNECTOR + '/' + fbKey(u)).once('value').then(function(s){
+        var r = s.val();
+        if(r){
+          var list = users(); var i = list.findIndex(function(x){ return x.id===u.id; });
+          if(i>=0){
+            ['photo','fullname','phone','email','username'].forEach(function(f){ if(r[f] && !list[i][f]) list[i][f]=r[f]; });
+            if(r.photo) list[i].photo = list[i].photo || r.photo;
+            saveUsers(list); u = list[i];
+          }
+        }
+        done();
+      }).catch(done);
+    } else done();
+  }
+
+  function installWrappers(){
+    wrap('kaweUsersRegister', afterAuth);
+    wrap('kaweUsersLogin', afterAuth);
+    wrap('adminUsersToggleBan', function(){ var d=db(); if(d) users().forEach(function(u){ window.kaweSyncUserToFirebase(u); }); });
+    // saveKaweProfile é definido em outro bloco; sincroniza depois de salvar
+    wrap('saveKaweProfile', function(){
+      var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
+      if(u) window.kaweSyncUserToFirebase(u);
+      kaweRefreshAuthUI();
+    });
+  }
+
+  /* ── PERFIL PROTEGIDO ───────────────────────────────────── */
+  function installProfileGuard(){
+    var orig = window.openKaweProfile;
+    if(typeof orig!=='function' || orig.__kaweGuarded) return;
+    var guarded = function(){
+      if(!window.kaweIsLogged()){
+        msg('🔒 Faça login para ver seu perfil');
+        window.__kaweOpenProfileAfterLogin = true;
+        if(typeof openAuthModal==='function') openAuthModal('login');
+        return;
+      }
+      return orig.apply(this, arguments);
+    };
+    guarded.__kaweGuarded = true;
+    window.openKaweProfile = guarded;
+  }
+
+  /* ── UI DO CABEÇALHO ────────────────────────────────────── */
+  function ensureButtons(){
+    var left = document.querySelector('header .header-left'); if(!left) return null;
+    var login = left.querySelector('.auth-header-btn.login-btn');
+    var signup = left.querySelector('.auth-header-btn.signup-btn');
+    var logout = document.getElementById('kawe-logout-btn');
+    if(!logout && (login||signup)){
+      logout = document.createElement('button');
+      logout.id = 'kawe-logout-btn';
+      logout.className = 'auth-header-btn logout-btn kawe-hidden';
+      logout.title = 'Sair';
+      logout.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 7l-1.41 1.41L17.17 10H9v2h8.17l-1.58 1.59L17 15l4-4-4-4zM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5V5z"/></svg> SAIR';
+      logout.onclick = function(){ window.kaweLogout(); };
+      (signup||login).insertAdjacentElement('afterend', logout);
+    }
+    var chip = document.getElementById('kawe-user-chip');
+    if(!chip && logout){
+      chip = document.createElement('button');
+      chip.id = 'kawe-user-chip';
+      chip.className = 'kawe-userchip kawe-hidden';
+      chip.title = 'Ver perfil';
+      chip.innerHTML = '<img alt="Foto de perfil"><span></span>';
+      chip.onclick = function(){ if(typeof openKaweProfile==='function') openKaweProfile(); };
+      logout.insertAdjacentElement('beforebegin', chip);
+    }
+    return { login: login, signup: signup, logout: logout, chip: chip };
+  }
+
+  window.kaweRefreshAuthUI = function(){
+    var els = ensureButtons(); if(!els) return;
+    var logged = window.kaweIsLogged();
+    var u = logged && typeof kaweCurrentUser==='function' ? kaweCurrentUser() : null;
+    if(els.login)  els.login.classList.toggle('kawe-hidden', logged);
+    if(els.signup) els.signup.classList.toggle('kawe-hidden', logged);
+    if(els.logout) els.logout.classList.toggle('kawe-hidden', !logged);
+    if(els.chip){
+      els.chip.classList.toggle('kawe-hidden', !logged);
+      if(u){
+        els.chip.querySelector('img').src = u.photo || DEF_AVATAR;
+        els.chip.querySelector('span').textContent = u.username || 'Perfil';
+      }
+    }
+    // avatar/nome também no menu lateral
+    var link = document.getElementById('kawe-profile-link');
+    if(link) link.style.display = '';
+    document.querySelectorAll('[data-kawe-avatar]').forEach(function(img){ if(u) img.src = u.photo || DEF_AVATAR; });
+  };
+
+  /* ── FECHAMENTO DO MODAL DE AUTH ────────────────────────── */
+  function watchAuthClose(){
+    var origClose = window.closeAuthModal;
+    if(typeof origClose==='function' && !origClose.__kaweWrapped){
+      var fn = function(){
+        var r = origClose.apply(this, arguments);
+        kaweRefreshAuthUI();
+        if(window.__kaweOpenProfileAfterLogin && window.kaweIsLogged()){
+          window.__kaweOpenProfileAfterLogin = false;
+          setTimeout(function(){ if(typeof openKaweProfile==='function') openKaweProfile(); }, 250);
+        }
+        return r;
+      };
+      fn.__kaweWrapped = true;
+      window.closeAuthModal = fn;
+    }
+  }
+
+  /* ── BOOT ───────────────────────────────────────────────── */
+  function boot(){
+    installWrappers();
+    installProfileGuard();
+    watchAuthClose();
+    kaweRefreshAuthUI();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  [300,900,2000,4000].forEach(function(ms){ setTimeout(boot, ms); });
+  setTimeout(function(){ window.kawePullUsersFromFirebase(); }, 1200);
+  window.addEventListener('storage', kaweRefreshAuthUI);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     KAWE ACCOUNT v4 — Excluir conta / Desativar conta / Reativar
+     Bloco puramente aditivo.
+     ═══════════════════════════════════════════════════════════════ -->
+<style id="kawe-account-css">
+.kacc-overlay{position:fixed;inset:0;z-index:100050;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(0,0,0,.82);backdrop-filter:blur(6px);}
+.kacc-overlay.open{display:flex;}
+.kacc-box{width:min(94vw,460px);max-height:90vh;overflow-y:auto;border-radius:18px;padding:26px 24px;
+  font-family:'Outfit',sans-serif;animation:kaccIn .25s ease;}
+@keyframes kaccIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.kacc-box h2{margin:0 0 6px;font-size:20px;letter-spacing:.5px;}
+.kacc-box p.kacc-sub{margin:0 0 18px;font-size:13px;line-height:1.5;color:#e5e7eb;opacity:.85;}
+.kacc-box label{display:block;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px;opacity:.8;}
+.kacc-box input{width:100%;padding:12px 14px;border-radius:10px;font-size:14px;outline:none;margin-bottom:14px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#fff;}
+.kacc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.kacc-btn{flex:1 1 140px;padding:13px;border-radius:10px;cursor:pointer;font-weight:900;font-size:12.5px;
+  text-transform:uppercase;letter-spacing:.5px;border:none;font-family:'Outfit',sans-serif;}
+.kacc-btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:#e5e7eb;}
+/* EXCLUIR — vermelho + preto */
+.kacc-danger .kacc-box{background:linear-gradient(160deg,#2a0505 0%,#150202 55%,#000 100%);
+  border:1px solid rgba(239,68,68,.6);box-shadow:0 0 55px rgba(239,68,68,.3);}
+.kacc-danger h2{color:#ef4444;}
+.kacc-danger input:focus{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.18);}
+.kacc-danger .kacc-btn-main{background:linear-gradient(135deg,#ef4444,#7f1d1d);color:#fff;}
+/* DESATIVAR — amarelo + vermelho */
+.kacc-warn .kacc-box{background:linear-gradient(160deg,#2a1c02 0%,#2a0a03 60%,#120500 100%);
+  border:1px solid rgba(250,204,21,.6);box-shadow:0 0 55px rgba(250,204,21,.25);}
+.kacc-warn h2{color:#facc15;}
+.kacc-warn input:focus{border-color:#facc15;box-shadow:0 0 0 3px rgba(250,204,21,.18);}
+.kacc-warn .kacc-btn-main{background:linear-gradient(135deg,#facc15,#ef4444);color:#1a1a1a;}
+/* REATIVAR — verde + vermelho */
+.kacc-reactivate .kacc-box{background:linear-gradient(160deg,#03210f 0%,#220806 65%,#050505 100%);
+  border:1px solid rgba(34,197,94,.6);box-shadow:0 0 55px rgba(34,197,94,.28);}
+.kacc-reactivate h2{color:#22c55e;}
+.kacc-reactivate .kacc-btn-main{background:linear-gradient(135deg,#22c55e,#15803d);color:#04140a;}
+.kacc-reactivate .kacc-btn-no{background:linear-gradient(135deg,#ef4444,#7f1d1d);color:#fff;}
+.kacc-note{font-size:11.5px;opacity:.7;margin:-6px 0 14px;}
+/* botões dentro do perfil */
+.kp-account-zone{margin-top:22px;padding-top:18px;border-top:1px dashed rgba(255,255,255,.15);display:flex;gap:10px;flex-wrap:wrap;}
+.kp-account-zone button{flex:1 1 150px;padding:12px;border-radius:10px;cursor:pointer;font-weight:900;font-size:12px;
+  text-transform:uppercase;letter-spacing:.5px;font-family:'Outfit',sans-serif;}
+.kp-deact-btn{background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.55);color:#facc15;}
+.kp-del-btn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.55);color:#fca5a5;}
+</style>
+
+<div class="kacc-overlay kacc-danger" id="kacc-delete">
+  <div class="kacc-box">
+    <h2>&#9888;&#65039; EXCLUIR CONTA PERMANENTEMENTE</h2>
+    <p class="kacc-sub">Esta ação é <b>irreversível</b>. Sua conta e todos os seus dados serão apagados do site e do banco de dados (Firebase). Confirme com seu e-mail e senha.</p>
+    <label>E-mail da conta</label>
+    <input type="email" id="kacc-del-email" placeholder="seu@email.com" autocomplete="off">
+    <label>Senha</label>
+    <input type="password" id="kacc-del-pass" placeholder="Sua senha" autocomplete="off">
+    <div class="kacc-note">Ao confirmar, você será desconectado imediatamente.</div>
+    <div class="kacc-actions">
+      <button class="kacc-btn kacc-btn-ghost" onclick="kaweCloseAccountModal('kacc-delete')">Cancelar</button>
+      <button class="kacc-btn kacc-btn-main" onclick="kaweConfirmDeleteAccount()">Excluir para sempre</button>
+    </div>
+  </div>
+</div>
+
+<div class="kacc-overlay kacc-warn" id="kacc-deactivate">
+  <div class="kacc-box">
+    <h2>&#128274; DESATIVAR CONTA</h2>
+    <p class="kacc-sub">Deseja mesmo desativar sua conta? Ela ficará oculta e você não conseguirá entrar até reativá-la. Seus dados <b>não</b> serão apagados.</p>
+    <label>E-mail da conta</label>
+    <input type="email" id="kacc-deact-email" placeholder="seu@email.com" autocomplete="off">
+    <label>Senha</label>
+    <input type="password" id="kacc-deact-pass" placeholder="Sua senha" autocomplete="off">
+    <div class="kacc-note">Você poderá reativar a qualquer momento ao tentar entrar novamente.</div>
+    <div class="kacc-actions">
+      <button class="kacc-btn kacc-btn-ghost" onclick="kaweCloseAccountModal('kacc-deactivate')">Cancelar</button>
+      <button class="kacc-btn kacc-btn-main" onclick="kaweConfirmDeactivateAccount()">Sim, desativar</button>
+    </div>
+  </div>
+</div>
+
+<div class="kacc-overlay kacc-reactivate" id="kacc-reactivate">
+  <div class="kacc-box">
+    <h2>&#9851;&#65039; CONTA DESATIVADA</h2>
+    <p class="kacc-sub">Sua conta foi desativada. Deseja mesmo <b>reativar</b> e entrar novamente?</p>
+    <div class="kacc-actions">
+      <button class="kacc-btn kacc-btn-no" onclick="kaweCloseAccountModal('kacc-reactivate')">Não</button>
+      <button class="kacc-btn kacc-btn-main" onclick="kaweConfirmReactivate()">Sim, reativar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var CONNECTOR = 'kawe_users_data';
+  function msg(t){ if(typeof toast==='function'){ try{ return toast(t); }catch(e){} } alert(t); }
+  function users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]'); }catch(e){ return []; } }
+  function saveUsers(l){ try{ localStorage.setItem('kawe_users', JSON.stringify(l)); }catch(e){} }
+  function db(){ return window.kaweDB || (typeof firebase!=='undefined' && firebase.apps && firebase.apps.length ? firebase.database() : null); }
+  function fbKey(u){
+    var base = (u.email || u.phone || u.username || u.id || '').toLowerCase();
+    return (u.id||'') + '__' + base.replace(/[^a-z0-9]/g,'_').slice(0,40);
+  }
+  function checkCreds(u, email, pass){
+    email = (email||'').trim().toLowerCase();
+    var uEmail = (u.email||'').trim().toLowerCase();
+    var uPhone = (u.phone||'').trim().toLowerCase();
+    if(!email) return 'Informe seu e-mail.';
+    if(uEmail ? email !== uEmail : (email !== uPhone && email !== (u.username||'').toLowerCase()))
+      return 'E-mail não confere com o da conta.';
+    if((u.password||'') && (pass||'') !== u.password) return 'Senha incorreta.';
+    if(!(u.password||'') && !(pass||'')) return 'Informe sua senha.';
+    return null;
+  }
+
+  window.kaweOpenAccountModal = function(id){
+    var el = document.getElementById(id); if(!el) return;
+    el.classList.add('open');
+  };
+  window.kaweCloseAccountModal = function(id){
+    var el = document.getElementById(id); if(el) el.classList.remove('open');
+  };
+
+  /* ── Botões dentro do modal de perfil ─────────────────── */
+  function injectZone(){
+    var box = document.querySelector('#kawe-profile-modal .kp-box');
+    if(!box || document.getElementById('kp-account-zone')) return;
+    var zone = document.createElement('div');
+    zone.className = 'kp-account-zone';
+    zone.id = 'kp-account-zone';
+    zone.innerHTML =
+      '<button class="kp-deact-btn" onclick="kaweStartDeactivate()">&#128274; Desativar conta</button>' +
+      '<button class="kp-del-btn" onclick="kaweStartDelete()">&#128465;&#65039; Excluir conta</button>';
+    box.appendChild(zone);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', injectZone);
+  else injectZone();
+  [400,1200,2500,5000].forEach(function(ms){ setTimeout(injectZone, ms); });
+
+  window.kaweStartDelete = function(){
+    var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
+    if(!u){ msg('\u26A0\uFE0F Faça login primeiro'); return; }
+    document.getElementById('kacc-del-email').value = '';
+    document.getElementById('kacc-del-pass').value = '';
+    kaweOpenAccountModal('kacc-delete');
+  };
+  window.kaweStartDeactivate = function(){
+    var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
+    if(!u){ msg('\u26A0\uFE0F Faça login primeiro'); return; }
+    document.getElementById('kacc-deact-email').value = '';
+    document.getElementById('kacc-deact-pass').value = '';
+    kaweOpenAccountModal('kacc-deactivate');
+  };
+
+  /* ── EXCLUIR DEFINITIVAMENTE ───────────────────────────── */
+  window.kaweConfirmDeleteAccount = function(){
+    var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
+    if(!u){ msg('\u26A0\uFE0F Faça login primeiro'); return; }
+    var err = checkCreds(u, document.getElementById('kacc-del-email').value, document.getElementById('kacc-del-pass').value);
+    if(err){ msg('\u26A0\uFE0F ' + err); return; }
+    var d = db();
+    var finish = function(){
+      saveUsers(users().filter(function(x){ return x.id !== u.id; }));
+      kaweCloseAccountModal('kacc-delete');
+      try{ if(typeof closeKaweProfile==='function') closeKaweProfile(); }catch(e){}
+      if(typeof renderAdminUsers==='function'){ try{ renderAdminUsers(); }catch(e){} }
+      if(typeof kaweLogout==='function') kaweLogout();
+      setTimeout(function(){ msg('\uD83D\uDDD1\uFE0F Sua conta foi excluída permanentemente.'); }, 100);
+    };
+    if(d) d.ref(CONNECTOR + '/' + fbKey(u)).remove().then(finish).catch(function(e){ console.warn('[KAWE]', e); finish(); });
+    else finish();
+  };
+
+  /* ── DESATIVAR ─────────────────────────────────────────── */
+  window.kaweConfirmDeactivateAccount = function(){
+    var u = (typeof kaweCurrentUser==='function') ? kaweCurrentUser() : null;
+    if(!u){ msg('\u26A0\uFE0F Faça login primeiro'); return; }
+    var err = checkCreds(u, document.getElementById('kacc-deact-email').value, document.getElementById('kacc-deact-pass').value);
+    if(err){ msg('\u26A0\uFE0F ' + err); return; }
+    var list = users(), i = list.findIndex(function(x){ return x.id===u.id; });
+    if(i>=0){ list[i].deactivated = true; list[i].deactivatedAt = new Date().toISOString(); list[i].updatedAt = new Date().toISOString(); saveUsers(list); u = list[i]; }
+    if(typeof kaweSyncUserToFirebase==='function') kaweSyncUserToFirebase(u);
+    kaweCloseAccountModal('kacc-deactivate');
+    try{ if(typeof closeKaweProfile==='function') closeKaweProfile(); }catch(e){}
+    if(typeof kaweLogout==='function') kaweLogout();
+    msg('\uD83D\uDD14 Sua conta foi desativada. Você foi redirecionado para o login.');
+    setTimeout(function(){ if(typeof openAuthModal==='function') openAuthModal('login'); }, 400);
+  };
+
+  /* ── REATIVAÇÃO NO LOGIN ───────────────────────────────── */
+  function findByIdentifier(id){
+    id = (id||'').trim().toLowerCase();
+    if(!id) return null;
+    return users().find(function(x){
+      return (x.email||'').toLowerCase()===id || (x.username||'').toLowerCase()===id || (x.phone||'').toLowerCase()===id;
+    }) || null;
+  }
+
+  window.kaweConfirmReactivate = function(){
+    var p = window.__kaweReactivatePending; if(!p){ kaweCloseAccountModal('kacc-reactivate'); return; }
+    var list = users(), i = list.findIndex(function(x){ return x.id===p.userId; });
+    if(i>=0){
+      list[i].deactivated = false;
+      list[i].reactivatedAt = new Date().toISOString();
+      list[i].updatedAt = new Date().toISOString();
+      saveUsers(list);
+      if(typeof kaweSyncUserToFirebase==='function') kaweSyncUserToFirebase(list[i]);
+    }
+    kaweCloseAccountModal('kacc-reactivate');
+    window.__kaweReactivatePending = null;
+    msg('\u2705 Conta reativada! Entrando...');
+    setTimeout(function(){ if(typeof p.retry==='function') p.retry(); }, 150);
+  };
+
+  function installLoginGuard(){
+    var orig = window.submitAuth;
+    if(typeof orig!=='function' || orig.__kaweAccGuard) return;
+    var guarded = function(ev){
+      try{
+        var isSignup = (function(){
+          var t = document.querySelector('#authModalOverlay .auth-tab.active');
+          return t ? t.dataset.mode === 'signup' : false;
+        })();
+        if(!isSignup){
+          var emailEl = document.getElementById('auth-email');
+          var phoneEl = document.getElementById('auth-phone');
+          var identifier = (emailEl && emailEl.offsetParent!==null ? emailEl.value : (phoneEl ? phoneEl.value : '')) || (emailEl?emailEl.value:'');
+          var u = findByIdentifier(identifier);
+          if(u && u.deactivated){
+            if(ev && ev.preventDefault) ev.preventDefault();
+            window.__kaweReactivatePending = { userId: u.id, retry: function(){ guarded({ preventDefault:function(){} }); } };
+            kaweOpenAccountModal('kacc-reactivate');
+            return false;
+          }
+        }
+      }catch(e){ console.warn('[KAWE]', e); }
+      return orig.apply(this, arguments);
+    };
+    guarded.__kaweAccGuard = true;
+    window.submitAuth = guarded;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', installLoginGuard);
+  else installLoginGuard();
+  [300,1000,2500,5000].forEach(function(ms){ setTimeout(installLoginGuard, ms); });
+
+  // impede que contas desativadas entrem por outros caminhos
+  (function(){
+    var origLogin = window.kaweUsersLogin;
+    if(typeof origLogin==='function' && !origLogin.__kaweDeactGuard){
+      var fn = function(identifier, password){
+        var u = findByIdentifier(identifier);
+        if(u && u.deactivated){
+          window.__kaweReactivatePending = { userId: u.id, retry: function(){ window.kaweUsersLogin(identifier, password); if(typeof closeAuthModal==='function') closeAuthModal(); } };
+          kaweOpenAccountModal('kacc-reactivate');
+          return { ok:false, error:'Conta desativada.' };
+        }
+        return origLogin.apply(this, arguments);
+      };
+      fn.__kaweDeactGuard = true;
+      window.kaweUsersLogin = fn;
+    }
+  })();
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ ['kacc-delete','kacc-deactivate','kacc-reactivate'].forEach(kaweCloseAccountModal); }
+  });
+})();
+</script>
