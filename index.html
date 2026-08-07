@@ -19295,3 +19295,323 @@ textarea.kia-adm-in{min-height:90px}
 })();
 </script>
 <!--KAWE_IA_END-->
+
+<!--KAWE_LOADER_MOBILE_START-->
+<!-- ═══════════ KAWE • CARREGAR CATÁLOGO (JSON do PC/Celular) + UI MOBILE/TABLET v2 ═══════════ -->
+<style id="kawe-loadcatalog-css">
+/* ---------- Botão de carregar catálogo ---------- */
+.kawe-load-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  border:1px solid rgba(34,197,94,.55);
+  background:linear-gradient(135deg, rgba(34,197,94,.16), rgba(34,197,94,.05));
+  color:var(--primary, #22c55e);
+  font-family:'Outfit',sans-serif; font-weight:800; text-transform:uppercase;
+  font-size:12px; letter-spacing:.5px; padding:9px 14px; border-radius:12px;
+  cursor:pointer; white-space:nowrap; min-height:40px; transition:.25s;
+}
+.kawe-load-btn:active{ transform:scale(.96); }
+.kawe-load-btn:hover{ background:var(--primary,#22c55e); color:#04120a; }
+
+/* FAB para celular/tablet */
+#kawe-load-fab{
+  position:fixed; left:14px; z-index:9600;
+  bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  width:56px; height:56px; border-radius:50%; display:none;
+  align-items:center; justify-content:center; border:none; cursor:pointer;
+  background:linear-gradient(140deg,#22c55e,#15803d); color:#04120a;
+  box-shadow:0 10px 26px rgba(0,0,0,.45), 0 0 0 4px rgba(34,197,94,.15);
+}
+#kawe-load-fab:active{ transform:scale(.92); }
+
+/* ---------- Modal ---------- */
+#kawe-load-modal{
+  position:fixed; inset:0; z-index:99999; display:none;
+  background:rgba(0,0,0,.78); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  padding:16px; overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+#kawe-load-modal.open{ display:flex; align-items:center; justify-content:center; }
+.kawe-load-card{
+  width:min(520px, 100%);
+  background:linear-gradient(180deg,#101711,#0b0f0c);
+  border:1px solid rgba(34,197,94,.25); border-radius:20px;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));
+  box-shadow:0 30px 70px rgba(0,0,0,.65);
+  font-family:'Outfit',sans-serif; color:#e8f5ec;
+  max-height:92vh; overflow-y:auto;
+}
+.kawe-load-card h3{
+  margin:0 0 4px; font-size:19px; font-weight:900; letter-spacing:.4px;
+  display:flex; align-items:center; gap:9px; color:#fff;
+}
+.kawe-load-card p.kawe-sub{ margin:0 0 16px; font-size:13px; line-height:1.5; color:#9db3a5; }
+.kawe-drop{
+  border:2px dashed rgba(34,197,94,.45); border-radius:16px;
+  padding:26px 16px; text-align:center; cursor:pointer;
+  background:rgba(34,197,94,.05); transition:.25s;
+}
+.kawe-drop.drag{ background:rgba(34,197,94,.16); border-color:#22c55e; }
+.kawe-drop strong{ display:block; font-size:15px; margin-top:10px; color:#fff; }
+.kawe-drop span{ display:block; font-size:12.5px; color:#8fa899; margin-top:5px; }
+.kawe-mode{ display:flex; gap:10px; margin:16px 0 4px; }
+.kawe-mode label{
+  flex:1; display:flex; gap:8px; align-items:center; justify-content:center;
+  padding:12px 8px; border-radius:12px; cursor:pointer; font-size:12.5px; font-weight:700;
+  border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.03); color:#cfe3d6;
+  text-align:center; min-height:46px;
+}
+.kawe-mode input{ accent-color:#22c55e; width:18px; height:18px; }
+.kawe-mode label:has(input:checked){ border-color:#22c55e; background:rgba(34,197,94,.14); color:#fff; }
+.kawe-load-actions{ display:flex; gap:10px; margin-top:18px; }
+.kawe-load-actions button{
+  flex:1; min-height:48px; border-radius:12px; font-weight:800; font-size:13.5px;
+  font-family:'Outfit',sans-serif; cursor:pointer; text-transform:uppercase; letter-spacing:.4px;
+}
+.kawe-btn-primary{ border:none; background:linear-gradient(135deg,#22c55e,#15803d); color:#04120a; }
+.kawe-btn-ghost{ border:1px solid rgba(255,255,255,.16); background:transparent; color:#cfe3d6; }
+#kawe-load-status{ margin-top:14px; font-size:12.5px; line-height:1.5; color:#9db3a5; min-height:18px; }
+#kawe-load-status.ok{ color:#5ee08a; } #kawe-load-status.err{ color:#ff7a7a; }
+.kawe-help{
+  margin-top:14px; font-size:11.5px; color:#7d9488; background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:10px 12px; line-height:1.6;
+}
+.kawe-help code{ color:#8fe6ad; font-size:11px; }
+/* Desktop: mantém o botão do header e o FAB sempre visíveis */
+#kawe-load-fab{ display:flex !important; z-index:100000;
+  bottom:calc(96px + env(safe-area-inset-bottom, 0px)) !important; left:14px !important; }
+.header-left .kawe-load-btn{ display:inline-flex; }
+</style>
+<!-- Modal de carregamento do catálogo -->
+<div id="kawe-load-modal" role="dialog" aria-modal="true" aria-label="Carregar catálogo">
+  <div class="kawe-load-card">
+    <h3>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
+      Carregar catálogo
+    </h3>
+    <p class="kawe-sub">Selecione um arquivo <strong>.json</strong> do seu celular, tablet ou computador para carregar filmes, séries, animes, canais e mais.</p>
+
+    <div class="kawe-drop" id="kawe-drop" tabindex="0" role="button">
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#22c55e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+      <strong>Toque para escolher o arquivo JSON</strong>
+      <span>ou arraste e solte aqui &middot; máx. 50 MB</span>
+    </div>
+
+    <div class="kawe-mode">
+      <label><input type="radio" name="kawe-load-mode" value="merge" checked> Adicionar ao catálogo</label>
+      <label><input type="radio" name="kawe-load-mode" value="replace"> Substituir tudo</label>
+    </div>
+
+    <div id="kawe-load-status"></div>
+
+    <div class="kawe-load-actions">
+      <button type="button" class="kawe-btn-ghost" onclick="kaweCloseLoadModal()">Fechar</button>
+      <button type="button" class="kawe-btn-primary" onclick="kaweTriggerFilePicker()">Escolher arquivo</button>
+    </div>
+
+    <div class="kawe-help">
+      Formatos aceitos: <code>{"filmes":[...],"series":[...]}</code>, backup completo <code>{"catalog":{...}}</code> ou uma lista simples <code>[{"title":"...","poster":"..."}]</code>.
+    </div>
+  </div>
+  <input type="file" id="kawe-load-input" accept=".json,application/json,text/json" style="display:none">
+</div>
+
+<button id="kawe-load-fab" type="button" title="Carregar catálogo (JSON)" aria-label="Carregar catálogo" onclick="kaweOpenLoadModal()">
+  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
+</button>
+<script id="kawe-loadcatalog-js">
+(function(){
+  var KNOWN = ['filmes','series','animes','infantil','novelas','doramas','canais','documentarios','shows','lancamentos'];
+
+  function statusMsg(msg, type){
+    var el = document.getElementById('kawe-load-status');
+    if (el){ el.textContent = msg || ''; el.className = type || ''; }
+    if (msg && window.toast) { try { window.toast(msg); } catch(e){} }
+  }
+
+  window.kaweOpenLoadModal = function(){
+    var m = document.getElementById('kawe-load-modal');
+    if (!m) return;
+    statusMsg('', '');
+    m.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.kaweCloseLoadModal = function(){
+    var m = document.getElementById('kawe-load-modal');
+    if (!m) return;
+    m.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  window.kaweTriggerFilePicker = function(){
+    var i = document.getElementById('kawe-load-input');
+    if (i){ i.value = ''; i.click(); }
+  };
+
+  function pick(o){
+    for (var i=1;i<arguments.length;i++){
+      var k = arguments[i];
+      if (o && o[k] !== undefined && o[k] !== null && o[k] !== '') return o[k];
+    }
+    return undefined;
+  }
+
+  function normalizeItem(raw){
+    if (!raw || typeof raw !== 'object') return null;
+    var title = pick(raw,'title','titulo','nome','name','label');
+    if (!title) return null;
+    var item = {
+      id: pick(raw,'id','tmdb_id') || Date.now() + Math.floor(Math.random()*100000),
+      title: String(title),
+      poster: pick(raw,'poster','capa','thumb','thumbnail','image','img','cover','logo') || '',
+      genre: pick(raw,'genre','genero','categoria','group') || 'Geral',
+      rating: pick(raw,'rating','nota','vote_average') || '8.0/10'
+    };
+    var link = pick(raw,'link','url','video','videoUrl','iframe','embed','stream','src');
+    if (link) { item.link = link; item.url = link; }
+    var seasons = pick(raw,'seasons','temporadas');
+    if (seasons) item.seasons = seasons;
+    if (raw.episodes || raw.episodios) item.episodes = raw.episodes || raw.episodios;
+    if (raw.description || raw.sinopse) item.description = raw.description || raw.sinopse;
+    return item;
+  }
+
+  function normalizeCatalog(data){
+    var out = {};
+    if (!data) return out;
+    if (Array.isArray(data)) { out.filmes = data; }
+    else if (data.catalog && typeof data.catalog === 'object') { return normalizeCatalog(data.catalog); }
+    else if (data.CATALOG_DATA && typeof data.CATALOG_DATA === 'object') { return normalizeCatalog(data.CATALOG_DATA); }
+    else if (Array.isArray(data.items)) { out.filmes = data.items; }
+    else if (typeof data === 'object') {
+      Object.keys(data).forEach(function(k){ if (Array.isArray(data[k])) out[k] = data[k]; });
+    }
+    var clean = {};
+    Object.keys(out).forEach(function(cat){
+      var key = String(cat).toLowerCase().trim();
+      var list = out[cat].map(normalizeItem).filter(Boolean);
+      if (list.length) clean[key] = (clean[key] || []).concat(list);
+    });
+    return clean;
+  }
+
+  function countItems(cat){
+    return Object.keys(cat).reduce(function(n,k){ return n + cat[k].length; }, 0);
+  }
+
+  function rerenderAll(){
+    try {
+      if (typeof window.renderCards === 'function'){
+        Object.keys(window.CATALOG_DATA || {}).forEach(function(cat){
+          if (document.getElementById(cat + '-content')) {
+            try { window.renderCards(cat, 1); } catch(e){}
+          }
+        });
+      }
+      if (typeof window.updateAdminMoviesList === 'function') window.updateAdminMoviesList();
+      if (typeof window.renderAdminCatalogo === 'function') window.renderAdminCatalogo();
+    } catch(e){ console.warn('[KAWE] rerender', e); }
+  }
+
+  function applyCatalog(incoming, mode){
+    if (!window.CATALOG_DATA || typeof window.CATALOG_DATA !== 'object') window.CATALOG_DATA = {};
+    if (mode === 'replace'){
+      var base = {};
+      KNOWN.forEach(function(k){ if (Array.isArray(window.CATALOG_DATA[k])) base[k] = []; });
+      Object.keys(incoming).forEach(function(k){ base[k] = incoming[k].slice(); });
+      window.CATALOG_DATA = base;
+    } else {
+      Object.keys(incoming).forEach(function(k){
+        if (!Array.isArray(window.CATALOG_DATA[k])) window.CATALOG_DATA[k] = [];
+        var seen = {};
+        window.CATALOG_DATA[k].forEach(function(it){ seen[String(it && it.title).toLowerCase()] = true; });
+        incoming[k].forEach(function(it){
+          var key = String(it.title).toLowerCase();
+          if (!seen[key]) { window.CATALOG_DATA[k].push(it); seen[key] = true; }
+        });
+      });
+    }
+    try { localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA)); } catch(e){
+      statusMsg('⚠️ Catálogo carregado, mas grande demais para salvar no aparelho.', 'err');
+    }
+    rerenderAll();
+  }
+
+  function handleFile(file){
+    if (!file) return;
+    if (!/\.json$/i.test(file.name) && !/json/i.test(file.type || '')){
+      statusMsg('❌ Selecione um arquivo .json válido.', 'err');
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024){
+      statusMsg('❌ Arquivo muito grande (máx. 50 MB).', 'err');
+      return;
+    }
+    statusMsg('⏳ Lendo ' + file.name + '…', '');
+    var reader = new FileReader();
+    reader.onerror = function(){ statusMsg('❌ Não foi possível ler o arquivo.', 'err'); };
+    reader.onload = function(e){
+      var data;
+      try { data = JSON.parse(e.target.result); }
+      catch(err){ statusMsg('❌ JSON inválido: ' + err.message, 'err'); return; }
+
+      var incoming = normalizeCatalog(data);
+      var total = countItems(incoming);
+      if (!total){ statusMsg('❌ Nenhum título reconhecido neste arquivo.', 'err'); return; }
+
+      var modeEl = document.querySelector('input[name="kawe-load-mode"]:checked');
+      var mode = modeEl ? modeEl.value : 'merge';
+      if (mode === 'replace' && !confirm('Substituir TODO o catálogo atual por ' + total + ' títulos do arquivo?')) {
+        statusMsg('Operação cancelada.', '');
+        return;
+      }
+
+      applyCatalog(incoming, mode);
+
+      var resumo = Object.keys(incoming).map(function(k){ return incoming[k].length + ' ' + k; }).join(' · ');
+      statusMsg('✅ ' + total + ' títulos carregados (' + resumo + ')', 'ok');
+      setTimeout(window.kaweCloseLoadModal, 1400);
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  function wire(){
+    var input = document.getElementById('kawe-load-input');
+    var drop  = document.getElementById('kawe-drop');
+    var modal = document.getElementById('kawe-load-modal');
+    if (input && !input.dataset.wired){
+      input.dataset.wired = '1';
+      input.addEventListener('change', function(){ handleFile(this.files && this.files[0]); });
+    }
+    if (drop && !drop.dataset.wired){
+      drop.dataset.wired = '1';
+      drop.addEventListener('click', window.kaweTriggerFilePicker);
+      drop.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); window.kaweTriggerFilePicker(); } });
+      ['dragenter','dragover'].forEach(function(t){ drop.addEventListener(t, function(ev){ ev.preventDefault(); drop.classList.add('drag'); }); });
+      ['dragleave','drop'].forEach(function(t){ drop.addEventListener(t, function(ev){ ev.preventDefault(); drop.classList.remove('drag'); }); });
+      drop.addEventListener('drop', function(ev){ handleFile(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]); });
+    }
+    if (modal && !modal.dataset.wired){
+      modal.dataset.wired = '1';
+      modal.addEventListener('click', function(ev){ if (ev.target === modal) window.kaweCloseLoadModal(); });
+    }
+    document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') window.kaweCloseLoadModal(); });
+
+    // Botão no cabeçalho (desktop/tablet largo)
+    var left = document.querySelector('.header-left');
+    if (left && !document.getElementById('kawe-load-header-btn')){
+      var b = document.createElement('button');
+      b.id = 'kawe-load-header-btn';
+      b.type = 'button';
+      b.className = 'nav-link kawe-load-btn';
+      b.style.marginLeft = '8px';
+      b.title = 'Carregar catálogo a partir de um arquivo JSON';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg> CARREGAR CATÁLOGO';
+      b.onclick = window.kaweOpenLoadModal;
+      left.appendChild(b);
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+  setTimeout(wire, 1200);
+})();
+</script>
+<!--KAWE_LOADER_MOBILE_END-->
