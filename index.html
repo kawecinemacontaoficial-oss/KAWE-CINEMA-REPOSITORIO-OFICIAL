@@ -39450,6 +39450,625 @@ img{max-width:100%;height:auto}
 </script>
 <!-- ═══════════ FIM DO PACOTE DE CORREÇÕES ═══════════ -->
 
+<!-- ═══════════ KAWE — SELEÇÃO DE UI DO PLAYER (UI 1 / UI 2) ═══════════ -->
+<style id="kawe-uisel-css">
+/* 1) A aba do player volta a ser um modal NORMAL, centralizado e rolável */
+#player-modal.open{
+  display:flex !important; flex-direction:column; align-items:center;
+  position:fixed; inset:0; z-index:99990;
+  overflow-y:auto; overflow-x:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(0,40,18,.96),rgba(0,0,0,.98)) !important;
+  padding:0 !important;
+}
+#player-modal.open > .player-container{
+  width:min(1500px,96vw) !important;
+  max-width:min(1500px,96vw) !important;
+  margin:18px auto 40px !important;
+  left:auto !important; right:auto !important; transform:none !important;
+}
+#player-modal #kyt-grid{ width:100% !important; max-width:100% !important; margin:0 auto !important; }
+@media (min-width:1200px){
+  #player-modal #kyt-grid{ display:grid !important; grid-template-columns:210px minmax(0,1fr) 330px !important; gap:18px !important; }
+}
+#player-modal #kyt-main{ min-width:0 !important; }
+
+/* 2) Remove a área/moldura gigante vazia da direita ("SALA DE EXIBIÇÃO") e a barra flutuante */
+#player-modal .kw-modal-crest,
+#player-modal .kw-modal-orn,
+#player-modal .kw-orn-star,
+#kw9-pbar{ display:none !important; }
+#player-modal.kw-orn-frame{ border:0 !important; box-shadow:none !important; }
+
+/* 3) Seletor de UI */
+.kawe-uisel{
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+  margin:12px 0; padding:10px 14px; border-radius:14px;
+  border:1px solid rgba(0,255,102,.35);
+  background:linear-gradient(180deg,rgba(0,40,18,.75),rgba(0,0,0,.6));
+  box-shadow:0 0 22px rgba(0,255,102,.12) inset;
+}
+.kawe-uisel > b{ font-size:11px; letter-spacing:2px; color:#f5d27a; text-transform:uppercase; }
+.kawe-uisel button{
+  cursor:pointer; border-radius:10px; padding:9px 14px; font-size:12px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; transition:.2s;
+  border:1px solid rgba(0,255,102,.35); color:#cfe9da; background:rgba(255,255,255,.04);
+}
+.kawe-uisel button:hover{ border-color:#00ff66; color:#eafff2; }
+.kawe-uisel button.on{
+  background:linear-gradient(180deg,#00ff66,#00a344); color:#04140a; border-color:#00ff66;
+  box-shadow:0 0 18px rgba(0,255,102,.45);
+}
+.kawe-uisel small{ opacity:.65; font-size:11px; }
+
+/* 4) Alternância das duas interfaces do player */
+body.kawe-ui-1 #player-modal .k4-top,
+body.kawe-ui-1 #player-modal .k4-body{ display:none !important; }
+body.kawe-ui-2 #player-modal .kyt-panel,
+body.kawe-ui-2 #player-modal .kyt-strip,
+body.kawe-ui-2 #player-modal .kyt-marquee,
+body.kawe-ui-2 #player-modal .kyt-actions,
+body.kawe-ui-2 #player-modal #kyt-emb{ display:none !important; }
+/* o #p-wrap ficou apenas decorativo (o vídeo real vive em #kawe-repaired-view) */
+#player-modal #p-wrap{ display:none !important; }
+
+/* telas de abertura viram overlay do palco real */
+#kyt-stage{ position:relative !important; }
+#kyt-stage > #kawe-green-screen,
+#kyt-stage > #kawe-loading-screen{
+  position:absolute !important; inset:0 !important; z-index:9 !important;
+  width:100% !important; height:100% !important; margin:0 !important; border-radius:10px;
+}
+body.kawe-ui-1 #kyt-stage > #kawe-green-screen{ display:none !important; }
+body.kawe-ui-2 #kyt-stage > #kyt-gate{ display:none !important; }
+#kyt-stage.kawe-playing > #kyt-gate,
+#kyt-stage.kawe-playing > #kawe-green-screen,
+#kyt-stage.kawe-playing > #kawe-loading-screen{ display:none !important; }
+</style>
+<script id="kawe-uisel-js">
+(function(){
+  if(window.__KAWE_UISEL__) return; window.__KAWE_UISEL__=1;
+  var D=document, KEY='kawe_player_ui';
+  function get(){ try{ return localStorage.getItem(KEY)==='2' ? '2' : '1'; }catch(e){ return '1'; } }
+  function set(v){ try{ localStorage.setItem(KEY,v); }catch(e){} apply(v); }
+
+  function apply(v){
+    D.body.classList.toggle('kawe-ui-1', v==='1');
+    D.body.classList.toggle('kawe-ui-2', v==='2');
+
+    var stage=D.getElementById('kyt-stage');
+    if(stage){
+      ['kawe-green-screen','kawe-loading-screen'].forEach(function(id){
+        var el=D.getElementById(id);
+        if(el && el.parentNode!==stage) stage.appendChild(el);
+      });
+      var vd=D.getElementById('player-native'), fr=D.getElementById('player');
+      var tocando=(vd && vd.src && !vd.paused) || (fr && fr.src && fr.src!=='about:blank' && fr.style.display!=='none');
+      stage.classList.toggle('kawe-playing', !!tocando);
+    }
+    /* marca os botões */
+    Array.prototype.forEach.call(D.querySelectorAll('.kawe-uisel button'),function(b){
+      b.classList.toggle('on', b.dataset.ui===v);
+    });
+  }
+  window.kaweSetPlayerUI=set;
+  window.kaweGetPlayerUI=get;
+
+  function bar(){
+    var d=D.createElement('div'); d.className='kawe-uisel';
+    d.innerHTML='<b>Interface do player</b>'+
+      '<button type="button" data-ui="1">KAWE PLAYER UI 1</button>'+
+      '<button type="button" data-ui="2">KAWE PLAYER UI 2</button>'+
+      '<small>Sua escolha fica salva neste navegador.</small>';
+    d.addEventListener('click',function(e){
+      var b=e.target.closest('button[data-ui]'); if(!b) return;
+      e.preventDefault(); e.stopPropagation();
+      set(b.dataset.ui);
+      if(window.kw9Toast) window.kw9Toast('🎛️ KAWE PLAYER UI '+b.dataset.ui+' ativada');
+    });
+    return d;
+  }
+
+  function inject(){
+    /* ficha do conteúdo (modal de informações) */
+    var dm=D.getElementById('kawe-detail-modal');
+    if(dm && !dm.querySelector('.kawe-uisel')){
+      var host=dm.querySelector('.kd-actions')||dm.querySelector('.kd-panel')||dm.querySelector('.kd-body')||dm.firstElementChild;
+      if(host) host.parentNode.insertBefore(bar(), host.nextSibling);
+    }
+    /* aba do player */
+    var pm=D.getElementById('player-modal');
+    if(pm){
+      var main=D.getElementById('kyt-main')||pm.querySelector('.player-container');
+      var b=pm.querySelector('.kawe-uisel');
+      if(main){
+        if(!b) b=bar();
+        if(main.firstChild!==b) main.insertBefore(b, main.firstChild);
+      }
+    }
+    apply(get());
+  }
+
+  function boot(){ inject(); }
+  if(D.readyState==='loading') D.addEventListener('DOMContentLoaded',boot); else boot();
+  [400,1200,2500,5000,9000].forEach(function(t){ setTimeout(boot,t); });
+  try{ new MutationObserver(function(){ clearTimeout(window.__kuiT); window.__kuiT=setTimeout(boot,600); })
+        .observe(D.documentElement,{childList:true,subtree:true}); }catch(e){}
+})();
+</script>
+<!-- ═══════════ FIM — SELEÇÃO DE UI DO PLAYER ═══════════ -->
+
+<!-- ═══════════ KAWE — MOTOR DE REPRODUÇÃO + SUGESTÕES + COMENTÁRIOS ═══════════ -->
+<style id="kawe-playfix-css">
+#kyt-stage #kawe-repaired-view{ width:100% !important; max-height:none !important; }
+#kyt-stage #kawe-repaired-view iframe,
+#kyt-stage #kawe-repaired-view video{ display:block; }
+
+/* ── Comentários (coluna de sugestões do player) ── */
+.kwc-box{
+  margin-top:16px; padding:12px; border-radius:14px;
+  border:1px solid rgba(34,197,94,.28);
+  background:linear-gradient(180deg,rgba(6,26,15,.9),rgba(0,0,0,.75));
+}
+.kwc-box h4{
+  margin:0 0 10px; font:800 12px/1 Outfit,Arial,sans-serif; letter-spacing:2px;
+  color:#86efac; text-transform:uppercase;
+}
+.kwc-form textarea{
+  width:100%; min-height:64px; resize:vertical; box-sizing:border-box;
+  border-radius:10px; border:1px solid rgba(34,197,94,.3);
+  background:rgba(0,0,0,.55); color:#e7f6ec; padding:9px 10px;
+  font:400 13px/1.45 Arial,sans-serif; outline:none;
+}
+.kwc-form textarea:focus{ border-color:#22c55e; }
+.kwc-row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+.kwc-row input{
+  flex:1; min-width:0; border-radius:10px; padding:8px 10px;
+  border:1px solid rgba(34,197,94,.25); background:rgba(0,0,0,.5); color:#e7f6ec;
+  font:400 12px Arial,sans-serif; outline:none;
+}
+.kwc-send{
+  cursor:pointer; border:0; border-radius:10px; padding:9px 14px;
+  font:800 12px Arial,sans-serif; letter-spacing:1px; text-transform:uppercase;
+  background:linear-gradient(180deg,#22c55e,#0f9c45); color:#04140a;
+}
+.kwc-send:hover{ filter:brightness(1.08); }
+.kwc-list{ margin-top:12px; display:flex; flex-direction:column; gap:9px; max-height:340px; overflow-y:auto; }
+.kwc-item{ padding:9px 10px; border-radius:11px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
+.kwc-head{ display:flex; align-items:center; gap:8px; }
+.kwc-av{
+  width:24px; height:24px; border-radius:50%; flex:0 0 24px; display:grid; place-items:center;
+  background:linear-gradient(180deg,#22c55e,#0b6b32); color:#04140a; font:800 11px Arial,sans-serif;
+}
+.kwc-name{ font:700 12px Arial,sans-serif; color:#d9ffe8; }
+.kwc-when{ font:400 10px Arial,sans-serif; color:#7f9b8b; margin-left:auto; }
+.kwc-text{ margin-top:6px; font:400 13px/1.45 Arial,sans-serif; color:#cfe3d6; overflow-wrap:anywhere; }
+.kwc-acts{ display:flex; gap:10px; margin-top:6px; }
+.kwc-acts button{
+  cursor:pointer; background:none; border:0; padding:0; color:#7fd9a2;
+  font:700 11px Arial,sans-serif; letter-spacing:.5px;
+}
+.kwc-acts button:hover{ color:#22c55e; }
+.kwc-empty{ font:400 12px Arial,sans-serif; color:#7f9b8b; }
+</style>
+<script id="kawe-playfix-js">
+(function(){
+  if(window.__KAWE_PLAYFIX__) return; window.__KAWE_PLAYFIX__=1;
+  var D=document;
+  function $(id){ return D.getElementById(id); }
+
+  /* ═══ 1. MOTOR DE REPRODUÇÃO FINAL ═══
+     Alguns módulos antigos sequestravam setPlayerSrc e só exibiam a "porta"
+     (tela verde / gate), sem nunca entregar o vídeo. Aqui o link é sempre
+     enviado de fato para o <video> (MP4/HLS) ou para o <iframe> (embeds). */
+  function tipo(u){
+    var limpo=String(u||'').split('#')[0].split('?')[0].toLowerCase();
+    if(/\.m3u8$/.test(limpo) || /[?&](format|type)=m3u8/i.test(u)) return 'hls';
+    if(/\.(mp4|m4v|webm|ogv|ogg|mov)$/.test(limpo)) return 'video';
+    if(/\.(mp3|m4a|aac|wav|flac)$/.test(limpo)) return 'audio';
+    return 'embed';
+  }
+  function estado(msg){ var e=$('kawe-player-state'); if(e) e.textContent=msg; }
+  function palco(){
+    var st=$('kyt-stage'), view=$('kawe-repaired-view');
+    if(st && view && view.parentNode!==st) st.appendChild(view);
+    if(st) st.classList.add('kawe-playing');
+  }
+
+  function reproduzir(bruto){
+    var iframe=$('player'), video=$('player-native');
+    if(!iframe || !video) return bruto;
+    var url=bruto;
+    try{ if(typeof window.normalizeEmbedUrl==='function') url=window.normalizeEmbedUrl(bruto)||bruto; }catch(e){}
+    if(!url || url==='about:blank'){
+      try{ video.pause(); video.removeAttribute('src'); video.load(); }catch(e){}
+      iframe.src='about:blank';
+      var st0=$('kyt-stage'); if(st0) st0.classList.remove('kawe-playing');
+      return url;
+    }
+    if(window.__hls){ try{ window.__hls.destroy(); }catch(e){} window.__hls=null; }
+    try{ video.pause(); video.removeAttribute('src'); video.load(); }catch(e){}
+
+    var modo=tipo(url);
+    palco();
+    if(modo==='embed'){
+      video.style.display='none';
+      iframe.style.display='block';
+      iframe.setAttribute('allow','autoplay; fullscreen; encrypted-media; picture-in-picture');
+      iframe.setAttribute('allowfullscreen','');
+      iframe.src=url;
+      estado('Player incorporado carregado.');
+    } else {
+      iframe.style.display='none'; iframe.src='about:blank';
+      video.style.display='block'; video.controls=true; video.playsInline=true;
+      video.onerror=function(){ estado('A fonte recusou a reprodução. Use “ABRIR FORA” ou troque de servidor.'); };
+      video.onplaying=function(){ estado('Reproduzindo agora.'); palco(); };
+      if(modo==='hls' && !video.canPlayType('application/vnd.apple.mpegurl')){
+        if(window.Hls && window.Hls.isSupported()){
+          var h=new window.Hls({enableWorker:true}); window.__hls=h;
+          h.loadSource(url); h.attachMedia(video);
+          h.on(window.Hls.Events.MANIFEST_PARSED,function(){ video.play().catch(function(){ estado('Toque em ▶ para iniciar.'); }); });
+          h.on(window.Hls.Events.ERROR,function(_,d){ if(d&&d.fatal) estado('Falha no stream HLS (CORS/token/validade do link).'); });
+        } else { estado('Este navegador não suporta HLS.'); }
+      } else {
+        video.src=url;
+        video.play().catch(function(){ estado('Conteúdo pronto. Toque em ▶ para iniciar.'); });
+      }
+    }
+    try{ if(window.STATE){ window.STATE.currentUrl=url; window.STATE.currentUrlOriginal=bruto; } }catch(e){}
+    var fb=$('player-fallback-link'); if(fb) fb.href=bruto||url;
+    var ext=$('kawe-repaired-external'); if(ext){ ext.href=bruto||url; ext.style.pointerEvents='auto'; ext.style.opacity='1'; }
+    return url;
+  }
+  reproduzir.__kaweFinal=1;
+  window.kawePlay=reproduzir;
+
+  /* mantém o motor final por cima de qualquer wrapper que apareça depois */
+  function reforcar(){
+    if(window.setPlayerSrc!==reproduzir) window.setPlayerSrc=reproduzir;
+  }
+  reforcar(); setInterval(reforcar,900);
+
+  /* tela verde / gate agora iniciam de verdade */
+  D.addEventListener('click',function(e){
+    var gs=e.target.closest && e.target.closest('#kawe-green-screen, #kyt-play');
+    if(!gs) return;
+    var u=(window.STATE && (window.STATE.currentUrlOriginal||window.STATE.currentUrl))||'';
+    if(u) reproduzir(u);
+    var st=$('kyt-stage'); if(st) st.classList.add('kawe-playing');
+  },true);
+
+  /* ═══ 2. SUGESTÕES SEMPRE PREENCHIDAS ═══ */
+  function sugestoes(){
+    var box=$('kyt-sug-list'); if(!box) return;
+    if(box.children.length && box.textContent.trim() && !/Sem outros títulos/.test(box.textContent)) return;
+    var cat=window.CATALOG_DATA||{}, itens=[];
+    Object.keys(cat).forEach(function(k){
+      (Array.isArray(cat[k])?cat[k]:[]).forEach(function(it,i){ itens.push({c:k,i:i,it:it}); });
+    });
+    if(!itens.length){ box.innerHTML='<div class="kwc-empty">Nenhum título no catálogo ainda.</div>'; return; }
+    itens=itens.sort(function(){ return Math.random()-.5; }).slice(0,14);
+    box.innerHTML=itens.map(function(o){
+      return '<div class="kyt-sug" data-c="'+o.c+'" data-i="'+o.i+'">'+
+        '<img src="'+(o.it.poster||'')+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+        '<div class="kyt-sug-info"><div class="kyt-sug-title">'+(o.it.title||'Sem título')+'</div>'+
+        '<div class="kyt-sug-meta">'+String(o.c).toUpperCase()+'</div></div></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.kyt-sug'),function(el){
+      el.addEventListener('click',function(){
+        if(typeof window.playCatalogItem==='function') window.playCatalogItem(el.dataset.c, parseInt(el.dataset.i,10));
+      });
+    });
+  }
+
+  /* ═══ 3. SISTEMA DE COMENTÁRIOS DO TÍTULO ═══ */
+  function tituloAtual(){
+    var t=$('player-title-text');
+    return ((t && t.textContent)||(window.STATE&&window.STATE.currentTitle)||'KAWE CINEMA').replace(/\s+/g,' ').trim();
+  }
+  function chave(){ return 'kawe_comments::'+tituloAtual().toLowerCase(); }
+  function ler(){ try{ return JSON.parse(localStorage.getItem(chave())||'[]'); }catch(e){ return []; } }
+  function gravar(l){ try{ localStorage.setItem(chave(), JSON.stringify(l.slice(0,300))); }catch(e){} }
+  function usuario(){
+    try{
+      var u=window.currentUser||window.CURRENT_USER||JSON.parse(localStorage.getItem('kawe_user')||'null');
+      if(u && (u.name||u.nome||u.username)) return u.name||u.nome||u.username;
+    }catch(e){}
+    try{ return localStorage.getItem('kawe_comment_name')||''; }catch(e){ return ''; }
+  }
+  function quando(ts){
+    var s=Math.floor((Date.now()-ts)/1000);
+    if(s<60) return 'agora';
+    if(s<3600) return Math.floor(s/60)+' min';
+    if(s<86400) return Math.floor(s/3600)+ 'h';
+    return new Date(ts).toLocaleDateString('pt-BR');
+  }
+  function esc(t){ return String(t).replace(/[&<>"]/g,function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+
+  function pintar(){
+    var lista=$('kwc-list'); if(!lista) return;
+    var itens=ler();
+    if(!itens.length){ lista.innerHTML='<div class="kwc-empty">Ainda não há comentários. Seja o primeiro!</div>'; return; }
+    lista.innerHTML=itens.map(function(c,i){
+      return '<div class="kwc-item">'+
+        '<div class="kwc-head"><span class="kwc-av">'+esc((c.nome||'?').charAt(0).toUpperCase())+'</span>'+
+        '<span class="kwc-name">'+esc(c.nome||'Anônimo')+'</span>'+
+        '<span class="kwc-when">'+quando(c.ts)+'</span></div>'+
+        '<div class="kwc-text">'+esc(c.txt)+'</div>'+
+        '<div class="kwc-acts"><button data-l="'+i+'">👍 '+(c.likes||0)+'</button>'+
+        '<button data-d="'+i+'">Excluir</button></div></div>';
+    }).join('');
+    Array.prototype.forEach.call(lista.querySelectorAll('[data-l]'),function(b){
+      b.onclick=function(){ var l=ler(); var i=+b.dataset.l; if(l[i]){ l[i].likes=(l[i].likes||0)+1; gravar(l); pintar(); } };
+    });
+    Array.prototype.forEach.call(lista.querySelectorAll('[data-d]'),function(b){
+      b.onclick=function(){ var l=ler(); l.splice(+b.dataset.d,1); gravar(l); pintar(); };
+    });
+  }
+
+  function comentarios(){
+    var col=$('kyt-right'); if(!col) return;
+    var box=$('kwc-box');
+    if(!box){
+      box=D.createElement('div'); box.className='kwc-box'; box.id='kwc-box';
+      box.innerHTML=
+        '<h4>Comentários</h4>'+
+        '<div class="kwc-form">'+
+          '<textarea id="kwc-txt" maxlength="600" placeholder="O que você achou deste título?"></textarea>'+
+          '<div class="kwc-row"><input id="kwc-nome" type="text" maxlength="40" placeholder="Seu nome">'+
+          '<button class="kwc-send" id="kwc-send" type="button">Enviar</button></div>'+
+        '</div>'+
+        '<div class="kwc-list" id="kwc-list"></div>';
+      col.appendChild(box);
+      box.querySelector('#kwc-send').onclick=function(){
+        var t=$('kwc-txt'), n=$('kwc-nome');
+        var txt=(t.value||'').trim(); if(!txt) return;
+        var nome=(n.value||'').trim()||usuario()||'Anônimo';
+        try{ localStorage.setItem('kawe_comment_name',nome); }catch(e){}
+        var l=ler(); l.unshift({nome:nome,txt:txt,ts:Date.now(),likes:0}); gravar(l);
+        t.value=''; pintar();
+        if(window.toast) try{ window.toast('💬 Comentário publicado'); }catch(e){}
+      };
+      var nome=usuario(); if(nome) box.querySelector('#kwc-nome').value=nome;
+    }
+    var alvo=tituloAtual();
+    if(box.dataset.titulo!==alvo){ box.dataset.titulo=alvo; pintar(); }
+  }
+
+  function boot(){ try{ sugestoes(); comentarios(); }catch(e){} }
+  if(D.readyState==='loading') D.addEventListener('DOMContentLoaded',boot); else boot();
+  [600,1500,3000,6000].forEach(function(t){ setTimeout(boot,t); });
+  setInterval(boot,2000);
+})();
+</script>
+<!-- ═══════════ FIM — MOTOR DE REPRODUÇÃO / SUGESTÕES / COMENTÁRIOS ═══════════ -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     KAWE · SISTEMA DE TROCA DE SERVIDOR + SELEÇÃO DE LINK (v3)
+     - Sempre mostra SERVIDOR 1 a 5 por padrão (player e admin)
+     - Botões dos links (players) do servidor selecionado
+     - Não remove nada: apenas sobrescreve a renderização final
+     ══════════════════════════════════════════════════════════════ -->
+<style id="kawe-srv3-css">
+#kawe-server-bar{display:none;flex-wrap:wrap;gap:8px;padding:0 0 10px;}
+#kawe-server-bar .kawe-server-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;transition:.18s;}
+#kawe-server-bar .kawe-server-btn:hover{filter:brightness(1.2);transform:translateY(-1px);}
+#kawe-server-bar .kawe-server-btn.empty{opacity:.38;}
+#kawe-server-bar .kawe-srv-count{background:rgba(0,0,0,.3);border-radius:999px;padding:1px 8px;font-size:11px;}
+#player-source-switcher .player-source-btn{padding:9px 15px;border-radius:10px;cursor:pointer;font-family:'Outfit',sans-serif;
+  font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);color:#e5e7eb;transition:.18s;}
+#player-source-switcher .player-source-btn:hover{filter:brightness(1.25);transform:translateY(-1px);}
+#player-source-switcher .player-source-btn.active{background:#fff;color:#000;border-color:#fff;}
+#player-source-switcher .kawe-srv-empty{font-family:'Outfit',sans-serif;font-size:12.5px;color:#94a3b8;padding:9px 4px;}
+</style>
+<script id="kawe-srv3-js">
+(function(){
+  'use strict';
+
+  function SRV(){ return window.KAWE_SERVERS; }
+
+  // ── Garante SERVIDOR 1..5 por padrão (nas duas UIs) ──
+  function ensureFive(){
+    var s = SRV(); if (!s || !Array.isArray(s.list)) return;
+    var changed = false;
+    for (var n = 1; n <= 5; n++){
+      if (!s.list.some(function(x){ return Number(x.id) === n; })){
+        s.list.push({ id:n, name:'SERVIDOR ' + n, color:'#22c55e' });
+        changed = true;
+      }
+    }
+    s.list.sort(function(a,b){ return a.id - b.id; });
+    if (changed && typeof s.save === 'function') { try { s.save(); } catch(e){} }
+  }
+  ensureFive();
+
+  function list(){ var s = SRV(); return (s && s.list && s.list.length) ? s.list : [1,2,3,4,5].map(function(n){ return {id:n,name:'SERVIDOR '+n,color:'#22c55e'}; }); }
+  function firstId(){ return list()[0].id; }
+  function srvOf(x){
+    var v = Number(x && x.server);
+    if (!v || !list().some(function(s){ return s.id === v; })) return firstId();
+    return v;
+  }
+  function nameOf(id){
+    var f = list().filter(function(s){ return s.id === Number(id); })[0];
+    return f ? f.name : ('SERVIDOR ' + id);
+  }
+  function normColor(c){ c = String(c||'').trim(); return /^#[0-9a-fA-F]{6}$/.test(c) ? c.toLowerCase() : '#22c55e'; }
+  function rgba(hex,a){ hex = normColor(hex); return 'rgba('+parseInt(hex.substr(1,2),16)+','+parseInt(hex.substr(3,2),16)+','+parseInt(hex.substr(5,2),16)+','+a+')'; }
+  function isLight(hex){ hex = normColor(hex); return (parseInt(hex.substr(1,2),16)*299 + parseInt(hex.substr(3,2),16)*587 + parseInt(hex.substr(5,2),16)*114)/1000 > 150; }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function say(m){ if (typeof window.toast === 'function') { try { window.toast(m); } catch(e){} } }
+
+  var STATE = { all: [], active: 0, server: null };
+
+  function wrapEl(){ return document.getElementById('player-source-switcher'); }
+  function barEl(){
+    var wrap = wrapEl(); if (!wrap) return null;
+    var b = document.getElementById('kawe-server-bar');
+    if (!b){
+      b = document.createElement('div');
+      b.id = 'kawe-server-bar';
+      b.className = 'kawe-server-bar';
+      wrap.parentNode.insertBefore(b, wrap);
+    }
+    return b;
+  }
+
+  function paint(){
+    var wrap = wrapEl(), b = barEl();
+    if (!wrap || !b) return;
+    var all = STATE.all;
+
+    if (!all.length){
+      b.style.display = 'none'; b.innerHTML = '';
+      wrap.style.display = 'none'; wrap.innerHTML = '';
+      return;
+    }
+
+    if (!STATE.server) STATE.server = srvOf(all[STATE.active] || all[0]);
+
+    // Barra de servidores (sempre 1..5, mesmo vazios)
+    b.innerHTML = list().map(function(s){
+      var count = all.filter(function(x){ return srvOf(x) === s.id; }).length;
+      var col = normColor(s.color);
+      var on = (s.id === Number(STATE.server));
+      var style = on
+        ? ('background:'+col+';border-color:'+col+';color:'+(isLight(col)?'#000':'#fff')+';box-shadow:0 4px 18px '+rgba(col,.4)+';')
+        : ('background:'+rgba(col,.14)+';border-color:'+rgba(col,.45)+';color:'+col+';');
+      return '<button type="button" class="kawe-server-btn'+(on?' active':'')+(count===0?' empty':'')
+        + '" style="border:1px solid;'+style+'" onclick="kaweSelectServer('+s.id+')">'
+        + esc(s.name) + ' <span class="kawe-srv-count">'+count+'</span></button>';
+    }).join('');
+    b.style.display = 'flex';
+
+    // Botões dos links do servidor ativo (sempre visíveis, mesmo com 1 link)
+    var inServer = [];
+    all.forEach(function(src, i){ if (srvOf(src) === Number(STATE.server)) inServer.push({ src:src, i:i }); });
+
+    if (inServer.length){
+      wrap.innerHTML = inServer.map(function(o, k){
+        return '<button type="button" class="player-source-btn'+(o.i === STATE.active ? ' active' : '')
+          + '" onclick="switchPlayerSource('+o.i+')">'+ esc(o.src.label || ('Player '+(k+1))) +'</button>';
+      }).join('');
+    } else {
+      wrap.innerHTML = '<span class="kawe-srv-empty">Nenhum link neste servidor — escolha outro servidor acima.</span>';
+    }
+    wrap.style.display = 'flex';
+    wrap.dataset.sources = JSON.stringify(all);
+    wrap.dataset.kaweActive = String(STATE.active);
+    wrap.dataset.kaweServer = String(STATE.server);
+  }
+
+  function play(src){
+    if (!src) return;
+    try {
+      var u = (typeof window.setPlayerSrc === 'function') ? window.setPlayerSrc(src.url) : src.url;
+      src.url = u || src.url;
+      if (typeof window.updatePlayerFallbackLink === 'function') window.updatePlayerFallbackLink(src.url);
+    } catch(e){}
+  }
+
+  window.switchPlayerSource = function(i){
+    i = Number(i);
+    var src = STATE.all[i];
+    if (!src){
+      var wrap = wrapEl();
+      if (wrap && wrap.dataset.sources){ try { STATE.all = JSON.parse(wrap.dataset.sources); } catch(e){} }
+      src = STATE.all[i];
+      if (!src) return;
+    }
+    STATE.active = i;
+    STATE.server = srvOf(src);
+    play(src);
+    paint();
+    say('🔄 ' + nameOf(STATE.server) + ' · ' + (src.label || ('Player ' + (i+1))));
+  };
+
+  window.kaweSelectServer = function(id){
+    id = Number(id);
+    STATE.server = id;
+    var idx = -1;
+    for (var i = 0; i < STATE.all.length; i++){ if (srvOf(STATE.all[i]) === id){ idx = i; break; } }
+    if (idx === -1){ paint(); say('⚠️ ' + nameOf(id) + ' ainda não tem links para este título'); return; }
+    STATE.active = idx;
+    play(STATE.all[idx]);
+    paint();
+    say('🖧 ' + nameOf(id));
+  };
+
+  var _prevBuild = window.buildPlayerSourceSwitcher;
+  window.buildPlayerSourceSwitcher = function(sources, activeIndex){
+    try { if (typeof _prevBuild === 'function') _prevBuild.call(this, sources, activeIndex); } catch(e){}
+    ensureFive();
+    STATE.all = (Array.isArray(sources) ? sources : []).map(function(s, i){
+      return { label: s.label || ('Player ' + (i+1)), url: s.url, server: srvOf(s), audio: s.audio };
+    });
+    STATE.active = Number(activeIndex) || 0;
+    STATE.server = STATE.all.length ? srvOf(STATE.all[STATE.active] || STATE.all[0]) : null;
+    paint();
+  };
+
+  // Mantém as barras corretas quando o filtro de idioma re-renderiza
+  var _prevAudio = window.kaweFilterAudio;
+  if (typeof _prevAudio === 'function'){
+    window.kaweFilterAudio = function(id){
+      var r = _prevAudio.apply(this, arguments);
+      setTimeout(function(){
+        var wrap = wrapEl();
+        if (wrap && wrap.dataset.sources){
+          try { STATE.all = JSON.parse(wrap.dataset.sources); } catch(e){}
+          STATE.active = 0;
+          STATE.server = STATE.all.length ? srvOf(STATE.all[0]) : null;
+          paint();
+        }
+      }, 0);
+      return r;
+    };
+  }
+
+  // Esconde as barras ao fechar o player
+  ['closePlayer'].forEach(function(fn){
+    var o = window[fn];
+    if (typeof o === 'function'){
+      window[fn] = function(){
+        STATE = { all: [], active: 0, server: null };
+        var b = document.getElementById('kawe-server-bar'); if (b){ b.style.display = 'none'; b.innerHTML = ''; }
+        return o.apply(this, arguments);
+      };
+    }
+  });
+
+  // ── ADMIN: garante o seletor de servidor (1..5) em toda linha de link ──
+  function optionsHTML(sel){
+    return list().map(function(s){
+      return '<option value="'+s.id+'"'+(Number(sel) === s.id ? ' selected' : '')+'>'+esc(s.name)+'</option>';
+    }).join('');
+  }
+  function upgradeRows(){
+    document.querySelectorAll('.video-link-row').forEach(function(row){
+      var sel = row.querySelector('.video-link-server');
+      if (!sel){
+        sel = document.createElement('select');
+        sel.className = 'video-link-server';
+        sel.title = 'Servidor onde este link ficará';
+        sel.innerHTML = optionsHTML(row.getAttribute('data-server') || firstId());
+        var btn = row.querySelector('.video-link-remove-btn');
+        if (btn) row.insertBefore(sel, btn); else row.appendChild(sel);
+      } else if (sel.options.length < list().length){
+        var v = sel.value;
+        sel.innerHTML = optionsHTML(v);
+      }
+    });
+  }
+  window.kaweUpgradeLinkRows = upgradeRows;
+  setInterval(upgradeRows, 1500);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', upgradeRows);
+  else upgradeRows();
+})();
+</script>
+
 </body>
 
 </html>
