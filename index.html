@@ -52,190 +52,22 @@
 <meta name="robots" content="index,follow">
 
 <!--KAWE_PERF_START-->
-<script>
-/* ═══ KAWE — MOTOR ANTI-TRAVAMENTO v2 ═══
-   Nenhuma função do site foi removida. O que mudou:
-   - Os ~50 timers de vigilância viraram UMA fila única e ordenada
-     (um por vez, nunca sobrepostos, espalhados no tempo).
-   - Tudo pausa quando a aba está em segundo plano e retoma ao voltar.
-   - MutationObserver agrupado (debounce) => fim do loop mutação->script->mutação.
-   - Animações (requestAnimationFrame) congelam com a aba oculta.
-   - Tarefas que estouram o orçamento de tempo são desaceleradas sozinhas. */
-(function(){
-  if (window.__KAWE_PERF2__) return; window.__KAWE_PERF2__ = 1;
-
-  var W = window;
-  var rawSetInterval   = W.setInterval.bind(W);
-  var rawClearInterval = W.clearInterval.bind(W);
-  var rawRAF = (W.requestAnimationFrame || function(f){ return rawSetTimeoutSafe(f,16) }).bind(W);
-  var rawSetTimeout = W.setTimeout.bind(W);
-  function rawSetTimeoutSafe(f,d){ return rawSetTimeout(f,d) }
-
-  /* ---------- fila única de vigilância ---------- */
-  var tasks = [];          /* {id, fn, args, period, next, cost, dead} */
-  var byKey = {};          /* dedupe de callbacks idênticos */
-  var nextId = 1;
-  var LIMIT_MS = 8;        /* orçamento por tarefa antes de desacelerar */
-  var MAX_PERIOD = 60000;  /* v3: vigilância inútil chega a 1x por minuto */
-
-  /* v3: contador global de mudancas do DOM — serve de "sensor" para saber se
-     uma vigilancia esta realmente fazendo algo ou so gastando CPU. */
-  var domTicks = 0;
-  try {
-    var RawMO = W.MutationObserver;
-    if (RawMO) new RawMO(function(recs){ domTicks += recs.length; })
-      .observe(document.documentElement, { childList:true, subtree:true, characterData:false });
-  } catch(e){}
-
-  function register(fn, delay, args){
-    var key;
-    try { key = String(delay) + '|' + fn.toString().slice(0, 400); } catch(e){ key = null; }
-    if (key && byKey[key] && !byKey[key].dead) return byKey[key].id; /* já existe: não duplica */
-    var t = { id: 'K' + (nextId++), fn: fn, args: args, period: delay, base: delay,
-              next: Date.now() + delay * (0.6 + Math.random() * 1.4), cost: 0, miss: 0, dead: false };
-    tasks.push(t);
-    if (key) byKey[key] = t;
-    return t.id;
-  }
-
-  W.setInterval = function(fn, delay){
-    var args = Array.prototype.slice.call(arguments, 2);
-    /* timers rápidos (players, progresso, contadores) continuam nativos */
-    if (typeof fn !== 'function' || !(delay >= 400)) return rawSetInterval.apply(W, arguments);
-    if (delay < 3000) delay = 3000; /* v3: piso maior — vigilâncias de 400ms/1.2s eram a causa do travamento */
-    return register(fn, delay, args);
-  };
-  W.clearInterval = function(id){
-    if (typeof id === 'string' && id.charAt(0) === 'K'){
-      for (var i=0;i<tasks.length;i++) if (tasks[i].id === id){ tasks[i].dead = true; tasks.splice(i,1); break; }
-      return;
-    }
-    return rawClearInterval(id);
-  };
-
-  var running = false;
-  function pump(){
-    if (running) return; running = true;
-    var now = Date.now(), budget = 10, start = now, ran = 0;
-    if (!document.hidden){
-      /* ordena por vencimento e roda no máximo o que couber no orçamento */
-      for (var i=0; i<tasks.length; i++){
-        var t = tasks[i];
-        if (t.dead || t.next > now) continue;
-        if (Date.now() - start > budget) break;   /* devolve o controle à tela ANTES de começar */
-        var mark = domTicks;
-        var t0 = (W.performance && performance.now) ? performance.now() : Date.now();
-        try { t.fn.apply(null, t.args); } catch(e){}
-        var d = ((W.performance && performance.now) ? performance.now() : Date.now()) - t0;
-        t.cost = t.cost * 0.7 + d * 0.3;
-        /* v3: se a tarefa não mudou nada no DOM, ela vai ficando mais lenta.
-           Assim nada é removido: continua funcionando, só para de gastar CPU à toa. */
-        if (domTicks === mark) t.miss++; else { t.miss = 0; t.period = t.base; }
-        var mult = 1 + Math.min(t.miss, 12) * 0.8;
-        if (t.cost > LIMIT_MS) mult *= Math.min(4, 1 + t.cost / LIMIT_MS);
-        t.next = Date.now() + Math.min(t.base * mult, MAX_PERIOD);
-        ran++;
-        if (ran >= 2 || Date.now() - start > budget) break;   /* no máximo 2 por ciclo */
-      }
-    }
-    running = false;
-  }
-
-  /* v3: nada de vigilância enquanto o usuário rola, digita ou arrasta */
-  var lastAct = 0;
-  ['scroll','wheel','touchmove','pointerdown','keydown'].forEach(function(ev){
-    W.addEventListener(ev, function(){ lastAct = Date.now() }, { passive: true, capture: true });
-  });
-  function loop(){
-    if (Date.now() - lastAct < 400) return;
-    if (W.requestIdleCallback) W.requestIdleCallback(function(){ pump() }, { timeout: 900 });
-    else pump();
-  }
-  rawSetInterval(loop, 500);
-
-  document.addEventListener('visibilitychange', function(){
-    if (document.hidden) return;
-    var n = Date.now();
-    for (var i=0;i<tasks.length;i++) tasks[i].next = n + i * 40; /* retomada escalonada */
-    loop();
-  }, { passive: true });
-
-  /* ---------- MutationObserver agrupado ---------- */
-  var MO = W.MutationObserver || W.WebKitMutationObserver;
-  if (MO && !MO.__kawe){
-    function KaweMO(cb){
-      var pendingRecs = [], scheduled = false, self = this;
-      var inst = new MO(function(recs, obs){
-        for (var i=0;i<recs.length;i++) pendingRecs.push(recs[i]);
-        if (pendingRecs.length > 3000) pendingRecs.length = 3000;
-        if (scheduled) return; scheduled = true;
-        rawSetTimeout(function(){
-          scheduled = false;
-          var r = pendingRecs; pendingRecs = [];
-          if (document.hidden) return;
-          try { cb.call(self, r, self) } catch(e){}
-        }, 700);
-      });
-      this.observe = function(target, opts){
-        opts = opts || {};
-        /* observar atributos + subtree em toda a página é o maior gerador de loops */
-        if (opts.subtree && opts.attributes && (target === document || target === document.body ||
-            target === document.documentElement)) { opts = Object.assign({}, opts, { attributes:false, attributeOldValue:false }); }
-        try { return inst.observe(target, opts) } catch(e){}
-      };
-      this.disconnect = function(){ pendingRecs = []; try { inst.disconnect() } catch(e){} };
-      this.takeRecords = function(){ var r = pendingRecs; pendingRecs = []; return r };
-    }
-    KaweMO.__kawe = 1;
-    W.MutationObserver = KaweMO;
-  }
-
-  /* ---------- animações pausam com a aba oculta ---------- */
-  var frozen = [];
-  W.requestAnimationFrame = function(cb){
-    if (document.hidden){ frozen.push(cb); if (frozen.length > 60) frozen.shift(); return -1; }
-    return rawRAF(cb);
-  };
-  document.addEventListener('visibilitychange', function(){
-    if (document.hidden) return;
-    var l = frozen.slice(); frozen.length = 0;
-    l.forEach(function(f){ try { rawRAF(f) } catch(e){} });
-  }, { passive: true });
-
-  /* ---------- rede: nunca deixar o site travado esperando ---------- */
-  if (W.fetch && !W.fetch.__kawe){
-    var rawFetch = W.fetch.bind(W);
-    var f = function(input, init){
-      init = init || {};
-      if (!init.signal && W.AbortController){
-        var ac = new AbortController(); init.signal = ac.signal;
-        rawSetTimeout(function(){ try { ac.abort() } catch(e){} }, 20000);
-      }
-      return rawFetch(input, init);
-    };
-    f.__kawe = 1; W.fetch = f;
-  }
-
-  /* ---------- erros nunca derrubam a página ---------- */
-  W.addEventListener('error', function(e){ try { console.warn('[KAWE] erro contido:', e.message) } catch(_){} }, true);
-  W.addEventListener('unhandledrejection', function(e){ try { e.preventDefault() } catch(_){} });
-})();
-</script>
 <style id="kawe-perf-css">
-/* cada cartão repinta isolado: rolagem fluida em listas grandes */
+/* Otimizações somente declarativas: não alteram APIs nativas do navegador. */
 .movie-card, .poster-card, .card, .auth-poster-card, .episode-item, .row-item {
   contain: layout paint style;
   content-visibility: auto;
   contain-intrinsic-size: 260px 380px;
 }
-/* blur em tela cheia é o maior custo de GPU no celular */
 @media (max-width: 820px) {
   *, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .row, .carousel, .rail { will-change: auto !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important;
+    animation-duration: .001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001s !important;
   }
 }
 img, video { max-width: 100%; }
@@ -5331,7 +5163,7 @@ function openAdminPanel() {
     });
   }
   updateAdminMoviesList();
-  document.getElementById('admin-source-code').value = document.documentElement.outerHTML;
+  // A fonte completa só é serializada ao abrir a aba CÓDIGO FONTE.
   const newVideoList = document.getElementById('new-movie-video-list');
   if (newVideoList && newVideoList.children.length === 0) addVideoLinkRow('new-movie-video-list');
   toggleSeriesFields('new');
@@ -5729,9 +5561,20 @@ function closeAdminPanel() {
 function switchAdminTab(tab) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.admin-content-section').forEach(s => s.classList.remove('active'));
-  
-  event.target.classList.add('active');
-  document.getElementById('admin-' + tab).classList.add('active');
+
+  const evt = window.event;
+  const trigger = evt && (evt.currentTarget || evt.target);
+  if (trigger && trigger.classList && trigger.classList.contains('admin-tab')) {
+    trigger.classList.add('active');
+  } else {
+    const fallback = document.querySelector('#admin-panel .admin-tab[onclick*="\'' + tab + '\'"]');
+    if (fallback) fallback.classList.add('active');
+  }
+  const section = document.getElementById('admin-' + tab);
+  if (section) section.classList.add('active');
+  if (tab === 'source' && window.kawePrepareSourceTools) {
+    window.kawePrepareSourceTools(false);
+  }
 }
 
 /* =========================================================
@@ -6201,10 +6044,17 @@ function updateAdminPassword() {
 }
 
 function copySourceCode() {
+  if (window.kawePrepareSourceTools) window.kawePrepareSourceTools(false);
   const area = document.getElementById('admin-source-code');
+  if (!area) return;
+  area.focus();
   area.select();
-  document.execCommand('copy');
-  toast('📋 Código copiado!');
+  try {
+    document.execCommand('copy');
+    toast('📋 Código copiado!');
+  } catch (e) {
+    toast('⚠️ Não foi possível copiar automaticamente');
+  }
 }
 
 function downloadBackup() {
@@ -7075,8 +6925,42 @@ function tryModeradorLogin(){
     <!-- ABA CÓDIGO FONTE -->
     <div id="admin-source" class="admin-content-section">
       <h3>VISUALIZAR CÓDIGO FONTE</h3>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Atenção: Este é o código HTML atual do arquivo.</p>
-      <textarea id="admin-source-code" readonly></textarea>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">A fonte é carregada somente quando esta aba é aberta, evitando travar o painel ao entrar no admin.</p>
+      <style id="kawe-admin-function-finder-css">
+        .kawe-fn-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 190px auto;gap:10px;align-items:end;margin:14px 0}
+        .kawe-fn-toolbar label{display:block;font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+        .kawe-fn-toolbar input,.kawe-fn-toolbar select{width:100%;min-height:42px;box-sizing:border-box}
+        .kawe-fn-status{font-size:12px;color:var(--text-muted);margin:8px 0 10px;min-height:18px}
+        .kawe-fn-results{display:grid;gap:7px;max-height:300px;overflow:auto;padding:8px;border:1px solid rgba(34,197,94,.16);border-radius:12px;background:rgba(0,0,0,.18)}
+        .kawe-fn-result{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;text-align:left;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.035);color:#fff;cursor:pointer}
+        .kawe-fn-result:hover,.kawe-fn-result.active{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.1)}
+        .kawe-fn-name{font-weight:800;color:#9df7b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .kawe-fn-meta{font-size:11px;color:var(--text-muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .kawe-fn-line{font-size:11px;color:#a7f3d0;white-space:nowrap}
+        .kawe-fn-preview{display:none;white-space:pre-wrap;max-height:180px;overflow:auto;margin:10px 0;padding:12px;border-radius:10px;background:#050805;border:1px solid rgba(34,197,94,.2);color:#d7ffe0;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}
+        @media(max-width:720px){.kawe-fn-toolbar{grid-template-columns:1fr}.kawe-fn-result{grid-template-columns:1fr}.kawe-fn-line{justify-self:start}}
+      </style>
+      <div class="kawe-fn-toolbar">
+        <div>
+          <label for="kawe-fn-query">Localizar função</label>
+          <input id="kawe-fn-query" class="admin-input" type="search" autocomplete="off" placeholder="Ex.: openAdminPanel, renderCards, setInterval...">
+        </div>
+        <div>
+          <label for="kawe-fn-scope">Escopo</label>
+          <select id="kawe-fn-scope" class="admin-select">
+            <option value="all">Todas as funções</option>
+            <option value="admin">Admin / catálogo</option>
+            <option value="player">Player / vídeo</option>
+            <option value="performance">Timers / desempenho</option>
+            <option value="interface">Interface / navegação</option>
+          </select>
+        </div>
+        <button type="button" class="admin-btn-secondary" onclick="kaweIndexFunctions(true)">REINDEXAR</button>
+      </div>
+      <div id="kawe-fn-status" class="kawe-fn-status"></div>
+      <div id="kawe-fn-results" class="kawe-fn-results" aria-live="polite"></div>
+      <pre id="kawe-fn-preview" class="kawe-fn-preview"></pre>
+      <textarea id="admin-source-code" readonly wrap="off" spellcheck="false"></textarea>
       <button class="admin-btn-save" onclick="copySourceCode()">COPIAR CÓDIGO</button>
     </div>
 
@@ -7322,6 +7206,149 @@ function tryModeradorLogin(){
 
   </div>
 </div>
+
+<script id="kawe-admin-function-finder">
+(function(){
+  if (window.__KAWE_FUNCTION_FINDER__) return;
+  window.__KAWE_FUNCTION_FINDER__ = true;
+
+  var sourceText = '';
+  var entries = [];
+  var selected = null;
+
+  function el(id){ return document.getElementById(id); }
+  function norm(value){
+    return String(value || '').toLocaleLowerCase('pt-BR')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function category(name, context){
+    var text = norm(name + ' ' + context);
+    if (/admin|catalog|catalogo|movie|filme|user|usuario|backup|restore|source|categoria|jogo|suporte|social|api|m3u|login|senha|password|auth/.test(text)) return 'admin';
+    if (/timer|interval|timeout|animation|observer|performance|fetch|raf|requestanimationframe/.test(text)) return 'performance';
+    if (/player|episode|episodio|season|temporada|video|play|stream|fullscreen|server|servidor/.test(text)) return 'player';
+    if (/card|render|section|header|menu|search|busca|home|sidebar|modal|intro|theme|tema|nav/.test(text)) return 'interface';
+    return 'other';
+  }
+  function lineAt(text, index){
+    var line = 1;
+    for (var i=0; i<index; i++) if (text.charCodeAt(i) === 10) line++;
+    return line;
+  }
+  function excerpt(text, index){
+    var start = Math.max(0, text.lastIndexOf('\n', Math.max(0,index-180)) + 1);
+    var end = text.indexOf('\n', index + 260);
+    if (end < 0) end = Math.min(text.length, index + 260);
+    return text.slice(start, end).trim();
+  }
+  function index(text){
+    var found = [];
+    var seen = Object.create(null);
+    var re = /(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)|(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/g;
+    var match;
+    while ((match = re.exec(text))) {
+      var name = match[1] || match[3];
+      if (!name) continue;
+      var key = name + '@' + match.index;
+      if (seen[key]) continue;
+      seen[key] = true;
+      var line = lineAt(text, match.index);
+      var context = text.slice(Math.max(0, match.index - 160), Math.min(text.length, match.index + 420));
+      found.push({
+        name: name,
+        line: line,
+        index: match.index,
+        type: match[1] ? 'function' : 'arrow',
+        category: category(name, context),
+        excerpt: excerpt(text, match.index)
+      });
+    }
+    found.sort(function(a,b){ return a.line - b.line || a.name.localeCompare(b.name); });
+    return found;
+  }
+  function labelFor(value){
+    return ({admin:'Admin / catálogo',player:'Player / vídeo',performance:'Timers / desempenho',interface:'Interface / navegação',other:'Outros'})[value] || 'Outros';
+  }
+  function prepare(force){
+    var area = el('admin-source-code');
+    if (!area) return;
+    if (force || !sourceText) {
+      sourceText = document.documentElement.outerHTML;
+      area.value = sourceText;
+      entries = index(sourceText);
+    } else if (!area.value) {
+      area.value = sourceText;
+    }
+    render();
+  }
+  function select(entry, button){
+    selected = entry;
+    var preview = el('kawe-fn-preview');
+    if (preview) {
+      preview.style.display = 'block';
+      preview.textContent = entry.name + ' — linha ' + entry.line + '\n\n' + entry.excerpt;
+    }
+    document.querySelectorAll('.kawe-fn-result.active').forEach(function(node){ node.classList.remove('active'); });
+    if (button) button.classList.add('active');
+    var area = el('admin-source-code');
+    if (area && typeof area.setSelectionRange === 'function') {
+      area.focus();
+      var end = Math.min(sourceText.length, entry.index + Math.max(80, entry.excerpt.length));
+      area.setSelectionRange(entry.index, end);
+      try { area.scrollTop = Math.max(0, area.value.slice(0, entry.index).split('\n').length * 7 - 120); } catch (e) {}
+    }
+  }
+  function render(){
+    var results = el('kawe-fn-results');
+    var status = el('kawe-fn-status');
+    if (!results || !status) return;
+    var query = norm(el('kawe-fn-query') && el('kawe-fn-query').value).trim();
+    var scope = el('kawe-fn-scope') ? el('kawe-fn-scope').value : 'all';
+    var filtered = entries.filter(function(item){
+      var hay = norm(item.name + ' ' + labelFor(item.category) + ' ' + item.excerpt);
+      return (!query || hay.indexOf(query) >= 0) && (scope === 'all' || item.category === scope);
+    });
+    results.innerHTML = '';
+    if (!filtered.length) {
+      results.textContent = entries.length ? 'Nenhuma função encontrada para este filtro.' : 'Nenhuma função indexada ainda.';
+    } else {
+      var frag = document.createDocumentFragment();
+      filtered.slice(0, 250).forEach(function(item){
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'kawe-fn-result';
+        var left = document.createElement('span');
+        var name = document.createElement('span');
+        name.className = 'kawe-fn-name';
+        name.textContent = item.name;
+        var meta = document.createElement('span');
+        meta.className = 'kawe-fn-meta';
+        meta.textContent = labelFor(item.category) + ' · ' + item.type;
+        left.appendChild(name);
+        left.appendChild(meta);
+        var line = document.createElement('span');
+        line.className = 'kawe-fn-line';
+        line.textContent = 'linha ' + item.line;
+        button.appendChild(left);
+        button.appendChild(line);
+        button.addEventListener('click', function(){ select(item, button); });
+        frag.appendChild(button);
+      });
+      results.appendChild(frag);
+    }
+    status.textContent = filtered.length + ' função(ões) encontrada(s)' + (filtered.length > 250 ? ' — mostrando as primeiras 250' : '') + '. Clique em um resultado para destacar o trecho no código.';
+  }
+
+  window.kawePrepareSourceTools = prepare;
+  window.kaweIndexFunctions = function(force){
+    sourceText = '';
+    prepare(force !== false);
+  };
+
+  document.addEventListener('input', function(event){
+    if (event.target && (event.target.id === 'kawe-fn-query' || event.target.id === 'kawe-fn-scope')) render();
+  });
+})();
+</script>
 
 <!-- MODAL EDITAR CONTEÚDO -->
 <div id="edit-movie-modal">
