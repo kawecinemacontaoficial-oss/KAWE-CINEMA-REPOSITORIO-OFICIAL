@@ -33092,5 +33092,144 @@ img, video, iframe{ max-width:100% !important; }
 </script>
 <!-- KAWE_INTERFACE_FIX_2026_END -->
 
+\n<!-- KAWE FIRESTORE: CARREGAMENTO AUTOMÁTICO POR CATEGORIA -->
+<script id="kawe-firestore-categorias">
+(function(){
+  'use strict';
+  if (window.__KAWE_FIRESTORE_CATEGORIAS__) return;
+  window.__KAWE_FIRESTORE_CATEGORIAS__ = true;
+
+  var CATEGORIAS = [
+    'filmes','series','animes','infantil','curtas','documentarios','doramas','novelas',
+    'terror','lancamentos','musica','livros','podcasts','radio','canais','esportes',
+    'ao-vivo','sitcom','live-action','cinema','televisao','lives','trailers','jogos','pedidos'
+  ];
+
+  var ALIASES = {
+    'filme':'filmes','filmes':'filmes',
+    'serie':'series','série':'series','series':'series','séries':'series',
+    'anime':'animes','animes':'animes',
+    'infantil':'infantil','crianca':'infantil','criança':'infantil',
+    'curta':'curtas','curtas':'curtas','curta-metragem':'curtas','curtametragem':'curtas',
+    'documentario':'documentarios','documentário':'documentarios','documentarios':'documentarios','documentários':'documentarios',
+    'dorama':'doramas','doramas':'doramas',
+    'novela':'novelas','novelas':'novelas',
+    'terror':'terror','lançamento':'lancamentos','lancamento':'lancamentos','lançamentos':'lancamentos','lancamentos':'lancamentos',
+    'musica':'musica','música':'musica','livro':'livros','livros':'livros',
+    'podcast':'podcasts','podcasts':'podcasts','radio':'radio','rádio':'radio',
+    'canal':'canais','canais':'canais','esporte':'esportes','esportes':'esportes',
+    'ao vivo':'ao-vivo','ao-vivo':'ao-vivo','live':'lives','lives':'lives',
+    'sitcom':'sitcom','live action':'live-action','live-action':'live-action',
+    'cinema':'cinema','televisao':'televisao','televisão':'televisao',
+    'trailer':'trailers','trailers':'trailers','jogo':'jogos','jogos':'jogos',
+    'pedido':'pedidos','pedidos':'pedidos'
+  };
+
+  function normalizarCategoria(valor){
+    var c = String(valor || '').toLowerCase().trim();
+    c = c.normalize ? c.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : c;
+    c = c.replace(/[_]+/g,' ').replace(/\s+/g,' ').trim();
+    if (ALIASES[c]) return ALIASES[c];
+    c = c.replace(/\s+/g,'-');
+    return ALIASES[c] || c || 'filmes';
+  }
+
+  function garantirCategorias(){
+    window.CATALOG_DATA = window.CATALOG_DATA || {};
+    CATEGORIAS.forEach(function(cat){
+      if (!Array.isArray(window.CATALOG_DATA[cat])) window.CATALOG_DATA[cat] = [];
+    });
+  }
+
+  function limparFirestoreAntigo(){
+    garantirCategorias();
+    Object.keys(window.CATALOG_DATA).forEach(function(cat){
+      if (Array.isArray(window.CATALOG_DATA[cat])) {
+        window.CATALOG_DATA[cat] = window.CATALOG_DATA[cat].filter(function(item){
+          return !(item && item.__firestore === true);
+        });
+      }
+    });
+  }
+
+  function renderizarTudo(){
+    Object.keys(window.CATALOG_DATA || {}).forEach(function(cat){
+      if (typeof window.renderCards === 'function' && document.getElementById(cat + '-content')) {
+        try { window.renderCards(cat, 1); } catch(e) { console.warn('[KAWE] Erro renderizando '+cat, e); }
+      }
+    });
+  }
+
+  function aplicarSnapshot(snapshot){
+    limparFirestoreAntigo();
+    var total = 0;
+
+    snapshot.forEach(function(doc){
+      var data = doc.data() || {};
+      if (data.active === false) return;
+
+      var categoria = normalizarCategoria(data.category || data.categoria || data.type || data.tipo || 'filmes');
+      if (!Array.isArray(window.CATALOG_DATA[categoria])) window.CATALOG_DATA[categoria] = [];
+
+      var item = Object.assign({}, data, {
+        id: doc.id,
+        category: categoria,
+        __firestore: true
+      });
+
+      var existe = window.CATALOG_DATA[categoria].some(function(x){
+        return x && x.id === item.id && x.__firestore === true;
+      });
+      if (!existe) {
+        window.CATALOG_DATA[categoria].push(item);
+        total++;
+      }
+    });
+
+    renderizarTudo();
+    console.log('[KAWE FIRESTORE] '+total+' conteúdo(s) carregado(s) e separado(s) por categoria.');
+  }
+
+  function iniciar(){
+    if (window.__KAWE_FIRESTORE_LISTENER__) return;
+
+    var tentativas = 0;
+    var timer = setInterval(function(){
+      tentativas++;
+      if (typeof window.firestore !== 'function') {
+        if (tentativas > 50) {
+          clearInterval(timer);
+          console.warn('[KAWE FIRESTORE] Função firestore() não foi encontrada.');
+        }
+        return;
+      }
+
+      clearInterval(timer);
+      window.__KAWE_FIRESTORE_LISTENER__ = true;
+
+      window.firestore().then(function(db){
+        if (!db || !db.collection) throw new Error('Firestore não inicializado');
+        return db.collection('filmes').onSnapshot(function(snapshot){
+          aplicarSnapshot(snapshot);
+        }, function(err){
+          console.error('[KAWE FIRESTORE] Erro ao ler coleção filmes:', err);
+        });
+      }).then(function(unsubscribe){
+        window.__KAWE_FIRESTORE_UNSUBSCRIBE__ = unsubscribe;
+      }).catch(function(err){
+        window.__KAWE_FIRESTORE_LISTENER__ = false;
+        console.error('[KAWE FIRESTORE] Falha ao iniciar:', err);
+      });
+    }, 200);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(iniciar, 1200); });
+  } else {
+    setTimeout(iniciar, 1200);
+  }
+})();
+</script>
+<!-- /KAWE FIRESTORE: CARREGAMENTO AUTOMÁTICO POR CATEGORIA -->
 </body>
 </html>
