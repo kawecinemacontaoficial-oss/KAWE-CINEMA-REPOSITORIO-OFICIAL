@@ -329,6 +329,8 @@ letter-spacing:.5px;text-transform:uppercase;}
 <!-- ── FIREBASE (Realtime Database) ─────────────────────────────── -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
   const firebaseConfig = {
@@ -344,6 +346,7 @@ letter-spacing:.5px;text-transform:uppercase;}
   try {
     firebase.initializeApp(firebaseConfig);
     window.kaweDB = firebase.database();
+    if (firebase.firestore) window.kaweFS = firebase.firestore();
     console.log("[KAWE] Firebase conectado:", firebaseConfig.projectId);
   } catch(e) {
     console.error("[KAWE] Falha ao iniciar Firebase:", e);
@@ -13259,7 +13262,6 @@ cursor:pointer;color:#9aa3b2;opacity:.85;z-index:5;line-height:0}
       ['Nome completo', esc(u.fullname||'—')],
       ['E-mail', esc(u.email||'—')],
       ['Telefone', esc(u.phone||'—')],
-      ['Senha cadastrada', u.password ? esc(u.password) : '—'],
       ['Método de cadastro', esc(u.method||'local')],
       ['Cargo', esc(u.cargo||'—')],
       ['Status da conta', status],
@@ -18499,7 +18501,6 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
       id: u.id||'', username: u.username||'', fullname: u.fullname||'',
       email: u.email||'', phone: u.phone||'', photo: u.photo||'',
       method: u.method||'local', banned: !!u.banned,
-      password: u.password||'',
       createdAt: u.createdAt||'', lastLogin: u.lastLogin||'', updatedAt: new Date().toISOString()
     };
     return d.ref(CONNECTOR + '/' + fbKey(u)).set(payload)
@@ -18555,7 +18556,7 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
         if(r){
           var list = users(); var i = list.findIndex(function(x){ return x.id===u.id; });
           if(i>=0){
-            ['photo','fullname','phone','email','username'].forEach(function(f){ if(r[f] && !list[i][f]) list[i][f]=r[f]; });
+            ['photo','fullname','phone','email','username','cargo','banned','deactivated','deactivatedAt','reactivatedAt'].forEach(function(f){ if(r[f] !== undefined && (r[f] || typeof r[f] === 'boolean')) list[i][f]=r[f]; });
             if(r.photo) list[i].photo = list[i].photo || r.photo;
             saveUsers(list); u = list[i];
           }
@@ -27976,6 +27977,102 @@ body.kawe-light select, body.kawe-light textarea{
 
 
 
+
+<!-- KAWE FIREBASE AUTH PATCH: autenticação segura por e-mail + perfil no RTDB -->
+<script id="kawe-firebase-auth-patch">
+(function(){
+  'use strict';
+  function auth(){
+    try { return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.auth() : null; }
+    catch(e){ return null; }
+  }
+  function db(){ return window.kaweDB || null; }
+  function localUsers(){ try { return JSON.parse(localStorage.getItem('kawe_users') || '[]') || []; } catch(e){ return []; } }
+  function saveLocalUsers(v){ try { localStorage.setItem('kawe_users', JSON.stringify(v)); } catch(e){} }
+  function setSession(u){
+    try {
+      localStorage.setItem('kawe_current_user_id', u.id);
+      localStorage.setItem('kawe_user_authed','1');
+      localStorage.setItem('kawe_user_name', u.username || u.email || 'Usuário');
+      localStorage.setItem('kaweUser', JSON.stringify({identifier:u.email||u.username, method:'firebase-email', name:u.username||u.email}));
+    } catch(e){}
+  }
+  function errorText(e){
+    var c=String(e && e.code || '');
+    return ({
+      'auth/email-already-in-use':'Já existe uma conta com este e-mail.',
+      'auth/invalid-email':'Informe um e-mail válido.',
+      'auth/weak-password':'A senha precisa ter pelo menos 6 caracteres.',
+      'auth/user-not-found':'Usuário não encontrado. Cadastre-se primeiro.',
+      'auth/wrong-password':'Senha incorreta.',
+      'auth/invalid-credential':'E-mail ou senha incorretos.',
+      'auth/too-many-requests':'Muitas tentativas. Aguarde alguns minutos.',
+      'auth/network-request-failed':'Falha de conexão. Tente novamente.'
+    })[c] || (e && e.message) || 'Não foi possível concluir a operação.';
+  }
+  function profile(user, name, phone){
+    return { id:user.uid, firebaseUid:user.uid, username:name || (user.email||'').split('@')[0], fullname:name||'', email:(user.email||'').toLowerCase(), phone:phone||'', method:'firebase-email', banned:false, deactivated:false, createdAt:new Date().toISOString(), lastLogin:new Date().toISOString(), updatedAt:new Date().toISOString() };
+  }
+  function cacheProfile(u){
+    var list=localUsers(), i=list.findIndex(function(x){return x.id===u.id;});
+    if(i<0) list.push(u); else list[i]=Object.assign({},list[i],u);
+    saveLocalUsers(list); setSession(u);
+    try{ if(typeof renderAdminUsers==='function') renderAdminUsers(); }catch(e){}
+    try{ if(typeof kaweRefreshAuthUI==='function') kaweRefreshAuthUI(); }catch(e){}
+  }
+  function writeProfile(u){
+    var d=db(); if(!d) return Promise.resolve();
+    var payload=Object.assign({},u); delete payload.password;
+    return d.ref('kawe_users_data/'+u.id).set(payload).catch(function(e){ console.warn('[KAWE] perfil não salvo no RTDB:',e); });
+  }
+  function activeMethod(){
+    var el=document.querySelector('#authModalOverlay .auth-method-tab.active');
+    return el && el.dataset.method || 'email';
+  }
+  window.kaweFirebaseAuthSubmit = async function(ev){
+    if(ev && ev.preventDefault) ev.preventDefault();
+    var a=auth();
+    if(!a){ alert('Firebase Authentication não está disponível. Verifique a conexão.'); return false; }
+    var method=activeMethod(), mode=(document.querySelector('#authModalOverlay .auth-tab.active')||{}).dataset;
+    mode=mode && mode.mode || 'login';
+    if(method!=='email') { alert('Para usar telefone, ative o provedor Phone e o reCAPTCHA no Firebase. Por enquanto, use o cadastro por e-mail.'); return false; }
+    var email=(document.getElementById('auth-email').value||'').trim().toLowerCase();
+    var pass=document.getElementById('auth-password').value||'';
+    var name=(document.getElementById('auth-name').value||'').trim();
+    var confirmPass=(document.getElementById('auth-password-confirm').value||'');
+    var btn=document.getElementById('authSubmitBtn');
+    if(!email){ alert('Informe seu e-mail.'); return false; }
+    if(mode==='signup' && !name){ alert('Informe seu nome.'); return false; }
+    if(pass.length<6){ alert('A senha precisa ter pelo menos 6 caracteres.'); return false; }
+    if(mode==='signup' && pass!==confirmPass){ alert('As senhas não coincidem.'); return false; }
+    if(btn){ btn.disabled=true; btn.dataset.oldText=btn.textContent; btn.textContent='Aguarde...'; }
+    try{
+      var cred;
+      if(mode==='signup') cred=await a.createUserWithEmailAndPassword(email,pass);
+      else cred=await a.signInWithEmailAndPassword(email,pass);
+      var existing=localUsers().find(function(x){return x.id===cred.user.uid;});
+      var u=existing || profile(cred.user,name,'');
+      u.email=email; u.username=(existing&&existing.username) || name || (email.split('@')[0]);
+      u.fullname=(existing&&existing.fullname) || name || '';
+      u.method='firebase-email'; u.lastLogin=new Date().toISOString(); u.updatedAt=new Date().toISOString();
+      cacheProfile(u); await writeProfile(u);
+      if(typeof closeAuthModal==='function') closeAuthModal();
+      if(typeof toast==='function') toast(mode==='signup'?'✅ Conta criada com sucesso!':'✅ Login realizado com sucesso!');
+      else alert(mode==='signup'?'Conta criada com sucesso!':'Login realizado com sucesso!');
+      return false;
+    }catch(e){ alert(errorText(e)); return false; }
+    finally{ if(btn){ btn.disabled=false; btn.textContent=btn.dataset.oldText || (mode==='signup'?'Cadastrar':'Entrar'); } }
+  };
+  function install(){
+    var form=document.getElementById('authForm');
+    if(form && !form.__kaweFbBound){ form.addEventListener('submit',window.kaweFirebaseAuthSubmit); form.__kaweFbBound=true; }
+    window.submitAuth=window.kaweFirebaseAuthSubmit;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install); else install();
+  [300,1000,2500,5000].forEach(function(ms){setTimeout(install,ms);});
+})();
+</script>
+
 </body>');
         w.document.close();
       }],
@@ -34884,5 +34981,219 @@ header .header-left > #v12-tut-btn{
 })();
 </script>
 <!--KAWE_SEED_ARCHIVE_V1_END-->
+<!-- KAWE_FIREBASE_FULL_SYNC_V1 -->
+<script id="kawe-firebase-full-sync">
+(function(){
+  'use strict';
+  var DB_KEY = 'kawe_catalog';
+  var SYNC_KEY = 'kawe_firebase_sync_v1';
+  var ready = false;
+  var applying = false;
+  var pending = Object.create(null);
+
+  function db(){ return window.kaweDB && typeof window.kaweDB.ref === 'function' ? window.kaweDB : null; }
+  function notify(msg){ try{ if(typeof window.toast === 'function') window.toast(msg); else console.log('[KAWE Firebase]', msg); }catch(e){} }
+  function clone(v){ try { return JSON.parse(JSON.stringify(v)); } catch(e){ return v; } }
+  function localGet(key, fallback){ try { var v=localStorage.getItem(key); return v==null ? fallback : JSON.parse(v); } catch(e){ return fallback; } }
+  function localSet(key, value){ try { localStorage.setItem(key, JSON.stringify(value)); } catch(e){} }
+  function clean(value){
+    if(value === undefined) return null;
+    if(typeof value === 'number' && !isFinite(value)) return null;
+    if(Array.isArray(value)) return value.map(clean);
+    if(value && typeof value === 'object') { var o={}; Object.keys(value).forEach(function(k){ o[k]=clean(value[k]); }); return o; }
+    return value;
+  }
+  function write(path, value, quiet){
+    var d=db(); if(!d) return Promise.reject(new Error('Firebase não está disponível'));
+    return d.ref(path).set(clean(clone(value))).then(function(){
+      if(!quiet) notify('✅ Dados sincronizados com o Firebase');
+      return true;
+    }).catch(function(err){
+      console.warn('[KAWE Firebase] Falha ao salvar '+path, err);
+      if(!quiet) notify('⚠️ Firebase indisponível; os dados ficaram salvos neste dispositivo');
+      throw err;
+    });
+  }
+  function saveCatalog(quiet){
+    var data=clone(window.CATALOG_DATA || {});
+    localSet(DB_KEY, data);
+    if(!db()) return Promise.resolve(false);
+    return write('catalog', data, quiet).then(function(){ localSet(SYNC_KEY, Date.now()); return true; }).catch(function(){ return false; });
+  }
+  function redraw(){
+    try { if(typeof window.updateAdminMoviesList==='function') window.updateAdminMoviesList(); } catch(e){}
+    try { if(typeof window.kaweRedrawCatalog==='function') window.kaweRedrawCatalog(); } catch(e){}
+    try { Object.keys(window.CATALOG_DATA||{}).forEach(function(c){ if(typeof window.renderCards==='function') window.renderCards(c,1); }); } catch(e){}
+  }
+  function loadCatalog(){
+    var d=db();
+    if(!d) return Promise.resolve(false);
+    return d.ref('catalog').once('value').then(function(snap){
+      var remote=snap.val();
+      if(remote && typeof remote==='object' && Object.keys(remote).length){
+        applying=true;
+        window.CATALOG_DATA=remote;
+        localSet(DB_KEY, remote);
+        applying=false;
+        redraw();
+        return true;
+      }
+      var local=window.CATALOG_DATA || localGet(DB_KEY, {});
+      if(local && Object.keys(local).length) return saveCatalog(true);
+      return false;
+    }).catch(function(err){ console.warn('[KAWE Firebase] Falha ao carregar catálogo',err); return false; });
+  }
+  function wrapCatalogFunction(name){
+    var original=window[name];
+    if(typeof original!=='function' || original.__kaweFirebaseWrapped) return;
+    var wrapped=function(){
+      var result=original.apply(this,arguments);
+      try { if(!applying) saveCatalog(true); } catch(e){}
+      return result;
+    };
+    wrapped.__kaweFirebaseWrapped=true;
+    wrapped.__kaweFirebaseOriginal=original;
+    window[name]=wrapped;
+  }
+  function syncFormData(path, data, quiet){
+    var id=data.id || data.uid || data.key || ('item_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));
+    data.id=id;
+    localSet(path.replace(/\//g,'_')+'_'+id, data);
+    return write(path+'/'+id, data, quiet);
+  }
+  function patchPedidoSubmit(){
+    var form=document.getElementById('pedidos-form');
+    if(!form || form.__kaweFirebaseSync) return;
+    form.__kaweFirebaseSync=true;
+    form.addEventListener('submit', function(){
+      setTimeout(function(){
+        try {
+          var last=localGet('kawe_last_pedido', null);
+          if(last) syncFormData('pedidos', last, true).catch(function(){});
+        }catch(e){}
+      }, 50);
+    }, true);
+  }
+  function patchLocalStorage(){
+    if(Storage.prototype.__kaweFirebasePatched) return;
+    var originalSet=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      var result=originalSet.apply(this,arguments);
+      if(this===localStorage && key==='kawe_catalog' && !applying){
+        try { var data=JSON.parse(value); if(db()) write('catalog',data,true).catch(function(){}); } catch(e){}
+      }
+      return result;
+    };
+    Storage.prototype.__kaweFirebasePatched=true;
+  }
+  function start(){
+    if(ready || !db()) return;
+    ready=true;
+    patchLocalStorage();
+    ['addNewMovie','saveMovieEdit','deleteMovie'].forEach(wrapCatalogFunction);
+    loadCatalog();
+    patchPedidoSubmit();
+    try { if(typeof window.renderAdminPedidos==='function') window.renderAdminPedidos('pendente'); } catch(e){}
+    window.kaweFirebaseSync={
+      saveCatalog:function(){return saveCatalog(false)},
+      loadCatalog:loadCatalog,
+      save:function(path,data){return write(path,data,false)},
+      saveForm:function(path,data){return syncFormData(path,data,false)}
+    };
+    window.dispatchEvent(new CustomEvent('kawe:firebase-ready'));
+  }
+  function boot(){
+    if(db()) start();
+    else setTimeout(boot,250);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+  window.addEventListener('load',function(){ setTimeout(function(){
+    ['addNewMovie','saveMovieEdit','deleteMovie'].forEach(wrapCatalogFunction);
+    patchPedidoSubmit();
+  },1000); });
+})();
+</script>
+<!-- KAWE_FIRESTORE_FULL_SYNC_V1 -->
+<script id="kawe-firestore-full-sync">
+(function(){
+  'use strict';
+  var COLLECTION='catalog_categories';
+  var started=false, loading=false, saving=false;
+  function fs(){ return window.kaweFS && typeof window.kaweFS.collection==='function' ? window.kaweFS : null; }
+  function toastMsg(msg){ try{ if(typeof window.toast==='function') window.toast(msg); else console.log('[KAWE Firestore]',msg); }catch(e){} }
+  function safeCopy(v){ try{return JSON.parse(JSON.stringify(v));}catch(e){return v;} }
+  function localCatalog(){ try{return JSON.parse(localStorage.getItem('kawe_catalog')||'{}')||{};}catch(e){return {};} }
+  function saveLocal(data){ try{localStorage.setItem('kawe_catalog',JSON.stringify(data));}catch(e){} }
+  function docId(category){ return String(category||'uncategorized').replace(/[.#$\[\]/]/g,'_').slice(0,120); }
+  function redraw(){
+    try{if(typeof window.updateAdminMoviesList==='function')window.updateAdminMoviesList();}catch(e){}
+    try{if(typeof window.kaweRedrawCatalog==='function')window.kaweRedrawCatalog();}catch(e){}
+    try{Object.keys(window.CATALOG_DATA||{}).forEach(function(c){if(typeof window.renderCards==='function')window.renderCards(c,1);});}catch(e){}
+  }
+  function loadFirestore(){
+    var database=fs(); if(!database||loading)return Promise.resolve(false);
+    loading=true;
+    return database.collection(COLLECTION).get().then(function(snapshot){
+      var data={};
+      snapshot.forEach(function(doc){var v=doc.data()||{};if(Array.isArray(v.items))data[v.category||doc.id]=v.items;});
+      if(Object.keys(data).length){window.CATALOG_DATA=data;saveLocal(data);redraw();return true;}
+      return false;
+    }).catch(function(e){console.warn('[KAWE Firestore] Falha ao carregar catálogo:',e);return false;}).then(function(v){loading=false;return v;});
+  }
+  function saveFirestore(quiet){
+    var database=fs(); if(!database||saving)return Promise.resolve(false);
+    saving=true;
+    var data=safeCopy(window.CATALOG_DATA||{}), batch=database.batch();
+    Object.keys(data).forEach(function(category){
+      var ref=database.collection(COLLECTION).doc(docId(category));
+      batch.set(ref,{category:category,items:data[category]||[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    });
+    saveLocal(data);
+    return batch.commit().then(function(){if(!quiet)toastMsg('✅ Catálogo salvo no Firestore');return true;}).catch(function(e){console.error('[KAWE Firestore] Falha ao salvar catálogo:',e);if(!quiet)toastMsg('⚠️ Não foi possível salvar no Firestore');return false;}).then(function(v){saving=false;return v;});
+  }
+  function wrap(name){
+    var old=window[name]; if(typeof old!=='function'||old.__kaweFirestoreWrapped)return;
+    function wrapped(){var result=old.apply(this,arguments);setTimeout(function(){if(!loading)saveFirestore(true);},0);return result;}
+    wrapped.__kaweFirestoreWrapped=true;wrapped.__kaweFirestoreOriginal=old;window[name]=wrapped;
+  }
+  function boot(){
+    if(started||!fs())return; started=true;
+    ['addNewMovie','saveMovieEdit','deleteMovie'].forEach(wrap);
+    setTimeout(function(){loadFirestore().then(function(found){if(!found)saveFirestore(true);});},900);
+    setTimeout(function(){['addNewMovie','saveMovieEdit','deleteMovie'].forEach(wrap);},1500);
+    window.kaweFirestoreSync={load:loadFirestore,save:function(){return saveFirestore(false)},collection:COLLECTION};
+    window.dispatchEvent(new CustomEvent('kawe:firestore-ready'));
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  window.addEventListener('load',function(){setTimeout(boot,500);});
+})();
+</script>
+<!-- KAWE_FIRESTORE_REST_SYNC_V1 -->
+<script id="kawe-firestore-rest-sync">
+(function(){
+  'use strict';
+  var COLLECTION='app_data';
+  var KEYS=[
+    'kaweNews','kawe_jogos','kawe_loja_v3','kyt_playlist','kw_views','kawe_reports',
+    'kawe_chat_local','kawe_activity_log','kawe_admin_notifs','kawe_clubes','kawe_xp',
+    'kawe_user_photo','kawe_user_name','kawe_comment_name','kawe_current_user_id'
+  ];
+  var SKIP=/pass|senha|password|apikey|api_key|secret|token|credential/i;
+  var syncing=false;
+  function fs(){return window.kaweFS&&typeof window.kaweFS.collection==='function'?window.kaweFS:null;}
+  function id(k){return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,150);}
+  function copy(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+  function get(k){try{var raw=localStorage.getItem(k);return raw==null?null:JSON.parse(raw);}catch(e){return localStorage.getItem(k);}}
+  function set(k,v){try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));}catch(e){}}
+  function allowed(k){return KEYS.indexOf(k)>=0&&!SKIP.test(k);}
+  function upload(k,v){var d=fs();if(!d||!allowed(k)||v==null)return Promise.resolve(false);return d.collection(COLLECTION).doc(id(k)).set({key:k,value:copy(v),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).then(function(){return true;}).catch(function(e){console.warn('[KAWE Firestore] '+k,e);return false;});}
+  function migrate(){var d=fs();if(!d||syncing)return;syncing=true;var jobs=[];KEYS.forEach(function(k){var v=get(k);if(v!=null)jobs.push(upload(k,v));});Promise.all(jobs).finally(function(){syncing=false;});}
+  function load(){var d=fs();if(!d)return;d.collection(COLLECTION).get().then(function(snap){snap.forEach(function(doc){var v=doc.data()||{};if(v.key&&v.value!==undefined&&allowed(v.key)&&get(v.key)==null)set(v.key,v.value);});}).catch(function(e){console.warn('[KAWE Firestore] app_data load',e);});}
+  function patchStorage(){if(Storage.prototype.__kaweRestFirestore)return;var old=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){var r=old.apply(this,arguments);if(this===localStorage&&allowed(k)&&!syncing){try{upload(k,JSON.parse(v));}catch(e){upload(k,v);}}return r;};Storage.prototype.__kaweRestFirestore=true;}
+  function boot(){if(!fs())return;patchStorage();load();setTimeout(migrate,1200);window.kaweFirestoreRestSync={migrate:migrate,load:load,collection:COLLECTION};}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  window.addEventListener('load',function(){setTimeout(boot,600);});
+})();
+</script>
 </body>
 </html>
