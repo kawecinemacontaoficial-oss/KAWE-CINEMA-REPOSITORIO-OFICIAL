@@ -35142,10 +35142,17 @@ header .header-left > #v12-tut-btn{
   },1000); });
 })();
 </script>
+<!-- KAWE_FIRESTORE_DISABLED_BY_FIX -->
+<script>
+  // O catálogo oficial fica somente no Realtime Database /catalog.
+  // Impede que o Firestore sobrescreva os dados do catálogo.
+  window.__KAWE_DISABLE_FIRESTORE__ = true;
+</script>
 <!-- KAWE_FIRESTORE_FULL_SYNC_V1 -->
 <script id="kawe-firestore-full-sync">
 (function(){
   'use strict';
+  if (window.__KAWE_DISABLE_FIRESTORE__) return;
   var COLLECTION='catalog_categories';
   var started=false, loading=false, saving=false;
   function fs(){ return window.kaweFS && typeof window.kaweFS.collection==='function' ? window.kaweFS : null; }
@@ -35202,6 +35209,7 @@ header .header-left > #v12-tut-btn{
 <script id="kawe-firestore-rest-sync">
 (function(){
   'use strict';
+  if (window.__KAWE_DISABLE_FIRESTORE__) return;
   var COLLECTION='app_data';
   var KEYS=[
     'kaweNews','kawe_loja_v3','kw_views','kawe_reports',
@@ -35406,7 +35414,7 @@ header .header-left > #v12-tut-btn{
       if(typeof window.openAdminPanel==='function') window.openAdminPanel();
       toastMsg('✅ Administrador autenticado no Firebase.');
       try{ if(window.kaweFirebaseSync) await window.kaweFirebaseSync.loadCatalog(); }catch(e){}
-      try{ if(window.kaweFirestoreSync) await window.kaweFirestoreSync.load(); }catch(e){}
+      // Firestore desativado: o catálogo é carregado somente do Realtime Database /catalog.
       return true;
     }catch(e){
       console.warn('[KAWE Firebase Auth]',e);
@@ -35622,6 +35630,21 @@ header .header-left > #v12-tut-btn{
 })();
 </script>
 <!-- KAWE_FINAL_REVIEW_PATCH_V1_END -->
+
+<!-- KAWE_PLAYER_GATE_V1 -->
+<style id="kawe-player-gate-css">
+#kawe-player-gate{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:inherit;color:#ecfdf5;background:radial-gradient(circle at 50% 28%,rgba(74,222,128,.28),transparent 34%),linear-gradient(145deg,#031b0d 0%,#064e24 48%,#052e16 100%);transition:opacity .45s ease,visibility .45s ease}
+#kawe-player-gate::before,#kawe-player-gate::after{content:"";position:absolute;border-radius:50%;pointer-events:none;border:1px solid rgba(134,239,172,.22);animation:kaweGatePulse 3.8s ease-in-out infinite}
+#kawe-player-gate::before{width:380px;height:380px}#kawe-player-gate::after{width:620px;height:620px;animation-delay:1.1s}#kawe-player-gate.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.kawe-gate-card{position:relative;z-index:1;text-align:center;width:min(90%,430px);padding:32px 24px;border:1px solid rgba(134,239,172,.3);border-radius:24px;background:rgba(1,20,9,.55);box-shadow:0 18px 60px rgba(0,0,0,.35),0 0 45px rgba(34,197,94,.18);backdrop-filter:blur(10px)}
+.kawe-gate-mark{width:72px;height:72px;margin:0 auto 16px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#4ade80,#16a34a);color:#03240f;box-shadow:0 0 30px rgba(74,222,128,.35)}.kawe-gate-mark svg{width:34px;height:34px;fill:currentColor}.kawe-gate-title{margin:0;color:#f0fdf4;font:900 22px/1.1 Outfit,system-ui,sans-serif;letter-spacing:.5px}.kawe-gate-subtitle{margin:10px 0 22px;color:#bbf7d0;font-size:13px;line-height:1.55}
+#kawe-player-gate-start{border:0;border-radius:999px;padding:13px 26px;cursor:pointer;font:900 13px Outfit,system-ui,sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#03240f;background:linear-gradient(135deg,#86efac,#22c55e);box-shadow:0 8px 24px rgba(34,197,94,.3);transition:transform .2s ease,filter .2s ease,box-shadow .2s ease}#kawe-player-gate-start:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.08);box-shadow:0 12px 30px rgba(34,197,94,.42)}#kawe-player-gate-start:disabled{cursor:wait;opacity:.9}
+.kawe-gate-loading{display:none;align-items:center;gap:11px;justify-content:center;color:#dcfce7;font-weight:800;font-size:13px}.kawe-gate-loading.is-on{display:flex}.kawe-gate-spinner{width:18px;height:18px;border:2px solid rgba(187,247,208,.28);border-top-color:#86efac;border-radius:50%;animation:kaweGateSpin .75s linear infinite}.kawe-gate-progress{height:5px;margin-top:18px;border-radius:99px;background:rgba(187,247,208,.14);overflow:hidden}.kawe-gate-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#86efac,#22c55e);transition:width .55s ease}@keyframes kaweGateSpin{to{transform:rotate(360deg)}}@keyframes kaweGatePulse{0%,100%{transform:scale(.88);opacity:.18}50%{transform:scale(1.06);opacity:.55}}@media (prefers-reduced-motion:reduce){#kawe-player-gate::before,#kawe-player-gate::after{animation:none}.kawe-gate-spinner{animation:none}}
+</style>
+<script id="kawe-player-gate-js">
+(function(){'use strict';if(window.__KAWE_PLAYER_GATE__)return;window.__KAWE_PLAYER_GATE__=true;var original=null,locked=true,pending=null,timers=[];function modal(){return document.getElementById('player-modal')}function wrapper(){return document.getElementById('p-wrap')}function clearTimers(){timers.forEach(function(t){clearTimeout(t)});timers=[]}function ensureGate(){var w=wrapper();if(!w)return null;var g=document.getElementById('kawe-player-gate');if(g)return g;g=document.createElement('div');g.id='kawe-player-gate';g.innerHTML='<div class="kawe-gate-card"><div class="kawe-gate-mark"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h2 class="kawe-gate-title">KAWE PLAYER</h2><p class="kawe-gate-subtitle">Prepare seu conteúdo para uma reprodução mais estável. Clique para iniciar.</p><button id="kawe-player-gate-start" type="button" onclick="window.kaweStartPlayerGate()">▶ INICIAR PLAYER</button><div class="kawe-gate-loading"><span class="kawe-gate-spinner"></span><span id="kawe-player-gate-status">Preparando...</span></div><div class="kawe-gate-progress"><span id="kawe-player-gate-progress-fill"></span></div></div>';w.appendChild(g);return g}function setStatus(m,p){var s=document.getElementById('kawe-player-gate-status'),f=document.getElementById('kawe-player-gate-progress-fill');if(s)s.textContent=m;if(f)f.style.width=p+'%'}function showGate(u){pending=u;locked=true;clearTimers();var g=ensureGate();if(!g)return;g.classList.remove('is-hidden');var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=false;b.style.display='inline-flex'}if(l)l.classList.remove('is-on');setStatus('Preparando...',0)}window.kaweStartPlayerGate=function(){if(!pending||!original||!locked)return;locked=false;var g=ensureGate();if(!g)return;var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=true;b.style.display='none'}if(l)l.classList.add('is-on');[['Carregando banco de dados',20],['Carregando servidor',42],['Carregando conteúdo',66],['Carregando player de vídeo',88]].forEach(function(x,i){timers.push(setTimeout(function(){setStatus(x[0],x[1])},650*(i+1)))});timers.push(setTimeout(function(){var m=modal();if(!m||!m.classList.contains('open')){pending=null;return}setStatus('Tudo pronto. Divirta-se!',100);timers.push(setTimeout(function(){var u=pending;pending=null;g.classList.add('is-hidden');try{original.call(window,u)}catch(e){console.warn('[KAWE PLAYER] falha ao carregar fonte',e)}},500))},3000))};function install(){if(typeof window.setPlayerSrc!=='function'||window.setPlayerSrc.__kaweGateWrapped)return;original=window.setPlayerSrc;var w=function(u){var m=modal(),r=String(u||'');if(m&&m.classList.contains('open')&&locked&&r&&r!=='about:blank'){showGate(r);return r}return original.apply(this,arguments)};w.__kaweGateWrapped=true;window.setPlayerSrc=w;var old=window.closePlayer;if(typeof old==='function'&&!old.__kaweGateCloseWrapped){var c=function(){clearTimers();pending=null;locked=true;var g=document.getElementById('kawe-player-gate');if(g)g.classList.add('is-hidden');return old.apply(this,arguments)};c.__kaweGateCloseWrapped=true;window.closePlayer=c}}function boot(){install();if(typeof window.setPlayerSrc==='function'&&!window.setPlayerSrc.__kaweGateWrapped){setTimeout(install,1200);setTimeout(install,3000)}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot()})();
+</script>
+<!-- KAWE_PLAYER_GATE_V1_END -->
 
 </body>
 </html>
