@@ -6516,7 +6516,7 @@ function kaweWriteCatalogRemote(value) {
   if (!window.kaweDB || window.__kaweCatalogWriteDenied || !window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase()) return Promise.resolve(false);
   if (window.__kaweCatalogWriteInFlight) return window.__kaweCatalogWriteInFlight;
   window.__kaweSyncing = true;
-  window.__kaweCatalogWriteInFlight = window.kaweDB.ref('catalog').set(value || {})
+  window.__kaweCatalogWriteInFlight = (window.kaweFirestoreSync && window.kaweFirestoreSync.save ? window.kaweFirestoreSync.save() : Promise.resolve(false))
     .then(() => true)
     .catch(err => {
       var msg = String((err && (err.code || err.message)) || err || '');
@@ -6560,30 +6560,8 @@ window.saveCatalogGlobal = function() {
   };
 })();
 
-// Escuta mudanças no Firebase e reflete para TODOS os usuários
-window.addEventListener('DOMContentLoaded', () => {
-  if (!window.kaweDB) { console.warn('[KAWE] Firebase indisponível — catálogo ficará só local.'); return; }
-
-  window.kaweDB.ref('catalog').on('value', (snap) => {
-    const remote = snap.val();
-    if (!remote || typeof remote !== 'object') return;
-    if (window.__kaweSyncing) return; // ignora eco do próprio save
-
-    // Mescla no CATALOG_DATA local
-    if (!window.CATALOG_DATA || typeof window.CATALOG_DATA !== 'object') window.CATALOG_DATA = {};
-    Object.keys(remote).forEach(k => {
-      if (Array.isArray(remote[k])) window.CATALOG_DATA[k] = remote[k];
-    });
-
-    // Re-renderiza todas as categorias
-    try {
-      Object.keys(window.CATALOG_DATA).forEach(cat => {
-        if (window.renderCards) window.renderCards(cat, 1);
-      });
-    } catch(e){}
-    console.log('[KAWE] Catálogo sincronizado do Firebase');
-  }, (err) => console.error('[KAWE] Erro escutando catálogo:', err));
-});
+// O catálogo não escuta mais /catalog no RTDB. A fonte oficial é o Firestore.
+// A atualização da interface é feita pelo sincronizador Firestore após o carregamento.
 
 
 /* ══════════════════════════════════════════════════════════════════
@@ -20177,7 +20155,22 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
   function msg(t){ if(typeof toast==='function'){ try{ return toast(t); }catch(e){} } alert(t); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function users(){ try{ return JSON.parse(localStorage.getItem('kawe_users')||'[]')||[]; }catch(e){ return []; } }
-  function me(){ try{ return (typeof window.kaweCurrentUser==='function') ? window.kaweCurrentUser() : null; }catch(e){ return null; } }
+  function me(){
+    try{
+      var local = (typeof window.kaweCurrentUser==='function') ? window.kaweCurrentUser() : null;
+      if(local) return local;
+      /* Se o Firebase Auth confirmou o login antes do cache local, cria uma
+         identidade mínima para o chat não bloquear um usuário válido. */
+      var fa = (window.firebase && firebase.apps && firebase.apps.length && firebase.auth) ? firebase.auth().currentUser : null;
+      if(!fa) return null;
+      var list = users(), found = list.find(function(x){ return x && x.id===fa.uid; });
+      if(found) return found;
+      var profile = { id:fa.uid, username:fa.displayName || (fa.email||'usuario').split('@')[0], fullname:fa.displayName||'', email:fa.email||'', photo:fa.photoURL||'', method:'firebase' };
+      list.push(profile);
+      try{ localStorage.setItem('kawe_users', JSON.stringify(list)); localStorage.setItem('kawe_current_user_id', fa.uid); }catch(e){}
+      return profile;
+    }catch(e){ return null; }
+  }
   function userById(id){ return users().find(function(u){ return u.id===id; }) || null; }
   function avatarOf(u){ return (u && (u.photo||u.avatar)) ? u.photo||u.avatar : DEF_AV; }
   function nameOf(u){ return (u && (u.username || u.fullname || (u.email||'').split('@')[0])) || 'Usuário'; }
@@ -20193,15 +20186,36 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
 
   function push(path, key, val){
     var d = db();
-    if(d){ d.ref(ROOT+'/'+path+'/'+key).set(val).catch(function(e){ console.warn('[KSOC]', e && e.message); }); }
+    if(!d) return Promise.resolve(false);
+    try{
+      /* Mensagens são duplicadas em caixas privadas dos dois participantes.
+         Assim o chat não precisa ler todas as conversas do site. */
+      if(path.indexOf('dm/') === 0 && val && val.from && val.to){
+        var cid = path.split('/')[1], updates = {};
+        updates[ROOT+'/inbox/'+val.from+'/'+cid+'/'+key] = val;
+        updates[ROOT+'/inbox/'+val.to+'/'+cid+'/'+key] = val;
+        return d.ref().update(updates).then(function(){ return true; }).catch(function(e){
+          console.warn('[KSOC] falha ao sincronizar mensagem:', e && (e.code || e.message || e));
+          return false;
+        });
+      }
+      return d.ref(ROOT+'/'+path+'/'+key).set(val).then(function(){ return true; }).catch(function(e){
+        console.warn('[KSOC] falha ao sincronizar:', e && (e.code || e.message || e));
+        return false;
+      });
+    }catch(e){
+      console.warn('[KSOC] falha ao preparar envio:', e && (e.code || e.message || e));
+      return Promise.resolve(false);
+    }
   }
   function remove(path){ var d=db(); if(d) d.ref(ROOT+'/'+path).remove().catch(function(){}); }
 
   function listen(){
-    var d = db(); if(!d){ setTimeout(listen, 1500); return; }
+    var d = db(), u = me();
+    if(!d || !u){ setTimeout(listen, 1500); return; }
     d.ref(ROOT+'/posts').on('value', function(s){ S.posts = s.val()||{}; lsSet('posts',S.posts); refresh(); });
     d.ref(ROOT+'/follows').on('value', function(s){ S.follows = s.val()||{}; lsSet('follows',S.follows); refresh(); });
-    d.ref(ROOT+'/dm').on('value', function(s){ S.dm = s.val()||{}; lsSet('dm',S.dm); refresh(); ksocBadges(); });
+    d.ref(ROOT+'/inbox/'+u.id).on('value', function(s){ S.dm = s.val()||{}; lsSet('dm',S.dm); refresh(); ksocBadges(); });
   }
 
   /* ── FOLLOW ─────────────────────────────────────────────── */
@@ -20437,9 +20451,11 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
     var cid = chatId(u.id,to), key = 'm_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
     var m = { from:u.id, to:to, text:txt, ts:Date.now(), read:false };
     S.dm[cid] = S.dm[cid]||{}; S.dm[cid][key] = m; lsSet('dm',S.dm);
-    push('dm/'+cid, key, m);
     if(inp) inp.value='';
     renderMessages();
+    push('dm/'+cid, key, m).then(function(ok){
+      if(!ok) msg('⚠️ Mensagem salva neste dispositivo, mas não foi sincronizada. Verifique o login e as regras do Realtime Database.');
+    });
   };
 
   function renderMessages(){
@@ -24912,19 +24928,12 @@ header #kawe-site-title, header .logo{ order:3 !important; }
       }
     }catch(e){ console.warn('[KAWE] catalogo local invalido', e); }
     redrawAll();
-    // b) nuvem (se disponivel) — nao bloqueia
+    // b) nuvem Firestore (se disponível) — não bloqueia a interface
     try{
-      if(window.kaweDB && window.kaweDB.ref){
-        window.kaweDB.ref('catalog').once('value').then(function(snap){
-          var remote = snap.val();
-          if(!remote || typeof remote !== 'object') return;
-          Object.keys(remote).forEach(function(k){
-            if(Array.isArray(remote[k]) && remote[k].length) window.CATALOG_DATA[k] = remote[k];
-          });
-          try{ localStorage.setItem('kawe_catalog', JSON.stringify(window.CATALOG_DATA)); }catch(e){}
-          redrawAll();
-          if(!silent && window.toast) window.toast('Catálogo atualizado da nuvem.');
-        }).catch(function(e){ console.warn('[KAWE] nuvem indisponivel', e); });
+      if(window.kaweFirestoreSync && typeof window.kaweFirestoreSync.load === 'function'){
+        window.kaweFirestoreSync.load().then(function(ok){
+          if(ok){ redrawAll(); if(!silent && window.toast) window.toast('Catálogo atualizado do Firestore.'); }
+        }).catch(function(e){ console.warn('[KAWE] Firestore indisponível', e); });
       }
     }catch(e){}
     var n = allItems().length;
@@ -35033,7 +35042,8 @@ header .header-left > #v12-tut-btn{
   }
   function write(path, value, quiet){
     var d=db(); if(!d) return Promise.reject(new Error('Firebase não está disponível'));
-    if(path === 'catalog' && (!window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase())) return Promise.resolve(false);
+    /* O catálogo interno é do Firestore; o RTDB não recebe mais /catalog. */
+    if(path === 'catalog') return Promise.resolve(false);
     return d.ref(path).set(clean(clone(value))).then(function(){
       if(!quiet) notify('✅ Dados sincronizados com o Firebase');
       return true;
@@ -35044,10 +35054,9 @@ header .header-left > #v12-tut-btn{
     });
   }
   function saveCatalog(quiet){
-    var data=clone(window.CATALOG_DATA || {});
-    localSet(DB_KEY, data);
-    if(!db() || !window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase()) return Promise.resolve(false);
-    return write('catalog', data, quiet).then(function(){ localSet(SYNC_KEY, Date.now()); return true; }).catch(function(){ return false; });
+    /* Compatibilidade para módulos antigos: o catálogo não é mais salvo no RTDB. */
+    localSet(DB_KEY, clone(window.CATALOG_DATA || {}));
+    return Promise.resolve(false);
   }
   function redraw(){
     try { if(typeof window.updateAdminMoviesList==='function') window.updateAdminMoviesList(); } catch(e){}
@@ -35055,6 +35064,9 @@ header .header-left > #v12-tut-btn{
     try { Object.keys(window.CATALOG_DATA||{}).forEach(function(c){ if(typeof window.renderCards==='function') window.renderCards(c,1); }); } catch(e){}
   }
   function loadCatalog(){
+    /* A fonte oficial do catálogo é o Firestore. */
+    return Promise.resolve(false);
+    /* Código legado mantido abaixo apenas para compatibilidade histórica. */
     var d=db();
     if(!d) return Promise.resolve(false);
     return d.ref('catalog').once('value').then(function(snap){
@@ -35108,9 +35120,7 @@ header .header-left > #v12-tut-btn{
     var originalSet=Storage.prototype.setItem;
     Storage.prototype.setItem=function(key,value){
       var result=originalSet.apply(this,arguments);
-      if(this===localStorage && key==='kawe_catalog' && !applying){
-        try { var data=JSON.parse(value); if(db()) write('catalog',data,true).catch(function(){}); } catch(e){}
-      }
+      /* O cache local não replica mais o catálogo para o RTDB. */
       return result;
     };
     Storage.prototype.__kaweFirebasePatched=true;
@@ -35142,18 +35152,17 @@ header .header-left > #v12-tut-btn{
   },1000); });
 })();
 </script>
-<!-- KAWE_FIRESTORE_DISABLED_BY_FIX -->
+<!-- KAWE_FIRESTORE_CATALOG_ENABLED -->
 <script>
-  // O catálogo oficial fica somente no Realtime Database /catalog.
-  // Impede que o Firestore sobrescreva os dados do catálogo.
-  window.__KAWE_DISABLE_FIRESTORE__ = true;
+  /* O catálogo interno é salvo no Firestore em catalog_categories. */
+  window.__KAWE_DISABLE_FIRESTORE__ = false;
 </script>
 <!-- KAWE_FIRESTORE_FULL_SYNC_V1 -->
 <script id="kawe-firestore-full-sync">
 (function(){
   'use strict';
   if (window.__KAWE_DISABLE_FIRESTORE__) return;
-  var COLLECTION='catalog_categories';
+  var COLLECTION='catalog_chunks';
   var started=false, loading=false, saving=false;
   function fs(){ return window.kaweFS && typeof window.kaweFS.collection==='function' ? window.kaweFS : null; }
   function toastMsg(msg){ try{ if(typeof window.toast==='function') window.toast(msg); else console.log('[KAWE Firestore]',msg); }catch(e){} }
@@ -35170,23 +35179,44 @@ header .header-left > #v12-tut-btn{
     var database=fs(); if(!database||loading)return Promise.resolve(false);
     loading=true;
     return database.collection(COLLECTION).get().then(function(snapshot){
-      var data={};
-      snapshot.forEach(function(doc){var v=doc.data()||{};if(Array.isArray(v.items))data[v.category||doc.id]=v.items;});
+      var data={}, chunks={};
+      snapshot.forEach(function(doc){
+        var v=doc.data()||{}, cat=v.category||'';
+        if(!cat || !Array.isArray(v.items)) return;
+        (chunks[cat]||(chunks[cat]=[])).push({n:Number(v.chunk)||0,items:v.items});
+      });
+      Object.keys(chunks).forEach(function(cat){
+        chunks[cat].sort(function(a,b){return a.n-b.n;});
+        data[cat]=[].concat.apply([],chunks[cat].map(function(x){return x.items;}));
+      });
       if(Object.keys(data).length){window.CATALOG_DATA=data;saveLocal(data);redraw();return true;}
-      return false;
+      /* Migração única: se a coleção ainda estiver vazia, importa /catalog
+         do RTDB antigo e grava os mesmos dados em blocos Firestore. */
+      var legacy=window.kaweDB && typeof window.kaweDB.ref==='function' ? window.kaweDB : null;
+      if(!legacy || !window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase()) return false;
+      return legacy.ref('catalog').once('value').then(function(snap){
+        var old=snap.val();
+        if(!old || typeof old!=='object' || !Object.keys(old).length) return false;
+        window.CATALOG_DATA=old; saveLocal(old); redraw();
+        return saveFirestore(true);
+      });
     }).catch(function(e){console.warn('[KAWE Firestore] Falha ao carregar catálogo:',e);return false;}).then(function(v){loading=false;return v;});
   }
   function saveFirestore(quiet){
     var database=fs(); if(!database||saving)return Promise.resolve(false);
     if(!window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase()) return Promise.resolve(false);
     saving=true;
-    var data=safeCopy(window.CATALOG_DATA||{}), batch=database.batch();
+    var data=safeCopy(window.CATALOG_DATA||{}), batch=database.batch(), writes=0, CHUNK=100;
     Object.keys(data).forEach(function(category){
-      var ref=database.collection(COLLECTION).doc(docId(category));
-      batch.set(ref,{category:category,items:data[category]||[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      var items=Array.isArray(data[category])?data[category]:[];
+      for(var start=0; start<items.length; start+=CHUNK){
+        var chunk=Math.floor(start/CHUNK), ref=database.collection(COLLECTION).doc(docId(category)+'__'+chunk);
+        batch.set(ref,{category:category,chunk:chunk,items:items.slice(start,start+CHUNK),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        writes++;
+      }
     });
     saveLocal(data);
-    return batch.commit().then(function(){if(!quiet)toastMsg('✅ Catálogo salvo no Firestore');return true;}).catch(function(e){console.error('[KAWE Firestore] Falha ao salvar catálogo:',e);if(!quiet)toastMsg('⚠️ Não foi possível salvar no Firestore');return false;}).then(function(v){saving=false;return v;});
+    return batch.commit().then(function(){if(!quiet)toastMsg('✅ Catálogo salvo no Firestore em '+writes+' bloco(s)');return true;}).catch(function(e){console.error('[KAWE Firestore] Falha ao salvar catálogo:',e);if(!quiet)toastMsg('⚠️ Não foi possível salvar o catálogo no Firestore');return false;}).then(function(v){saving=false;return v;});
   }
   function wrap(name){
     var old=window[name]; if(typeof old!=='function'||old.__kaweFirestoreWrapped)return;
@@ -35414,7 +35444,8 @@ header .header-left > #v12-tut-btn{
       if(typeof window.openAdminPanel==='function') window.openAdminPanel();
       toastMsg('✅ Administrador autenticado no Firebase.');
       try{ if(window.kaweFirebaseSync) await window.kaweFirebaseSync.loadCatalog(); }catch(e){}
-      // Firestore desativado: o catálogo é carregado somente do Realtime Database /catalog.
+      // O catálogo é carregado do Firestore; o Realtime fica reservado ao estado vivo.
+      try{ if(window.kaweFirestoreSync) await window.kaweFirestoreSync.load(); }catch(e){}
       return true;
     }catch(e){
       console.warn('[KAWE Firebase Auth]',e);
@@ -35457,16 +35488,11 @@ header .header-left > #v12-tut-btn{
     var user=a.currentUser, admin=!!(user && user.uid===ADMIN_UID);
     rows.push(status('Sessão autenticada',!!user,user?(user.email||'conta sem e-mail'):'Nenhum usuário autenticado'));
     rows.push(status('UID autorizado',admin,user?('UID atual: '+user.uid):('Esperado: '+ADMIN_UID)));
+    rows.push(status('Realtime Database /catalog',false,'Desativado: o catálogo interno agora usa Firestore.'));
     try{
-      var snap=await window.kaweDB.ref('catalog').once('value'), data=snap.val(), cats=data&&typeof data==='object'?Object.keys(data):[];
-      var total=cats.reduce(function(n,k){return n+(Array.isArray(data[k])?data[k].length:0);},0);
-      rows.push(status('Realtime Database /catalog',true,cats.length+' categorias, '+total+' itens lidos agora.'));
-      window.__KAWE_LAST_CATALOG_READ__=Date.now();
-    }catch(e){ rows.push(status('Realtime Database /catalog',false,(e&&e.message)||e)); }
-    try{
-      var fs=window.kaweFS, qs=fs?await fs.collection('catalog_categories').get():null;
-      rows.push(status('Firestore /catalog_categories',!!qs,qs?(qs.size+' documentos lidos agora.'):'Firestore indisponível.'));
-    }catch(e){ rows.push(status('Firestore /catalog_categories',false,(e&&e.message)||e)); }
+      var fs=window.kaweFS, qs=fs?await fs.collection('catalog_chunks').get():null;
+      rows.push(status('Firestore /catalog_chunks',!!qs,qs?(qs.size+' documentos lidos agora.'):'Firestore indisponível.'));
+    }catch(e){ rows.push(status('Firestore /catalog_chunks',false,(e&&e.message)||e)); }
     var local={}; try{local=JSON.parse(localStorage.getItem('kawe_catalog')||'{}')||{};}catch(e){}
     rows.push(status('Catálogo local em memória',true,Object.keys(local).length+' categorias no navegador.'));
     rows.push('<div style="padding:11px 13px;border-radius:10px;background:rgba(255,255,255,.04);color:#d4d4d8;font-size:12px">Última verificação: '+esc(new Date().toLocaleString('pt-BR'))+'</div>');
@@ -35474,8 +35500,7 @@ header .header-left > #v12-tut-btn{
   };
   window.loadFirebaseCatalogFromPanel = async function(){
     try{
-      if(window.kaweFirebaseSync && typeof window.kaweFirebaseSync.loadCatalog==='function') await window.kaweFirebaseSync.loadCatalog();
-      else if(window.kaweDB) { var snap=await window.kaweDB.ref('catalog').once('value'); if(snap.val()){window.CATALOG_DATA=snap.val(); localStorage.setItem('kawe_catalog',JSON.stringify(window.CATALOG_DATA));} }
+      if(window.kaweFirestoreSync && typeof window.kaweFirestoreSync.load==='function') await window.kaweFirestoreSync.load();
       if(typeof window.updateAdminMoviesList==='function') window.updateAdminMoviesList();
       if(typeof window.kaweRedrawCatalog==='function') window.kaweRedrawCatalog();
       if(typeof window.toast==='function') window.toast('✅ Catálogo carregado do Firebase.');
