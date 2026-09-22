@@ -34106,6 +34106,7 @@ header .header-left > #v12-tut-btn{
   }
 
   function clean(h){
+    if (window.__KAWE_HEADER_RESTORE__) return;
     ensureHamSlot(h);
     ensureSearch(h);
     ensureFs(h);
@@ -35670,6 +35671,174 @@ header .header-left > #v12-tut-btn{
 (function(){'use strict';if(window.__KAWE_PLAYER_GATE__)return;window.__KAWE_PLAYER_GATE__=true;var original=null,locked=true,pending=null,timers=[];function modal(){return document.getElementById('player-modal')}function wrapper(){return document.getElementById('p-wrap')}function clearTimers(){timers.forEach(function(t){clearTimeout(t)});timers=[]}function ensureGate(){var w=wrapper();if(!w)return null;var g=document.getElementById('kawe-player-gate');if(g)return g;g=document.createElement('div');g.id='kawe-player-gate';g.innerHTML='<div class="kawe-gate-card"><div class="kawe-gate-mark"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h2 class="kawe-gate-title">KAWE PLAYER</h2><p class="kawe-gate-subtitle">Prepare seu conteúdo para uma reprodução mais estável. Clique para iniciar.</p><button id="kawe-player-gate-start" type="button" onclick="window.kaweStartPlayerGate()">▶ INICIAR PLAYER</button><div class="kawe-gate-loading"><span class="kawe-gate-spinner"></span><span id="kawe-player-gate-status">Preparando...</span></div><div class="kawe-gate-progress"><span id="kawe-player-gate-progress-fill"></span></div></div>';w.appendChild(g);return g}function setStatus(m,p){var s=document.getElementById('kawe-player-gate-status'),f=document.getElementById('kawe-player-gate-progress-fill');if(s)s.textContent=m;if(f)f.style.width=p+'%'}function showGate(u){pending=u;locked=true;clearTimers();var g=ensureGate();if(!g)return;g.classList.remove('is-hidden');var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=false;b.style.display='inline-flex'}if(l)l.classList.remove('is-on');setStatus('Preparando...',0)}window.kaweStartPlayerGate=function(){if(!pending||!original||!locked)return;locked=false;var g=ensureGate();if(!g)return;var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=true;b.style.display='none'}if(l)l.classList.add('is-on');[['Carregando banco de dados',20],['Carregando servidor',42],['Carregando conteúdo',66],['Carregando player de vídeo',88]].forEach(function(x,i){timers.push(setTimeout(function(){setStatus(x[0],x[1])},650*(i+1)))});timers.push(setTimeout(function(){var m=modal();if(!m||!m.classList.contains('open')){pending=null;return}setStatus('Tudo pronto. Divirta-se!',100);timers.push(setTimeout(function(){var u=pending;pending=null;g.classList.add('is-hidden');try{original.call(window,u)}catch(e){console.warn('[KAWE PLAYER] falha ao carregar fonte',e)}},500))},3000))};function install(){if(typeof window.setPlayerSrc!=='function'||window.setPlayerSrc.__kaweGateWrapped)return;original=window.setPlayerSrc;var w=function(u){var m=modal(),r=String(u||'');if(m&&m.classList.contains('open')&&locked&&r&&r!=='about:blank'){showGate(r);return r}return original.apply(this,arguments)};w.__kaweGateWrapped=true;window.setPlayerSrc=w;var old=window.closePlayer;if(typeof old==='function'&&!old.__kaweGateCloseWrapped){var c=function(){clearTimers();pending=null;locked=true;var g=document.getElementById('kawe-player-gate');if(g)g.classList.add('is-hidden');return old.apply(this,arguments)};c.__kaweGateCloseWrapped=true;window.closePlayer=c}}function boot(){install();if(typeof window.setPlayerSrc==='function'&&!window.setPlayerSrc.__kaweGateWrapped){setTimeout(install,1200);setTimeout(install,3000)}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot()})();
 </script>
 <!-- KAWE_PLAYER_GATE_V1_END -->
+
+
+<!-- KAWE_HEADER_REPAIR_FINAL_START -->
+<style id="kawe-header-repair-final">
+/* Correção final e isolada do cabeçalho: restaura apenas elementos já existentes. */
+#main-content > header,
+body > header,
+body header:not(#kawe-repaired-head){
+  display:block !important;
+  position:relative !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:12px clamp(12px,2vw,24px) !important;
+  overflow:visible !important;
+  z-index:900 !important;
+}
+#main-content > header .header-left,
+body > header .header-left,
+body header:not(#kawe-repaired-head) .header-left{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:10px !important;
+  width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+}
+#main-content > header .logo,
+body > header .logo,
+body header:not(#kawe-repaired-head) .logo{
+  display:inline-flex !important;
+  align-items:center !important;
+  flex:0 0 auto !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  position:relative !important;
+  width:auto !important;
+  max-width:none !important;
+  overflow:visible !important;
+  white-space:nowrap !important;
+}
+#main-content > header .hamburger,
+body > header .hamburger,
+body header:not(#kawe-repaired-head) .hamburger,
+#kawe-ham-slot{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  flex:0 0 auto !important;
+}
+#main-content > header .header-category-strip,
+body > header .header-category-strip,
+body header:not(#kawe-repaired-head) .header-category-strip,
+#main-content > header #kawe-hd-cats{
+  display:flex !important;
+  align-items:center !important;
+  flex:1 1 360px !important;
+  min-width:160px !important;
+  max-width:100% !important;
+  width:auto !important;
+  height:auto !important;
+  max-height:52px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  white-space:nowrap !important;
+}
+#main-content > header .header-category-link,
+body > header .header-category-link,
+body header:not(#kawe-repaired-head) .header-category-link{
+  display:inline-flex !important;
+  flex:0 0 auto !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#main-content > header .auth-header-btn,
+body > header .auth-header-btn,
+body header:not(#kawe-repaired-head) .auth-header-btn,
+#main-content > header #v12-tut-btn,
+body > header #v12-tut-btn{
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  flex:0 0 auto !important;
+}
+#main-content > header .search-container,
+body > header .search-container,
+body header:not(#kawe-repaired-head) .search-container,
+#main-content > header #kf-search,
+body header:not(#kawe-repaired-head) #kf-search{
+  display:flex !important;
+  align-items:center !important;
+  flex:1 1 220px !important;
+  min-width:170px !important;
+  max-width:360px !important;
+  width:auto !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#main-content > header .header-nav,
+body > header .header-nav,
+body header:not(#kawe-repaired-head) .header-nav{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:6px !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-height:220px !important;
+  overflow:auto !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#main-content > header .header-nav .nav-link,
+body > header .header-nav .nav-link,
+body header:not(#kawe-repaired-head) .header-nav .nav-link{
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+@media (max-width:820px){
+  #main-content > header,
+  body > header,
+  body header:not(#kawe-repaired-head){ padding:10px 12px !important; }
+  #main-content > header .header-left,
+  body > header .header-left,
+  body header:not(#kawe-repaired-head) .header-left{ gap:8px !important; }
+  #main-content > header .header-category-strip,
+  body > header .header-category-strip,
+  body header:not(#kawe-repaired-head) .header-category-strip{ order:10 !important; flex-basis:100% !important; }
+  #main-content > header .search-container,
+  body > header .search-container,
+  body header:not(#kawe-repaired-head) .search-container{ order:9 !important; flex-basis:100% !important; max-width:none !important; }
+  #main-content > header .header-nav,
+  body > header .header-nav,
+  body header:not(#kawe-repaired-head) .header-nav{ max-height:180px !important; }
+}
+</style>
+<script id="kawe-header-repair-final-js">
+(function(){
+  'use strict';
+  window.__KAWE_HEADER_RESTORE__ = true;
+  function restore(){
+    var heads = document.querySelectorAll('header:not(#kawe-repaired-head)');
+    heads.forEach(function(h){
+      [
+        '.logo','.hamburger','.header-category-strip','.header-category-link',
+        '.auth-header-btn','.search-container','.header-nav','.header-nav .nav-link','#v12-tut-btn'
+      ].forEach(function(sel){
+        h.querySelectorAll(sel).forEach(function(el){
+          el.style.removeProperty('display');
+          el.style.removeProperty('visibility');
+          el.style.removeProperty('opacity');
+        });
+      });
+    });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restore, {once:true});
+  else restore();
+  setTimeout(restore, 150);
+  setTimeout(restore, 700);
+})();
+</script>
+<!-- KAWE_HEADER_REPAIR_FINAL_END -->
 
 </body>
 </html>
