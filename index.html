@@ -27285,62 +27285,10 @@ body.kawe-light select, body.kawe-light textarea{
   }
   setInterval(syncHud,1200);
 
-  /* ---- tela verde + carregamento ---- */
-  function build(){
-    buildHud();
-    if(!wrap || document.getElementById('kawe-green-screen')) return;
-    var gs=document.createElement('div'); gs.id='kawe-green-screen'; gs.className='kawe-green-screen';
-    gs.innerHTML=
-      '<div class="kawe-gs-grid"></div>'+
-      '<div class="kawe-gs-brand">KAWE<span>CINEMA</span></div>'+
-      '<div class="kawe-gs-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>'+
-      '<div class="kawe-gs-txt">Clique para iniciar</div>'+
-      '<div class="kawe-gs-sub">Player KAWE • conexão segura • servidor principal</div>'+
-      '<div class="kawe-gs-meta"><em>4K HDR</em><em>Dolby Áudio</em><em>Sem anúncios</em></div>';
-    var ld=document.createElement('div'); ld.id='kawe-loading-screen'; ld.className='kawe-loading-screen'; ld.style.display='none';
-    ld.innerHTML=
-      '<div class="kawe-spin"></div>'+
-      '<div class="kawe-load-title">Servidor carregando<span class="kawe-load-dots"></span></div>'+
-      '<div class="kawe-load-sub">Aguarde por favor…</div>'+
-      '<div class="kawe-load-bar"><i id="kawe-load-fill"></i></div>'+
-      '<div class="kawe-load-steps"><em id="kls0">Conectando</em><em id="kls1">Autenticando</em><em id="kls2">Buffer</em><em id="kls3">Pronto</em></div>';
-    wrap.appendChild(gs); wrap.appendChild(ld);
-    gs.addEventListener('click',startLoading);
-  }
-  function startLoading(){
-    var gs=document.getElementById('kawe-green-screen'), ld=document.getElementById('kawe-loading-screen');
-    if(!gs) return;
-    gs.style.display='none'; ld.style.display='flex';
-    var fill=document.getElementById('kawe-load-fill'), p=0;
-    var t=setInterval(function(){
-      p+=7+Math.random()*13; if(p>100)p=100;
-      if(fill) fill.style.width=p+'%';
-      [0,1,2,3].forEach(function(i){ var e=document.getElementById('kls'+i); if(e) e.classList.toggle('on', p>=i*25); });
-      if(p>=100){ clearInterval(t); setTimeout(function(){ ld.style.display='none'; },400); }
-    },260);
-  }
-  window.kaweResetPlayerScreen=function(){
-    build();
-    var gs=document.getElementById('kawe-green-screen'), ld=document.getElementById('kawe-loading-screen');
-    if(!gs) return;
-    gs.style.display='flex'; ld.style.display='none';
-    var f=document.getElementById('kawe-load-fill'); if(f) f.style.width='0%';
-    [0,1,2,3].forEach(function(i){ var e=document.getElementById('kls'+i); if(e) e.classList.remove('on'); });
-  };
+  // Nenhuma tela verde ou carregamento artificial cobre o player.
+  window.kaweResetPlayerScreen = function() {};
   build();
-
-  var modal=document.getElementById('player-modal');
-  if(modal){
-    new MutationObserver(function(){
-      if(modal.classList.contains('open') && !modal.dataset.kaweShown){ modal.dataset.kaweShown='1'; window.kaweResetPlayerScreen(); syncHud(); }
-      if(!modal.classList.contains('open')) delete modal.dataset.kaweShown;
-    }).observe(modal,{attributes:true,attributeFilter:['class']});
-  }
-  var ifr=document.getElementById('player');
-  if(ifr){
-    new MutationObserver(function(){ if(modal&&modal.classList.contains('open')) window.kaweResetPlayerScreen(); })
-      .observe(ifr,{attributes:true,attributeFilter:['src']});
-  }
+  // Overlays de clique removidos.
 })();
 </script>
 <!-- ============ FIM KAWE ULTRA PACK v2 ============ -->
@@ -31865,19 +31813,7 @@ function install(){
     main.appendChild(stage);
     if (view) stage.appendChild(view);
 
-    stage.insertAdjacentHTML('beforeend',
-      '<div class="kyt-gate" id="kyt-gate">' +
-        '<div class="kyt-gate-logo">KAWE CINEMA OFICIAL</div>' +
-        '<button type="button" class="kyt-play-btn" id="kyt-play" title="Iniciar reprodução">' + ICON.play + '</button>' +
-        '<div class="kyt-gate-sub" id="kyt-gate-sub">Clique no botão para iniciar o conteúdo.</div>' +
-      '</div>' +
-      '<div class="kyt-intro hidden" id="kyt-intro">' +
-        '<div class="kyt-ring"></div>' +
-        '<div class="kyt-intro-text" id="kyt-intro-text">CARREGANDO SERVIDOR</div>' +
-        '<div class="kyt-intro-bar"><div class="kyt-intro-fill" id="kyt-intro-fill"></div></div>' +
-        '<div class="kyt-steps" id="kyt-steps"></div>' +
-        '<div class="kyt-intro-sub" id="kyt-intro-sub">KAWE CINEMA OFICIAL</div>' +
-      '</div>');
+    // Reprodução direta: não criar tela intermediária nem exigir clique.
 
     var acts = document.createElement('div');
     acts.className = 'kyt-actions';
@@ -31938,78 +31874,8 @@ function install(){
     });
   }
 
-  /* ══ 2. PORTÃO VERDE + INTROS ══ */
-  var STEPS = [
-    'CARREGANDO SERVIDOR',
-    'CARREGANDO CONTEÚDO',
-    'SINCRONIZANDO SERVIDOR E CONTEÚDO',
-    'FIQUE CONFORTÁVEL, AGUARDE E SE DIVIRTA'
-  ];
-
-  function adopt() {
-    var st = $('kyt-stage'), w = document.getElementById('kawe-repaired-view') || $('p-wrap');
-    if (st && w && w.parentElement !== st) st.insertBefore(w, st.firstChild);
-    var g = $('kyt-gate'); if (st && g && g.parentElement !== st) st.appendChild(g);
-  }
-
-  function showGate(url) {
-    build();
-    adopt();
-    KYT.pending = url;
-    KYT.playing = false;
-    var g = $('kyt-gate'), i = $('kyt-intro');
-    if (g) g.classList.remove('hidden');
-    if (i) i.classList.add('hidden');
-    var sub = $('kyt-gate-sub');
-    if (sub) sub.textContent = (KYT.item && KYT.item.title) ? KYT.item.title + ' — clique em PLAY para começar' : 'Clique no botão para iniciar o conteúdo.';
-  }
-
-  function runIntro(done) {
-    var g = $('kyt-gate'), intro = $('kyt-intro'), txt = $('kyt-intro-text'),
-        fill = $('kyt-intro-fill'), dots = $('kyt-steps');
-    if (g) g.classList.add('hidden');
-    if (!intro) { done(); return; }
-    intro.classList.remove('hidden');
-    if (dots) dots.innerHTML = STEPS.map(function () { return '<span class="kyt-dot"></span>'; }).join('');
-    var k = 0;
-    function step() {
-      if (k >= STEPS.length) {
-        setTimeout(function () { intro.classList.add('hidden'); done(); }, 500);
-        return;
-      }
-      if (txt) { txt.textContent = STEPS[k]; txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = 'kytFade .5s ease'; }
-      if (fill) fill.style.width = Math.round(((k + 1) / STEPS.length) * 100) + '%';
-      if (dots) dots.querySelectorAll('.kyt-dot').forEach(function (d, idx) { d.classList.toggle('on', idx <= k); });
-      k++;
-      setTimeout(step, 1150);
-    }
-    step();
-  }
-
-  function startPlayback() {
-    if (!KYT.pending) { say('⚠️ Nenhum conteúdo carregado'); return; }
-    runIntro(function () {
-      KYT.armed = true;
-      try { window.setPlayerSrc(KYT.pending); } finally { KYT.armed = false; }
-      KYT.playing = true;
-      say('▶️ Reproduzindo agora');
-    });
-  }
-
-  /* intercepta a troca de fonte para exigir o clique no PLAY */
-  function hookSrc() {
-    var orig = window.setPlayerSrc;
-    if (typeof orig !== 'function' || orig.__kyt) return;
-    var wrapped = function (url) {
-      if (KYT.armed || !url || url === 'about:blank') return orig.apply(this, arguments);
-      build();
-      try { if (window.STATE) window.STATE.currentUrl = url; } catch (e) {}
-      showGate(url);
-      return url;
-    };
-    wrapped.__kyt = true;
-    window.setPlayerSrc = wrapped;
-  }
+  // setPlayerSrc não é interceptado: a fonte é enviada imediatamente ao player.
+  function hookSrc() {}
 
   /* ══ 3. AÇÕES ══ */
   function closeModal() {
@@ -32064,7 +31930,6 @@ function install(){
   function bind() {
     $('kyt-close').addEventListener('click', closeModal);
     $('kyt-fs').addEventListener('click', goFullscreen);
-    $('kyt-play').addEventListener('click', startPlayback);
     $('kyt-like').addEventListener('click', function () { vote('l'); });
     $('kyt-dislike').addEventListener('click', function () { vote('d'); });
     $('kyt-report').addEventListener('click', function () {
@@ -35674,20 +35539,7 @@ header .header-left > #v12-tut-btn{
 </script>
 <!-- KAWE_FINAL_REVIEW_PATCH_V1_END -->
 
-<!-- KAWE_PLAYER_GATE_V1 -->
-<style id="kawe-player-gate-css">
-#kawe-player-gate{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:inherit;color:#ecfdf5;background:radial-gradient(circle at 50% 28%,rgba(74,222,128,.28),transparent 34%),linear-gradient(145deg,#031b0d 0%,#064e24 48%,#052e16 100%);transition:opacity .45s ease,visibility .45s ease}
-#kawe-player-gate::before,#kawe-player-gate::after{content:"";position:absolute;border-radius:50%;pointer-events:none;border:1px solid rgba(134,239,172,.22);animation:kaweGatePulse 3.8s ease-in-out infinite}
-#kawe-player-gate::before{width:380px;height:380px}#kawe-player-gate::after{width:620px;height:620px;animation-delay:1.1s}#kawe-player-gate.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
-.kawe-gate-card{position:relative;z-index:1;text-align:center;width:min(90%,430px);padding:32px 24px;border:1px solid rgba(134,239,172,.3);border-radius:24px;background:rgba(1,20,9,.55);box-shadow:0 18px 60px rgba(0,0,0,.35),0 0 45px rgba(34,197,94,.18);backdrop-filter:blur(10px)}
-.kawe-gate-mark{width:72px;height:72px;margin:0 auto 16px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#4ade80,#16a34a);color:#03240f;box-shadow:0 0 30px rgba(74,222,128,.35)}.kawe-gate-mark svg{width:34px;height:34px;fill:currentColor}.kawe-gate-title{margin:0;color:#f0fdf4;font:900 22px/1.1 Outfit,system-ui,sans-serif;letter-spacing:.5px}.kawe-gate-subtitle{margin:10px 0 22px;color:#bbf7d0;font-size:13px;line-height:1.55}
-#kawe-player-gate-start{border:0;border-radius:999px;padding:13px 26px;cursor:pointer;font:900 13px Outfit,system-ui,sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#03240f;background:linear-gradient(135deg,#86efac,#22c55e);box-shadow:0 8px 24px rgba(34,197,94,.3);transition:transform .2s ease,filter .2s ease,box-shadow .2s ease}#kawe-player-gate-start:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.08);box-shadow:0 12px 30px rgba(34,197,94,.42)}#kawe-player-gate-start:disabled{cursor:wait;opacity:.9}
-.kawe-gate-loading{display:none;align-items:center;gap:11px;justify-content:center;color:#dcfce7;font-weight:800;font-size:13px}.kawe-gate-loading.is-on{display:flex}.kawe-gate-spinner{width:18px;height:18px;border:2px solid rgba(187,247,208,.28);border-top-color:#86efac;border-radius:50%;animation:kaweGateSpin .75s linear infinite}.kawe-gate-progress{height:5px;margin-top:18px;border-radius:99px;background:rgba(187,247,208,.14);overflow:hidden}.kawe-gate-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#86efac,#22c55e);transition:width .55s ease}@keyframes kaweGateSpin{to{transform:rotate(360deg)}}@keyframes kaweGatePulse{0%,100%{transform:scale(.88);opacity:.18}50%{transform:scale(1.06);opacity:.55}}@media (prefers-reduced-motion:reduce){#kawe-player-gate::before,#kawe-player-gate::after{animation:none}.kawe-gate-spinner{animation:none}}
-</style>
-<script id="kawe-player-gate-js">
-(function(){'use strict';if(window.__KAWE_PLAYER_GATE__)return;window.__KAWE_PLAYER_GATE__=true;var original=null,locked=true,pending=null,timers=[];function modal(){return document.getElementById('player-modal')}function wrapper(){return document.getElementById('p-wrap')}function clearTimers(){timers.forEach(function(t){clearTimeout(t)});timers=[]}function ensureGate(){var w=wrapper();if(!w)return null;var g=document.getElementById('kawe-player-gate');if(g)return g;g=document.createElement('div');g.id='kawe-player-gate';g.innerHTML='<div class="kawe-gate-card"><div class="kawe-gate-mark"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div><h2 class="kawe-gate-title">KAWE PLAYER</h2><p class="kawe-gate-subtitle">Prepare seu conteúdo para uma reprodução mais estável. Clique para iniciar.</p><button id="kawe-player-gate-start" type="button" onclick="window.kaweStartPlayerGate()">▶ INICIAR PLAYER</button><div class="kawe-gate-loading"><span class="kawe-gate-spinner"></span><span id="kawe-player-gate-status">Preparando...</span></div><div class="kawe-gate-progress"><span id="kawe-player-gate-progress-fill"></span></div></div>';w.appendChild(g);return g}function setStatus(m,p){var s=document.getElementById('kawe-player-gate-status'),f=document.getElementById('kawe-player-gate-progress-fill');if(s)s.textContent=m;if(f)f.style.width=p+'%'}function showGate(u){pending=u;locked=true;clearTimers();var g=ensureGate();if(!g)return;g.classList.remove('is-hidden');var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=false;b.style.display='inline-flex'}if(l)l.classList.remove('is-on');setStatus('Preparando...',0)}window.kaweStartPlayerGate=function(){if(!pending||!original||!locked)return;locked=false;var g=ensureGate();if(!g)return;var b=document.getElementById('kawe-player-gate-start'),l=g.querySelector('.kawe-gate-loading');if(b){b.disabled=true;b.style.display='none'}if(l)l.classList.add('is-on');[['Carregando banco de dados',20],['Carregando servidor',42],['Carregando conteúdo',66],['Carregando player de vídeo',88]].forEach(function(x,i){timers.push(setTimeout(function(){setStatus(x[0],x[1])},650*(i+1)))});timers.push(setTimeout(function(){var m=modal();if(!m||!m.classList.contains('open')){pending=null;return}setStatus('Tudo pronto. Divirta-se!',100);timers.push(setTimeout(function(){var u=pending;pending=null;g.classList.add('is-hidden');try{original.call(window,u)}catch(e){console.warn('[KAWE PLAYER] falha ao carregar fonte',e)}},500))},3000))};function install(){if(typeof window.setPlayerSrc!=='function'||window.setPlayerSrc.__kaweGateWrapped)return;original=window.setPlayerSrc;var w=function(u){var m=modal(),r=String(u||'');if(m&&m.classList.contains('open')&&locked&&r&&r!=='about:blank'){showGate(r);return r}return original.apply(this,arguments)};w.__kaweGateWrapped=true;window.setPlayerSrc=w;var old=window.closePlayer;if(typeof old==='function'&&!old.__kaweGateCloseWrapped){var c=function(){clearTimers();pending=null;locked=true;var g=document.getElementById('kawe-player-gate');if(g)g.classList.add('is-hidden');return old.apply(this,arguments)};c.__kaweGateCloseWrapped=true;window.closePlayer=c}}function boot(){install();if(typeof window.setPlayerSrc==='function'&&!window.setPlayerSrc.__kaweGateWrapped){setTimeout(install,1200);setTimeout(install,3000)}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot()})();
-</script>
-<!-- KAWE_PLAYER_GATE_V1_END -->
+
 
 
 <!-- KAWE_HEADER_REPAIR_FINAL_START -->
@@ -36153,7 +36005,6 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
 </script>
 <!-- KAWE_CATALOGO_STATUS_END -->
 
-<
 <!-- KAWE_PLAYER_UNLOCKED_FINAL_START -->
 <style id="kawe-player-unlocked-final-css">
   /* Gates e telas intermediárias removidos: a fonte abre imediatamente. */
