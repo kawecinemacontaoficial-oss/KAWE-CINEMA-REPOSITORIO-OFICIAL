@@ -36173,14 +36173,12 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
 <script id="kawe-player-unlocked-final-js">
 (function () {
   'use strict';
-  if (window.__KAWE_PLAYER_UNLOCKED_FINAL__) return;
-  window.__KAWE_PLAYER_UNLOCKED_FINAL__ = true;
+  if (window.__KAWE_PLAYER_UNLOCKED_FINAL_V2__) return;
+  window.__KAWE_PLAYER_UNLOCKED_FINAL_V2__ = true;
 
-  var D = document;
-  var hls = null;
-
+  var D = document, hls = null, mediaEpoch = 0;
   function el(id) { return D.getElementById(id); }
-  function source(raw) {
+  function rawSource(raw) {
     var v = String(raw == null ? '' : raw).trim();
     var tag = v.match(/<(?:iframe|embed|video|source|object)\b[\s\S]*?>/i);
     if (tag) {
@@ -36195,7 +36193,7 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
       .replace(/&#39;|&#x27;/gi, "'").replace(/\s+/g, '').trim();
   }
   function normalize(raw) {
-    var v = source(raw);
+    var v = rawSource(raw);
     if (!v) return '';
     try {
       if (typeof window.kaweNormalizeAnyLink === 'function') return window.kaweNormalizeAnyLink(v) || v;
@@ -36206,8 +36204,9 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
     return v;
   }
   function kind(url) {
-    var q = url.split('#')[0].toLowerCase();
+    var q = String(url).split('#')[0].toLowerCase();
     if (/\.m3u8(?:$|[?&])/.test(q) || /[?&](?:format|type)=m3u8(?:&|$)/.test(q)) return 'hls';
+    if (/\.mpd(?:$|[?&])/.test(q)) return 'dash';
     if (/\.(?:mp4|m4v|webm|ogv|ogg|mov)(?:$|[?#&])/.test(q)) return 'video';
     if (/\.(?:mp3|m4a|aac|wav|flac)(?:$|[?#&])/.test(q)) return 'audio';
     return 'embed';
@@ -36216,50 +36215,53 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
     if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
     if (window.__hls) { try { window.__hls.destroy(); } catch (e) {} window.__hls = null; }
     var v = el('player-native');
-    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} v.onerror = null; }
+  }
+  function setFallback(original, url) {
+    var href = original || url, a = el('player-fallback-link'), b = el('kawe-repaired-external');
+    [a, b].forEach(function (x) {
+      if (x) { x.href = href || '#'; x.target = '_blank'; x.rel = 'noopener noreferrer'; x.style.pointerEvents = href ? 'auto' : 'none'; x.style.opacity = href ? '1' : '.45'; }
+    });
   }
   function play(raw) {
-    var iframe = el('player'), video = el('player-native');
-    var url = normalize(raw);
-    if (!iframe || !video) return url;
+    var original = rawSource(raw), url = normalize(raw);
+    var iframe = el('player'), video = el('player-native'), stage = el('kyt-stage'), view = el('kawe-repaired-view');
+    if (!iframe || !video) return url || original;
+    var epoch = ++mediaEpoch;
     stop();
-    iframe.removeAttribute('sandbox');
-    iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write');
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.removeAttribute('referrerpolicy');
-    var stage = el('kyt-stage');
-    if (stage) stage.classList.add('kawe-playing');
-    ['kawe-player-gate','kyt-gate','kawe-green-screen','kawe-loading-screen','kyt-intro'].forEach(function (id) {
-      var g = el(id); if (g) { g.style.display = 'none'; g.style.pointerEvents = 'none'; }
-    });
+    if (view && stage && view.parentNode !== stage) stage.appendChild(view);
     if (!url || url === 'about:blank') {
       iframe.src = 'about:blank'; iframe.style.display = 'none'; video.style.display = 'none';
+      if (stage) stage.classList.remove('kawe-playing');
       return '';
     }
-    if (kind(url) === 'embed') {
+    iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('referrerpolicy', 'origin');
+    iframe.title = iframe.title || 'Player KAWE';
+    setFallback(original, url);
+    try { if (window.STATE) { window.STATE.currentUrl = url; window.STATE.currentUrlOriginal = original; } } catch (e) {}
+
+    var mode = kind(url);
+    if (mode === 'embed' || mode === 'dash') {
       video.style.display = 'none';
       iframe.style.display = 'block';
       iframe.src = url;
     } else {
       iframe.style.display = 'none'; iframe.src = 'about:blank';
-      video.style.display = 'block'; video.controls = true; video.playsInline = true;
-      if (kind(url) === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && window.Hls.isSupported()) {
+      video.style.display = 'block'; video.controls = true; video.playsInline = true; video.preload = 'metadata';
+      video.src = url;
+      if (mode === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && window.Hls.isSupported()) {
         hls = new window.Hls({ enableWorker: true }); window.__hls = hls;
-        hls.loadSource(url); hls.attachMedia(video);
-        hls.on(window.Hls.Events.MANIFEST_PARSED, function () { video.play().catch(function () {}); });
+        hls.attachMedia(video);
+        hls.on(window.Hls.Events.MANIFEST_PARSED, function () { if (epoch === mediaEpoch) video.play().catch(function () {}); });
+        hls.loadSource(url);
       } else {
-        video.src = url;
         video.play().catch(function () {});
       }
     }
-    try {
-      if (window.STATE) {
-        window.STATE.currentUrl = url;
-        window.STATE.currentUrlOriginal = source(raw);
-      }
-    } catch (e) {}
-    var fallback = el('player-fallback-link');
-    if (fallback) { fallback.href = source(raw) || url; fallback.target = '_blank'; }
+    if (stage) stage.classList.add('kawe-playing');
+    var gate = el('kawe-player-gate'); if (gate) gate.classList.add('is-hidden');
     var bar = el('player-fallback-bar'); if (bar) bar.style.display = 'block';
     return url;
   }
@@ -36271,7 +36273,9 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
   };
   window.normalizeEmbedUrl = normalize;
   window.normalizeVideoUrl = normalize;
-  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', function () { play('about:blank'); });
+  function blankAfterReady() { if (el('player') && el('player-native')) play('about:blank'); }
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', blankAfterReady, { once: true });
+  else blankAfterReady();
 })();
 </script>
 <!-- KAWE_PLAYER_UNLOCKED_FINAL_END -->
