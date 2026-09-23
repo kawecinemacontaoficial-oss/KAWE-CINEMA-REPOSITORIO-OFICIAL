@@ -31523,10 +31523,10 @@ function play(raw,forced){
    if(window.Hls&&window.Hls.isSupported()){
     hls=new window.Hls({enableWorker:true,lowLatencyMode:true,backBufferLength:90});window.__hls=hls;
     hls.loadSource(url);hls.attachMedia(video);
-    hls.on(window.Hls.Events.MANIFEST_PARSED,function(){video.play().catch(function(){state('Toque no botão Play para iniciar.','ready')})});
+    hls.on(window.Hls.Events.MANIFEST_PARSED,function(){video.play().catch(function(){state('Conteúdo carregado.','ready')})});
     hls.on(window.Hls.Events.ERROR,function(_,d){if(d&&d.fatal)state('Falha no stream HLS. Verifique CORS, token ou validade do link.','error')});
    }else{state('Este navegador não oferece suporte a HLS.','error')}
-  }else{video.src=url;video.play().catch(function(){state('Conteúdo pronto. Toque no botão Play para iniciar.','ready')})}
+  }else{video.src=url;video.play().catch(function(){state('Conteúdo pronto. Conteúdo carregado.','ready')})}
  }else{
   iframe.style.display='block';iframe.referrerPolicy='origin-when-cross-origin';iframe.allow='autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write';iframe.setAttribute('allowfullscreen','');
   iframe.onload=function(){state('Player incorporado carregado.','ready')};iframe.onerror=function(){state('O site de origem bloqueou a incorporação. Use “Abrir fora”.','error')};iframe.src=url;
@@ -32717,12 +32717,12 @@ body.kawe-ui-2 #kyt-stage > #kyt-gate{ display:none !important; }
         if(window.Hls && window.Hls.isSupported()){
           var h=new window.Hls({enableWorker:true}); window.__hls=h;
           h.loadSource(url); h.attachMedia(video);
-          h.on(window.Hls.Events.MANIFEST_PARSED,function(){ video.play().catch(function(){ estado('Toque em ▶ para iniciar.'); }); });
+          h.on(window.Hls.Events.MANIFEST_PARSED,function(){ video.play().catch(function(){ estado('Conteúdo carregado.'); }); });
           h.on(window.Hls.Events.ERROR,function(_,d){ if(d&&d.fatal) estado('Falha no stream HLS (CORS/token/validade do link).'); });
         } else { estado('Este navegador não suporta HLS.'); }
       } else {
         video.src=url;
-        video.play().catch(function(){ estado('Conteúdo pronto. Toque em ▶ para iniciar.'); });
+        video.play().catch(function(){ estado('Conteúdo carregado.'); });
       }
     }
     try{ if(window.STATE){ window.STATE.currentUrl=url; window.STATE.currentUrlOriginal=bruto; } }catch(e){}
@@ -35952,10 +35952,10 @@ body header:not(#kawe-repaired-head) .header-nav .nav-link{
       video.onloadedmetadata=function(){ if(epoch===mediaEpoch) status('Conteúdo pronto.'); };
       if(mode==='hls' && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && window.Hls.isSupported()){
         hls=new window.Hls({enableWorker:true}); hls.loadSource(url); hls.attachMedia(video);
-        hls.on(window.Hls.Events.MANIFEST_PARSED,function(){ if(epoch===mediaEpoch) video.play().catch(function(){status('Conteúdo pronto. Toque em ▶ para iniciar.');}); });
+        hls.on(window.Hls.Events.MANIFEST_PARSED,function(){ if(epoch===mediaEpoch) video.play().catch(function(){status('Conteúdo carregado.');}); });
         hls.on(window.Hls.Events.ERROR,function(_,d){ if(epoch===mediaEpoch && d && d.fatal) status('Falha no HLS: o servidor pode exigir CORS ou token válido.',true); });
       } else {
-        video.src=url; video.play().catch(function(){ if(epoch===mediaEpoch) status('Conteúdo pronto. Toque em ▶ para iniciar.'); });
+        video.src=url; video.play().catch(function(){ if(epoch===mediaEpoch) status('Conteúdo carregado.'); });
       }
     }
     if(stage) stage.classList.add('kawe-playing');
