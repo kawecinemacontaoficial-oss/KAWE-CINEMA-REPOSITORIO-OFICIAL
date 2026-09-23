@@ -32511,11 +32511,10 @@ function install(){
   }
 
   /* ══ BLINDAGEM ANTI-SEQUESTRO DO IFRAME (impede o site externo de trocar a página) ══ */
-  var SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-orientation-lock';
+  /* Sandbox removido: provedores externos precisam controlar livremente o iframe. */
   function guardFrame() {
     var f = document.getElementById('player');
-    if (!f) return;
-    if (f.getAttribute('sandbox') !== SANDBOX) f.setAttribute('sandbox', SANDBOX);
+    if (f) f.removeAttribute('sandbox');
   }
   (function hookGuard() {
     var o = window.setPlayerSrc;
@@ -32873,7 +32872,7 @@ body.kawe-ui-2 #kyt-stage > #kyt-gate{ display:none !important; }
   function reforcar(){
     if(window.setPlayerSrc!==reproduzir) window.setPlayerSrc=reproduzir;
   }
-  reforcar(); setInterval(reforcar,900);
+  reforcar(); /* sem sobrescrita periódica do motor do player */
 
   /* tela verde / gate agora iniciam de verdade */
   D.addEventListener('click',function(e){
@@ -36153,6 +36152,129 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
 })();
 </script>
 <!-- KAWE_CATALOGO_STATUS_END -->
+
+<
+<!-- KAWE_PLAYER_UNLOCKED_FINAL_START -->
+<style id="kawe-player-unlocked-final-css">
+  /* Gates e telas intermediárias removidos: a fonte abre imediatamente. */
+  #kawe-player-gate,
+  #kyt-gate,
+  #kawe-green-screen,
+  #kawe-loading-screen,
+  #kyt-intro {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  /* Fallback caso alguma rotina antiga não mova o palco reparado. */
+  #player-modal #p-wrap { display: block !important; }
+  #player-modal #p-wrap iframe,
+  #player-modal #p-wrap video { pointer-events: auto !important; }
+</style>
+<script id="kawe-player-unlocked-final-js">
+(function () {
+  'use strict';
+  if (window.__KAWE_PLAYER_UNLOCKED_FINAL__) return;
+  window.__KAWE_PLAYER_UNLOCKED_FINAL__ = true;
+
+  var D = document;
+  var hls = null;
+
+  function el(id) { return D.getElementById(id); }
+  function source(raw) {
+    var v = String(raw == null ? '' : raw).trim();
+    var tag = v.match(/<(?:iframe|embed|video|source|object)\b[\s\S]*?>/i);
+    if (tag) {
+      var a = tag[0].match(/\s(?:src|data|file|movie)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+      if (a) v = a[1] || a[2] || a[3] || v;
+    }
+    if (/^</.test(v)) {
+      var b = v.match(/(?:src|data|file|movie)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+      if (b) v = b[1] || b[2] || b[3] || '';
+    }
+    return v.replace(/&amp;/gi, '&').replace(/&quot;/gi, '"')
+      .replace(/&#39;|&#x27;/gi, "'").replace(/\s+/g, '').trim();
+  }
+  function normalize(raw) {
+    var v = source(raw);
+    if (!v) return '';
+    try {
+      if (typeof window.kaweNormalizeAnyLink === 'function') return window.kaweNormalizeAnyLink(v) || v;
+      if (typeof window.normalizeEmbedUrl === 'function' && window.normalizeEmbedUrl !== normalize) return window.normalizeEmbedUrl(v) || v;
+    } catch (e) {}
+    if (/^\/\//.test(v)) v = 'https:' + v;
+    if (!/^[a-z][\w+.-]*:/i.test(v) && /^[\w.-]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(v)) v = 'https://' + v;
+    return v;
+  }
+  function kind(url) {
+    var q = url.split('#')[0].toLowerCase();
+    if (/\.m3u8(?:$|[?&])/.test(q) || /[?&](?:format|type)=m3u8(?:&|$)/.test(q)) return 'hls';
+    if (/\.(?:mp4|m4v|webm|ogv|ogg|mov)(?:$|[?#&])/.test(q)) return 'video';
+    if (/\.(?:mp3|m4a|aac|wav|flac)(?:$|[?#&])/.test(q)) return 'audio';
+    return 'embed';
+  }
+  function stop() {
+    if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+    if (window.__hls) { try { window.__hls.destroy(); } catch (e) {} window.__hls = null; }
+    var v = el('player-native');
+    if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+  }
+  function play(raw) {
+    var iframe = el('player'), video = el('player-native');
+    var url = normalize(raw);
+    if (!iframe || !video) return url;
+    stop();
+    iframe.removeAttribute('sandbox');
+    iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.removeAttribute('referrerpolicy');
+    var stage = el('kyt-stage');
+    if (stage) stage.classList.add('kawe-playing');
+    ['kawe-player-gate','kyt-gate','kawe-green-screen','kawe-loading-screen','kyt-intro'].forEach(function (id) {
+      var g = el(id); if (g) { g.style.display = 'none'; g.style.pointerEvents = 'none'; }
+    });
+    if (!url || url === 'about:blank') {
+      iframe.src = 'about:blank'; iframe.style.display = 'none'; video.style.display = 'none';
+      return '';
+    }
+    if (kind(url) === 'embed') {
+      video.style.display = 'none';
+      iframe.style.display = 'block';
+      iframe.src = url;
+    } else {
+      iframe.style.display = 'none'; iframe.src = 'about:blank';
+      video.style.display = 'block'; video.controls = true; video.playsInline = true;
+      if (kind(url) === 'hls' && !video.canPlayType('application/vnd.apple.mpegurl') && window.Hls && window.Hls.isSupported()) {
+        hls = new window.Hls({ enableWorker: true }); window.__hls = hls;
+        hls.loadSource(url); hls.attachMedia(video);
+        hls.on(window.Hls.Events.MANIFEST_PARSED, function () { video.play().catch(function () {}); });
+      } else {
+        video.src = url;
+        video.play().catch(function () {});
+      }
+    }
+    try {
+      if (window.STATE) {
+        window.STATE.currentUrl = url;
+        window.STATE.currentUrlOriginal = source(raw);
+      }
+    } catch (e) {}
+    var fallback = el('player-fallback-link');
+    if (fallback) { fallback.href = source(raw) || url; fallback.target = '_blank'; }
+    var bar = el('player-fallback-bar'); if (bar) bar.style.display = 'block';
+    return url;
+  }
+  window.kawePlay = play;
+  window.setPlayerSrc = play;
+  window.kaweStartPlayerGate = function () {
+    var u = window.STATE && (window.STATE.currentUrlOriginal || window.STATE.currentUrl);
+    if (u) play(u);
+  };
+  window.normalizeEmbedUrl = normalize;
+  window.normalizeVideoUrl = normalize;
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', function () { play('about:blank'); });
+})();
+</script>
+<!-- KAWE_PLAYER_UNLOCKED_FINAL_END -->
 
 </body>
 </html>
