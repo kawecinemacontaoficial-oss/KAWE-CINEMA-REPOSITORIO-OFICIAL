@@ -109,6 +109,9 @@ img, video { max-width: 100%; }
     var ms = Math.max(50, Number(delay) || 0), source = '';
     try { source = Function.prototype.toString.call(fn).replace(/\s+/g,' ').slice(0,900); } catch(e){}
     if(ms <= 5000 && maintenancePattern.test(source)){
+      /* Auto-reparos visuais são recuperação de baixa prioridade, não animação.
+         Um piso de 12 s reduz varreduras repetitivas de DOM sem afetar a carga inicial. */
+      ms = Math.max(ms, 12000);
       var key = source + '|' + ms;
       if(intervalKeys[key] != null) return intervalKeys[key];
       if(activeKeys >= 140) return 0;
@@ -5325,7 +5328,7 @@ function sendChatMessage() {
 
 // --- ADMIN LOGIC ---
 const ADMIN_EMAIL_FIXO = 'kawe.cinema.conta.oficial@gmail.com';
-const ADMIN_SENHA_FIXA = 'KAWE2026';
+const ADMIN_SENHA_FIXA = '';
 let ADMIN_EMAIL = localStorage.getItem('kawe_admin_email') || ADMIN_EMAIL_FIXO;
 let ADMIN_SENHA = localStorage.getItem('kawe_admin_senha') || ADMIN_SENHA_FIXA;
 let ADMIN_PASS = localStorage.getItem('kawe_admin_pass') || '2011';
@@ -6999,7 +7002,7 @@ document.addEventListener('dblclick', (event) => {
 
 <script>
 // ── MODERADOR: usa o mesmo painel do ADMIN (mesmas funções de conteúdo) ──
-window.MOD_SENHA = 'MOD1';
+window.MOD_SENHA = '';
 function openModeradorAuth(){
   const m = document.getElementById('mod-auth-modal');
   if(!m) return;
@@ -20533,7 +20536,7 @@ textarea.ksoc-input{min-height:78px;resize:vertical;}
     var dm = document.getElementById('ksoc-discover-modal');
     if(dm && dm.classList.contains('open')) ksocRenderDiscover();
     var mm = document.getElementById('ksoc-msg-modal');
-    if(mm && mm.classList.contains('open')) renderMessages();
+    if(mm && mm.classList.contains('open')){var ci=document.getElementById('ksoc-msg-input');if(document.activeElement!==ci)renderMessages();}
     ksocBadges();
   }
 
@@ -22637,14 +22640,35 @@ button, .btn, .kawe-btn, .admin-btn-action, .sidebar-link, .nav-link{ font-size:
     });
     return out;
   }
+  var searchIndexCache = null;
+  function invalidateSearchIndex(){ searchIndexCache = null; }
   function allSearchable(){
+    if (searchIndexCache) return searchIndexCache;
     var list = catalogItems(), seen = {};
-    list.forEach(function(i){ seen[(i.cat+'|'+i.title).toLowerCase()] = 1; });
-    staticCards().forEach(function(i){
-      if (!seen[(i.cat+'|'+i.title).toLowerCase()]) list.push(i);
+    list.forEach(function(i){
+      i._kaweSearchTitle = String(i.title || '').toLowerCase();
+      seen[(i.cat+'|'+i._kaweSearchTitle)] = 1;
     });
+    staticCards().forEach(function(i){
+      var title = String(i.title || '').toLowerCase(), key = (i.cat+'|'+title);
+      if (!seen[key]) { i._kaweSearchTitle = title; list.push(i); seen[key] = 1; }
+    });
+    searchIndexCache = list;
     return list;
   }
+  window.addEventListener('kawe:catalog-updated', invalidateSearchIndex);
+  window.addEventListener('storage', function(e){ if (!e || e.key === 'kawe_catalog') invalidateSearchIndex(); });
+  try {
+    if (window.Storage && Storage.prototype && !Storage.prototype.__kaweSearchIndexInvalidator) {
+      var priorSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(key){
+        var result = priorSetItem.apply(this, arguments);
+        if (key === 'kawe_catalog') invalidateSearchIndex();
+        return result;
+      };
+      Storage.prototype.__kaweSearchIndexInvalidator = true;
+    }
+  } catch(e) {}
 
   function ensureSearchSection(){
     var main = document.querySelector('#main-content main') || document.querySelector('main');
@@ -22694,9 +22718,9 @@ button, .btn, .kawe-btn, .admin-btn-action, .sidebar-link, .nav-link{ font-size:
       document.body.classList.add('kawe-searching');
     }
 
-    normalizeCatalog();
+    /* O catálogo já é normalizado na carga/atualização. Não percorrer e reescrever milhares de itens por tecla. */
     var results = allSearchable().filter(function(it){
-      return it.title.toLowerCase().indexOf(q) > -1;
+      return (it._kaweSearchTitle || String(it.title || '').toLowerCase()).indexOf(q) > -1;
     }).sort(function(a,b){
       var d = a.title.toLowerCase().indexOf(q) - b.title.toLowerCase().indexOf(q);
       return d !== 0 ? d : a.title.localeCompare(b.title,'pt-BR');
@@ -24606,7 +24630,7 @@ header .hamburger span, header > .hamburger span, #kawe-hz-left .hamburger span{
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',limpar); else limpar();
   [100,400,1000,2000,4000,8000,15000].forEach(function(t){ setTimeout(limpar,t); });
-  setInterval(limpar,1000);
+  /* limpeza já ocorre na carga e nos timeouts; não repetir varredura do DOM a cada segundo. */
 })();
 </script>
 <!--KAWE_AJUSTES_UI_END-->
@@ -24701,7 +24725,7 @@ header #kawe-site-title, #kawe-hz-left #kawe-site-title, header .logo{
       drop('#kawe-load-fab');
       drop('#kawe-fs-btn');
       drop('#kawe-suggest');
-      drop('header .search-container');
+      /* Mantém o campo de busca original; removê-lo quebrava o cabeçalho e seus atalhos. */
 
       /* funcoes no menu de tres barras */
       addSidebarLink('kawe-side-temas', 'TEMAS', '🎨', openTemas);
@@ -24726,7 +24750,7 @@ header #kawe-site-title, #kawe-hz-left #kawe-site-title, header .logo{
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', apply); else apply();
   [100,400,900,1800,3000,5000,8000].forEach(function(t){ setTimeout(apply,t); });
-  setInterval(apply, 400);
+  /* apply já é executado na carga e em timeouts; removido loop que apagava e recriava controles do header. */
 })();
 </script>
 <!--KAWE_AJUSTES_UI_V2_END-->
@@ -33911,6 +33935,32 @@ header .header-left > #v12-tut-btn{
 })();
 </script>
 
+<!-- KAWE_INTRO_FAILSAFE_V1 -->
+<script id="kawe-intro-failsafe">
+(function(){
+  'use strict';
+  var root=document.getElementById('kawe-intro-root');
+  if(!root) return;
+  var finished=false;
+  function releaseIntro(){
+    if(finished) return;
+    finished=true;
+    root.setAttribute('data-done','1');
+    root.setAttribute('aria-busy','false');
+    root.style.setProperty('display','none','important');
+    root.style.setProperty('pointer-events','none','important');
+    if(document.body) document.body.classList.remove('kawe-intro-lock');
+    try { sessionStorage.setItem('kawe_intro_seen_v1','1'); } catch(e) {}
+  }
+  /* A animação normal termina em ~5,5 s. Este prazo cobre dispositivos lentos
+     e libera o site se requestAnimationFrame/algum script ficar preso. */
+  window.setTimeout(releaseIntro,15000);
+  /* Um escape de teclado dá uma saída imediata caso o usuário esteja esperando. */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && root.getAttribute('data-done')!=='1') releaseIntro();
+  },{once:false});
+})();
+</script>
 <script id="kawe-header-minimal-js">
 (function(){
   if (window.__KAWE_HEADER_MINIMAL__) return;
@@ -36130,6 +36180,862 @@ function boot(){inject()}if(D.readyState==='loading')D.addEventListener('DOMCont
 })();
 </script>
 <!-- KAWE_PLAYER_UNLOCKED_FINAL_END -->
+
+
+<!-- KAWE_FINAL_CORRECTION_V2_START -->
+<style id="kawe-final-correction-css">
+/* Sistema original de organização do catálogo no topo real da home. */
+#home { display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:0 !important; }
+#home > #kawe-main-category-hub { order:-100 !important; flex:0 0 auto !important; margin-top:0 !important; display:block !important; visibility:visible !important; opacity:1 !important; }
+#home > #kawe-hp { order:10 !important; flex:0 0 auto !important; margin-top:0 !important; display:block !important; visibility:visible !important; opacity:1 !important; }
+#home > #kawe-final-catalog-system { order:-110 !important; flex:0 0 auto !important; display:block !important; visibility:visible !important; opacity:1 !important; }
+#kawe-main-category-hub { z-index:20 !important; }
+#kawe-hp { z-index:19 !important; }
+#kawe-final-catalog-system { z-index:21 !important; width:100%; margin:0 auto 14px; padding:0 2vw 10px; border:0; border-radius:0; background:transparent; box-sizing:border-box; }
+#kawe-final-catalog-system .kfc-title { color:#fff; font:800 18px/1.2 Outfit,Inter,sans-serif; margin-bottom:12px; }
+#kawe-final-catalog-system .kfc-title span { color:#86efac; font:700 10px/1.2 Inter,sans-serif; letter-spacing:.5px; margin-left:8px; }
+#kawe-final-catalog-system .kfc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:8px; }
+#kawe-final-catalog-system button { border:1px solid rgba(87,255,138,.25); border-radius:10px; padding:10px 8px; color:#dfffea; background:rgba(255,255,255,.055); font:700 11px Outfit,Inter,sans-serif; cursor:pointer; }
+#kawe-final-catalog-system button:hover, #kawe-final-catalog-system button:focus-visible { color:#06110f; background:linear-gradient(135deg,#57ff8a,#36d9ff); outline:none; }
+@media(max-width:720px){#kawe-final-catalog-system{padding:0 10px 8px;margin-top:0}.kfc-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.kfc-title{font-size:16px!important}.kfc-title span{display:block;margin:5px 0 0!important}}
+.kawe-admin-tools{display:none;position:fixed;inset:4vh 3vw;z-index:100010;overflow:auto;padding:20px;border:1px solid rgba(87,255,138,.25);border-radius:16px;background:#07120f;color:#eafff0;box-shadow:0 24px 90px rgba(0,0,0,.75)}
+.kawe-admin-tools.open{display:block}.kawe-admin-tools h2{margin:0 0 6px;color:#57ff8a}.kawe-admin-tools p{color:#a7c7b1;font-size:12px}.kat-count{color:#36d9ff}.kat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:7px}.kat-grid button{border:1px solid rgba(87,255,138,.2);border-radius:8px;padding:9px;color:#dfffea;background:#10231c;text-align:left;font-size:11px;cursor:pointer}.kat-grid button:hover{background:#1b4431}.kat-close{float:right;border:1px solid #57ff8a;border-radius:8px;padding:8px;color:#06110f;background:#57ff8a;cursor:pointer}
+.kat-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}.kat-form-grid label{display:flex;flex-direction:column;gap:5px;color:#bfe8cc;font-size:11px}.kat-form-grid input,.kat-form-grid select{box-sizing:border-box;width:100%;padding:9px;border:1px solid rgba(87,255,138,.22);border-radius:7px;background:#0d2119;color:#fff}.kat-actions{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}.kat-actions button,.kat-import{border:1px solid rgba(87,255,138,.3);border-radius:8px;padding:9px 11px;background:#153224;color:#dfffea;font:700 11px Outfit,Inter,sans-serif;cursor:pointer}.kat-import input{display:none}.kat-real-list{display:grid;gap:6px}.kat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px;border:1px solid rgba(87,255,138,.13);border-radius:8px;background:#0b1b15}.kat-row small{display:block;color:#86b398;font-size:10px;margin-top:3px}.kat-row button{margin-left:4px;border:1px solid rgba(87,255,138,.25);border-radius:6px;padding:6px;background:#10231c;color:#dfffea;font-size:10px;cursor:pointer}
+.kw-header-cat-tools{display:flex;flex-wrap:wrap;gap:5px;align-items:center;width:100%;margin-top:6px;padding-top:6px;border-top:1px solid rgba(87,255,138,.16)}.kw-header-cat-tools button{flex:0 0 auto;border:1px solid rgba(87,255,138,.25);border-radius:7px;padding:7px 8px;background:#10231c;color:#dfffea;font:700 10px Outfit,Inter,sans-serif;cursor:pointer}.kw-header-cat-tools button:hover{background:#57ff8a;color:#06110f}.kw-header-cat-tools .kw-cat-caption{color:#86efac;font:700 10px Outfit,Inter,sans-serif;margin-right:3px}@media(max-width:700px){.kw-header-cat-tools{overflow-x:auto;flex-wrap:nowrap}.kw-header-cat-tools button{font-size:9px;padding:6px 7px}}
+.header-category-strip{display:flex!important;position:relative!important;box-sizing:border-box!important;gap:8px!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;width:min(68vw,900px)!important;max-width:min(68vw,900px)!important;min-width:0!important;height:52px!important;padding:7px 4px!important;white-space:nowrap!important;align-items:center!important;align-content:center!important;z-index:40!important;scrollbar-width:thin!important}.header-category-strip>*{position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none!important;float:none!important}.header-category-link{display:inline-flex!important;position:relative!important;flex:0 0 auto!important;align-items:center!important;justify-content:center!important;white-space:nowrap!important;height:36px!important;min-height:36px!important;border-radius:9px!important;font-weight:900!important;font-size:12px!important;letter-spacing:.25px!important;padding:9px 13px!important;box-shadow:0 3px 12px rgba(0,0,0,.2)}.header-category-link.filmes-btn{border-color:#ef4444!important;color:#fca5a5!important;background:rgba(239,68,68,.12)!important}.header-category-link.series-btn{border-color:#3b82f6!important;color:#93c5fd!important;background:rgba(59,130,246,.12)!important}.header-category-link.animes-btn{border-color:#a855f7!important;color:#d8b4fe!important;background:rgba(168,85,247,.12)!important}.header-category-link.infantil-btn{border-color:#22c55e!important;color:#86efac!important;background:rgba(34,197,94,.12)!important}.header-category-link.curtas-btn{border-color:#f59e0b!important;color:#fcd34d!important;background:rgba(245,158,11,.12)!important}.header-category-link.documentarios-btn{border-color:#06b6d4!important;color:#67e8f9!important;background:rgba(6,182,212,.12)!important}.header-category-link.doramas-btn{border-color:#ec4899!important;color:#f9a8d4!important;background:rgba(236,72,153,.12)!important}.header-category-link.novelas-btn{border-color:#f97316!important;color:#fdba74!important;background:rgba(249,115,22,.12)!important}.header-category-link.musica-btn{border-color:#9ca3af!important;color:#d1d5db!important;background:rgba(156,163,175,.12)!important}.header-category-link.livros-btn{border-color:#fff!important;color:#fff!important;background:#111!important}.header-category-link.podcasts-btn{border-color:#2563eb!important;color:#bfdbfe!important;background:#0b1f4a!important}.header-category-link.radio-btn{border-color:#c26b19!important;color:#f0bd82!important;background:#5c2e00!important}
+.section#filmes,.section#series,.section#animes,.section#infantil,.section#curtas,.section#documentarios,.section#doramas,.section#novelas,.section#musica,.section#livros,.section#podcasts,.section#radio,.section#lancamentos{padding-top:12px!important;scroll-margin-top:72px!important;}
+.kawe-moved-category{order:20!important;width:100%!important;max-width:none!important;display:block!important;visibility:visible!important;opacity:1!important;margin:0!important;padding:12px 2vw 24px!important;box-sizing:border-box!important;}
+.kawe-extra-rail{margin-top:12px!important;border-color:rgba(34,197,94,.12)!important;background:linear-gradient(135deg,rgba(5,22,16,.86),rgba(3,10,12,.86))!important}.kawe-extra-rail h3{font-size:13px!important}.kawe-extra-rail h3 span{color:#86efac!important}
+.ksoc-msg-modal input#ksoc-msg-input,#ksoc-msg-modal #ksoc-msg-input{pointer-events:auto!important;user-select:text!important;opacity:1!important;cursor:text!important;display:block!important;position:relative!important;z-index:2!important;}
+.kawe-category-system{margin:0 0 18px;padding:12px 14px;border:1px solid rgba(87,255,138,.18);border-radius:12px;background:linear-gradient(135deg,rgba(7,28,20,.95),rgba(3,12,10,.8));}.kawe-category-system h3{margin:0 0 9px;color:#dfffea;font:800 15px Outfit,Inter,sans-serif}.kawe-category-system h3 span{color:#86efac;font-size:10px;margin-left:8px}.kawe-category-system .kcs-tabs{display:flex;gap:6px;overflow-x:auto}.kawe-category-system .kcs-tabs button{flex:0 0 auto;border:1px solid rgba(87,255,138,.25);border-radius:7px;padding:6px 9px;background:#10231c;color:#dfffea;font-size:10px;font-weight:800;cursor:pointer}.kawe-category-system .kcs-tabs button.active,.kawe-category-system .kcs-tabs button:hover{background:#57ff8a;color:#06110f}.kawe-category-system .kcs-items{display:flex;gap:8px;margin-top:10px;overflow-x:auto}.kawe-category-system .kcs-item{min-width:130px;max-width:150px;border:1px solid rgba(87,255,138,.14);border-radius:8px;background:#0b1b15;color:#fff;padding:6px;cursor:pointer}.kawe-category-system .kcs-item img{width:100%;height:88px;object-fit:cover;border-radius:5px;background:#111}.kawe-category-system .kcs-item b{display:block;margin-top:5px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kawe-launch-system{border-color:rgba(236,72,153,.65);background:linear-gradient(135deg,rgba(64,10,44,.9),rgba(8,14,25,.9));}.kawe-launch-system h2{margin:0 0 10px;color:#f9a8d4;font:900 24px Outfit,Inter,sans-serif}.kawe-launch-system h2 span{display:block;color:#fff;font-size:10px;letter-spacing:1px}.kawe-launch-system .kcs-tabs button{border-color:rgba(236,72,153,.55)}
+/* Cabeçalho principal estático: sequência organizada sem barra horizontal. */
+#main-content>header,body>header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important;min-height:86px!important;padding:12px 16px!important;box-sizing:border-box!important;overflow:visible!important}
+#main-content>header .hamburger,body>header .hamburger{position:relative!important;display:inline-flex!important;flex:0 0 58px!important;width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;align-items:center!important;justify-content:center!important;font-size:30px!important;border-radius:14px!important;z-index:60!important}
+#kf-search{display:flex!important;flex:1 1 260px!important;width:auto!important;min-width:220px!important;max-width:420px!important;height:48px!important;min-height:48px!important;border-radius:14px!important;z-index:61!important}
+#kf-search #kf-q{width:100%!important;height:48px!important;min-height:48px!important;font-size:16px!important;padding:0 16px 0 44px!important;box-sizing:border-box!important}
+#kf-fs-btn{display:inline-flex!important;flex:0 0 auto!important;min-width:150px!important;min-height:48px!important;height:48px!important;padding:0 16px!important;border-radius:12px!important;font-size:13px!important;align-items:center!important;justify-content:center!important;z-index:61!important}
+.header-category-strip{display:flex!important;flex:1 1 100%!important;order:20!important;width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:48px!important;padding:6px 0!important;gap:10px!important;flex-wrap:wrap!important;overflow:visible!important;overflow-x:visible!important;overflow-y:visible!important;justify-content:center!important;align-items:center!important;white-space:normal!important}
+.header-category-link{flex:0 0 auto!important;min-width:92px!important;min-height:44px!important;height:44px!important;padding:10px 16px!important;font-size:13px!important;border-radius:11px!important;line-height:1!important}
+@media(max-width:720px){#main-content>header,body>header{gap:8px!important;padding:10px!important}.header-category-strip{gap:7px!important;justify-content:flex-start!important}.header-category-link{min-width:calc(33.333% - 7px)!important;padding:9px 7px!important;font-size:11px!important}.#kf-search{order:5!important;flex-basis:calc(100% - 70px)!important;min-width:0!important;max-width:none!important}.#kf-fs-btn{min-width:132px!important;font-size:11px!important}}
+header .hamburger{width:64px!important;height:64px!important;min-width:64px!important;min-height:64px!important;flex-basis:64px!important;font-size:32px!important;transform:scale(1.15)!important;transform-origin:center!important}
+.header-category-strip{overflow:hidden!important;scrollbar-width:none!important}
+.header-category-strip::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+/* Modal de conteúdo/player: área central, responsiva e sempre acima das outras camadas. */
+#player-modal { position:fixed !important; inset:0 !important; z-index:100010 !important; isolation:isolate !important; pointer-events:auto !important; overflow-y:auto !important; overscroll-behavior:contain !important; background:rgba(0,0,0,.92) !important; padding:6px !important; box-sizing:border-box !important; }
+#player-modal:not(.open) { display:none !important; }
+#player-modal.open { display:block !important; }
+#player-modal .player-container { width:99vw !important; max-width:none !important; min-height:calc(100vh - 12px) !important; height:auto !important; margin:0 auto !important; border-radius:10px !important; overflow:hidden !important; position:relative !important; background:#070b08 !important; box-shadow:0 24px 80px rgba(0,0,0,.65) !important; }
+#player-modal .player-header { position:sticky !important; top:0 !important; z-index:30 !important; }
+#player-modal .player-header .btn-header { min-height:38px !important; }
+#player-modal .kawe-hero { max-height:42vh !important; min-height:220px !important; }
+#player-modal .iframe-wrapper, #player-modal #kyt-stage { min-height:min(60vh,620px) !important; }
+#player-modal iframe, #player-modal video { max-height:70vh !important; }
+#kawe-detail-modal { position:fixed !important; inset:0 !important; z-index:100001 !important; isolation:isolate !important; overflow-y:auto !important; overscroll-behavior:contain !important; background:rgba(0,0,0,.92) !important; padding:6px !important; box-sizing:border-box !important; }
+#player-modal.open, body.kawe-player-over-detail #player-modal { z-index:100010 !important; display:block !important; pointer-events:auto !important; }
+#kawe-detail-modal.open, #kawe-detail-modal[aria-hidden="false"] { z-index:100001 !important; }
+#kawe-detail-modal[aria-hidden="true"] { display:none !important; }
+#kawe-detail-modal.open, #kawe-detail-modal[aria-hidden="false"] { display:block !important; }
+#kawe-detail-modal .kd-shell { width:99vw !important; max-width:none !important; min-height:calc(100vh - 12px) !important; margin:0 auto !important; border-radius:10px !important; overflow:hidden !important; position:relative !important; background:#070b08 !important; box-shadow:0 24px 80px rgba(0,0,0,.7) !important; }
+body.modal-open{overflow:hidden!important}.ksoc-modal.open{z-index:100002!important}
+@media(max-width:720px){#player-modal,#kawe-detail-modal{padding:0!important}#player-modal .player-container,#kawe-detail-modal .kd-shell{width:100vw!important;min-height:100vh!important;border-radius:0!important}#player-modal .player-header{position:sticky!important;top:0!important}}
+#kawe-detail-modal .kd-x { position:sticky !important; top:12px !important; z-index:30 !important; }
+body.modal-open { overflow:hidden !important; }
+@media (max-width:700px) {
+  #player-modal { padding:0 !important; }
+  #player-modal .player-container { min-height:100vh !important; border-radius:0 !important; }
+  #player-modal .player-header { flex-wrap:wrap !important; gap:8px !important; }
+  #player-modal .header-buttons { width:100% !important; overflow-x:auto !important; padding-bottom:4px !important; }
+  #player-modal .btn-header { flex:0 0 auto !important; }
+  #player-modal .kawe-hero { min-height:190px !important; max-height:46vh !important; }
+  #player-modal .iframe-wrapper, #player-modal #kyt-stage { min-height:38vh !important; }
+}
+</style>
+<script id="kawe-final-correction-js">
+(function(){
+  'use strict';
+  if(window.__KAWE_FINAL_CORRECTION_V2__) return;
+  window.__KAWE_FINAL_CORRECTION_V2__ = true;
+  var D=document;
+  if(typeof window.adopt !== 'function') window.adopt=function(){};
+  var cats=[['Conteúdo Geral','conteudo-geral'],['Lançamentos','lancamentos'],['Canais','canais'],['Filmes','filmes'],['Séries','series'],['Animes','animes'],['Infantil','infantil'],['Documentários','documentarios'],['Doramas','doramas'],['Novelas','novelas'],['Curtas','curtas'],['Música','musica'],['Livros','livros'],['Podcasts','podcasts'],['Jogos','jogos'],['Rádio','radio'],['Adulto','adulto'],['Terror','terror'],['Esportes','esportes'],['Ao Vivo','ao-vivo'],['Sitcom','sitcom'],['Live Action','live-action'],['Cinema','cinema'],['Televisão','televisao'],['Lives','lives'],['Trailers','trailers'],['Bronze','bronze'],['Prata','prata'],['Ouro','ouro'],['Premium','premium']];
+  function goCategory(id){
+    try{if(typeof window.showSectionFromHeader==='function')window.showSectionFromHeader(id);else if(typeof window.showSectionFromSidebar==='function')window.showSectionFromSidebar(id);}catch(e){}
+    setTimeout(function(){if(typeof placeCategory==='function'&&placeCategory(id))return;var home=D.getElementById('home'),sec=D.getElementById(id);if(!home||!sec)return;sec.classList.add('active');sec.scrollIntoView({behavior:'instant',block:'start'});window.scrollBy(0,-72);},120);
+  }
+  function ensureSystem(){
+    var box=D.getElementById('kawe-final-catalog-system');
+    if(box)box.remove();
+    return null;
+  }
+  function ensureAdmin(){
+    var panel=D.getElementById('admin-panel'), tabs=panel&&panel.querySelector('.admin-tabs');
+    if(!panel||!tabs||D.getElementById('admin-kawe-tools-tab'))return;
+    var tab=D.createElement('div');tab.id='admin-kawe-tools-tab';tab.className='admin-tab';tab.textContent='DESTAQUES / TOP 10';tab.onclick=function(){switchAdminTab('kawe-tools');renderKaweTools();};tabs.appendChild(tab);
+    var sec=D.createElement('div');sec.id='admin-kawe-tools';sec.className='admin-content-section';
+    sec.innerHTML='<h3>Organização real do catálogo</h3><p class="admin-subtitle">Edite os conteúdos existentes, marque Destaques e Top 10 por categoria, salve backup e sincronize com Firebase.</p><div class="kat-form-grid"><label>Título<input id="kat-title" class="admin-input"></label><label>Categoria<select id="kat-cat" class="admin-select"></select></label><label>Poster/URL<input id="kat-poster" class="admin-input"></label><label>Formato<input id="kat-format" class="admin-input" placeholder="Filme, série, episódio..."></label><label><input type="checkbox" id="kat-featured"> Destaque</label><label><input type="checkbox" id="kat-top10"> Top 10</label></div><div class="kat-actions"><button type="button" class="admin-btn-primary" id="kat-save">Salvar alterações</button><button type="button" class="admin-btn-secondary" id="kat-new">Novo conteúdo</button><button type="button" class="admin-btn-secondary" id="kat-export">Exportar backup</button><label class="kat-import admin-btn-secondary">Importar backup<input type="file" id="kat-import-file" accept="application/json"></label><button type="button" class="admin-btn-secondary" id="kat-sync">Salvar no Firebase</button></div><div id="kat-list" class="kat-real-list"></div>';
+    panel.querySelector('.admin-box').appendChild(sec);
+    var list=sec.querySelector('#kat-list'),catSel=sec.querySelector('#kat-cat'),selected=null;
+    function data(){if(!window.CATALOG_DATA)window.CATALOG_DATA={};return window.CATALOG_DATA;}
+    function categories(){return Array.from(new Set((window.ADMIN_CATEGORIES||[]).map(function(c){return c.id;}).concat(Object.keys(data()))));}
+    function fillCats(){catSel.innerHTML=categories().map(function(c){return '<option value="'+c+'">'+c.toUpperCase()+'</option>';}).join('');}
+    function save(){try{localStorage.setItem('kawe_catalog',JSON.stringify(data()));}catch(e){}window.dispatchEvent(new Event('kawe:catalog-updated'));if(typeof window.kawePersistCatalogOnlyFirebase==='function')window.kawePersistCatalogOnlyFirebase();}
+    function reset(){selected=null;sec.querySelector('#kat-title').value='';sec.querySelector('#kat-poster').value='';sec.querySelector('#kat-format').value='';sec.querySelector('#kat-featured').checked=false;sec.querySelector('#kat-top10').checked=false;fillCats();}
+    window.renderKaweTools=function(){fillCats();var rows=[];Object.keys(data()).forEach(function(c){(Array.isArray(data()[c])?data()[c]:[]).forEach(function(it,i){if(!it)return;rows.push('<div class="kat-row"><div><b>'+String(it.title||'Sem título').replace(/[<>&]/g,'')+'</b><small>'+c+' · '+(it.format||it.type||'conteúdo')+(it.featured?' · DESTAQUE':'')+(it.top10?' · TOP 10':'')+'</small></div><div><button type="button" data-edit="'+c+'|'+i+'">Editar</button><button type="button" data-feature="'+c+'|'+i+'">'+(it.featured?'Remover destaque':'Destaque')+'</button><button type="button" data-top="'+c+'|'+i+'">'+(it.top10?'Remover Top 10':'Top 10')+'</button></div></div>');});});list.innerHTML=rows.join('')||'<p>Nenhum conteúdo cadastrado.</p>';};
+    sec.querySelector('#kat-save').onclick=function(){var c=catSel.value||'filmes',it=data()[c]=Array.isArray(data()[c])?data()[c]:[],payload={title:sec.querySelector('#kat-title').value.trim(),poster:sec.querySelector('#kat-poster').value.trim(),format:sec.querySelector('#kat-format').value.trim(),featured:sec.querySelector('#kat-featured').checked,top10:sec.querySelector('#kat-top10').checked};if(!payload.title){if(window.toast)toast('Informe o título.');return;}if(selected&&selected.cat===c)it[selected.i]=Object.assign({},it[selected.i],payload);else it.push(payload);save();renderKaweTools();reset();if(window.toast)toast('Conteúdo salvo no catálogo.');};
+    sec.querySelector('#kat-new').onclick=reset;
+    sec.querySelector('#kat-export').onclick=function(){var blob=new Blob([JSON.stringify(data(),null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=D.createElement('a');a.href=u;a.download='kawe-catalogo-backup.json';a.click();setTimeout(function(){URL.revokeObjectURL(u);},500);};
+    sec.querySelector('#kat-sync').onclick=function(){save();if(window.toast)toast('Catálogo enviado para sincronização Firebase.');};
+    sec.querySelector('#kat-import-file').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{window.CATALOG_DATA=JSON.parse(r.result);save();renderKaweTools();if(window.toast)toast('Backup importado.');}catch(err){if(window.toast)toast('Backup inválido.');}};r.readAsText(f);};
+    list.addEventListener('click',function(e){var b=e.target.closest('button'),key=b&&(b.dataset.edit||b.dataset.feature||b.dataset.top);if(!key)return;var z=key.split('|'),c=z[0],i=Number(z[1]),it=data()[c]&&data()[c][i];if(!it)return;if(b.dataset.edit!==undefined){selected={cat:c,i:i};fillCats();catSel.value=c;sec.querySelector('#kat-title').value=it.title||'';sec.querySelector('#kat-poster').value=it.poster||it.image||'';sec.querySelector('#kat-format').value=it.format||'';sec.querySelector('#kat-featured').checked=!!it.featured;sec.querySelector('#kat-top10').checked=!!it.top10;}else if(b.dataset.feature!==undefined){it.featured=!it.featured;save();renderKaweTools();}else{it.top10=!it.top10;save();renderKaweTools();}});
+    renderKaweTools();
+  }
+  function moveTop(){
+    var home=D.getElementById('home'), hub=D.getElementById('kawe-main-category-hub'), catalog=D.getElementById('kawe-hp'), system=ensureSystem();
+    if(!home) return;
+    if(hub){ hub.remove(); hub=null; }
+    if(system) home.insertBefore(system,home.firstElementChild);
+    if(home.querySelector('.kawe-moved-category')) return;
+    var welcome=home.querySelector('.welcome-msg');
+    if(catalog){
+      if(welcome && welcome.parentNode===home) welcome.insertAdjacentElement('afterend',catalog); else if(home.lastElementChild!==catalog) home.appendChild(catalog);
+      catalog.style.setProperty('display','block','important'); catalog.style.setProperty('visibility','visible','important'); catalog.style.setProperty('opacity','1','important'); catalog.style.setProperty('order','10','important'); catalog.setAttribute('data-kawe-position','below-welcome');
+    }
+  }
+  function restoreCategory(){D.querySelectorAll('#home .kawe-moved-category').forEach(function(sec){var ph=sec.__kawePlaceholder;if(ph&&ph.parentNode){ph.parentNode.insertBefore(sec,ph.nextSibling);ph.remove();}sec.classList.remove('kawe-moved-category');});}
+  function placeCategory(id){var sec=D.getElementById(id),home=D.getElementById('home'),welcome=home&&home.querySelector('.welcome-msg');if(!sec||!home||!welcome)return false;if(id==='home'){restoreCategory();home.classList.add('active');return true;}if(!sec.classList.contains('kawe-moved-category'))restoreCategory();if(sec.parentNode!==home){var ph=D.createComment('KAWE_CATEGORY_PLACEHOLDER_'+id);sec.parentNode.insertBefore(ph,sec);sec.__kawePlaceholder=ph;home.insertBefore(sec,welcome.nextElementSibling);}else if(sec.previousElementSibling!==welcome){home.insertBefore(sec,welcome.nextElementSibling);}home.querySelectorAll('.section').forEach(function(x){if(x!==sec)x.classList.remove('active');});D.querySelectorAll('main>.section').forEach(function(x){if(x!==sec)x.classList.remove('active');});sec.classList.add('active','kawe-moved-category');home.classList.add('active');home.style.setProperty('display','flex','important');window.scrollTo({top:Math.max(0,home.getBoundingClientRect().top+window.scrollY-72),behavior:'instant'});return true;}
+  function wireSidebarTop(){
+    if(typeof window.showSectionFromSidebar!=='function')return;
+    if(window.showSectionFromSidebar.__kaweTopWrapped)return;
+    var base=window.showSectionFromSidebar;
+    window.showSectionFromSidebar=function(id){try{base.call(this,id);}catch(e){console.warn('[KAWE navigation]',e);}setTimeout(function(){if(!placeCategory(id)){var sec=D.getElementById(id);if(sec){sec.classList.add('active');sec.scrollIntoView({behavior:'instant',block:'start'});window.scrollBy(0,-72);}}},80);};window.showSectionFromSidebar.__kaweTopWrapped=true;
+    if(typeof window.showSectionFromHeader==='function'){
+      var headerBase=window.showSectionFromHeader;
+      window.showSectionFromHeader=function(id){try{headerBase.call(this,id);}catch(e){}setTimeout(function(){if(!placeCategory(id)){var sec=D.getElementById(id);if(sec){sec.scrollIntoView({behavior:'instant',block:'start'});window.scrollBy(0,-72);}}},80);};window.showSectionFromHeader.__kaweTopWrapped=true;
+    }
+    window.__kaweSidebarTopWired=true;
+  }
+  window.__kawePlaceCategory=function(id){return placeCategory(id);};
+  function modal(){
+    var m=D.getElementById('player-modal');
+    if(!m || m.__kaweFinalModal) return;
+    m.__kaweFinalModal=true;
+    m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true');
+    m.setAttribute('aria-label','Conteúdo KAWE'); m.setAttribute('aria-hidden',m.classList.contains('open')?'false':'true');
+    m.addEventListener('click',function(e){ if(e.target===m && typeof window.closePlayer==='function') window.closePlayer(); });
+    function syncModalLayers(){var playerOpen=m.classList.contains('open'),detail=D.getElementById('kawe-detail-modal'),detailOpen=!!(detail&&(detail.classList.contains('open')||detail.getAttribute('aria-hidden')==='false'));m.setAttribute('aria-hidden',playerOpen?'false':'true');D.body.classList.toggle('kawe-player-over-detail',playerOpen);D.body.classList.toggle('modal-open',playerOpen||detailOpen);if(playerOpen||detailOpen)D.body.dataset.kaweModalOpen='1';else delete D.body.dataset.kaweModalOpen;}
+    var observer=new MutationObserver(syncModalLayers);
+    observer.observe(m,{attributes:true,attributeFilter:['class','style']});
+    var d=D.getElementById('kawe-detail-modal');
+    if(d && !d.__kaweFinalDetail){
+      d.__kaweFinalDetail=true;
+      d.setAttribute('aria-hidden',d.classList.contains('open')?'false':'true');
+      d.addEventListener('click',function(e){if(e.target===d && typeof window.kaweCloseDetail==='function')window.kaweCloseDetail();});
+      new MutationObserver(function(){d.setAttribute('aria-hidden',d.classList.contains('open')?'false':'true');syncModalLayers();}).observe(d,{attributes:true,attributeFilter:['class','style']});
+    }
+    syncModalLayers();
+  }
+  function addHeaderCategories(){
+    var host=D.getElementById('kawe-player-tools');if(!host||host.querySelector('.kw-header-cat-tools'))return;
+    var list=[['FILMES','filmes'],['SÉRIES','series'],['ANIMES','animes'],['INFANTIL','infantil'],['CURTAS','curtas'],['DOCUMENTÁRIOS','documentarios'],['DORAMAS','doramas'],['NOVELAS','novelas'],['MÚSICA','musica'],['LIVROS','livros'],['PODCASTS','podcasts'],['RÁDIO','radio']];
+    var bar=D.createElement('div');bar.className='kw-header-cat-tools';bar.setAttribute('aria-label','Categorias do catálogo');bar.innerHTML='<span class="kw-cat-caption">CATEGORIAS:</span>'+list.map(function(c){return '<button type="button" data-section="'+c[1]+'">'+c[0]+'</button>';}).join('');
+    bar.addEventListener('click',function(e){var b=e.target.closest('button[data-section]');if(!b)return;if(typeof window.kaweCloseDetail==='function')window.kaweCloseDetail();if(typeof window.closePlayer==='function')window.closePlayer();goCategory(b.dataset.section);});host.appendChild(bar);
+  }
+  function enhanceMainHeader(){
+    var strip=D.querySelector('.header-category-strip'),fs=D.getElementById('kf-fs-btn');
+    if(!strip && fs&&fs.parentNode){strip=D.getElementById('kawe-header-cat-copy');if(!strip){strip=D.createElement('div');strip.className='header-category-strip';strip.id='kawe-header-cat-copy';fs.parentNode.insertBefore(strip,fs.nextSibling);}}
+    if(!strip)return;
+    if(fs&&fs.parentNode&&strip.parentNode===fs.parentNode)fs.parentNode.insertBefore(strip,fs.nextSibling);
+    var list=[['FILMES','filmes'],['SÉRIES','series'],['ANIMES','animes'],['INFANTIL','infantil'],['CURTAS','curtas'],['DOCUMENTÁRIOS','documentarios'],['DORAMAS','doramas'],['NOVELAS','novelas'],['MÚSICA','musica'],['LIVROS','livros'],['PODCASTS','podcasts'],['RÁDIO','radio']];
+    strip.innerHTML=list.map(function(c){return '<button type="button" class="header-category-link '+c[1]+'-btn" data-kawe-header-cat="'+c[1]+'">'+c[0]+'</button>';}).join('');
+    strip.style.setProperty('display','flex','important');strip.style.setProperty('visibility','visible','important');strip.style.setProperty('opacity','1','important');strip.style.setProperty('order','2','important');strip.style.setProperty('max-width','min(58vw,760px)','important');
+    strip.onclick=function(e){var b=e.target.closest('[data-kawe-header-cat]');if(b)goCategory(b.dataset.kaweHeaderCat);};
+    strip.setAttribute('aria-label','Atalhos de categorias ao lado de Tela cheia');
+    if(!window.__kaweHeaderObserver){var root=strip.parentNode;new MutationObserver(function(){var s=D.querySelector('.header-category-strip');if(s&&s.children.length===0)enhanceMainHeader();}).observe(root,{childList:true,subtree:true});window.__kaweHeaderObserver=true;}
+  }
+  function categoryItems(cat,mode){
+    var d=window.CATALOG_DATA||{},arr=Array.isArray(d[cat])?d[cat].slice():[];
+    if(mode==='destaques')arr=arr.filter(function(x){return x&&(x.featured||x.isFeatured||x.destaque);});
+    if(mode==='vistos')arr=arr.filter(function(x){return x&&(x.lastWatched||x.lastViewed||x.watchedAt||x.progress);});
+    if(mode==='top10')arr.sort(function(a,b){return Number(b.rating||b.views||0)-Number(a.rating||a.views||0);});
+    return arr.slice(0,6);
+  }
+  function renderCategorySystem(box,cat,mode){
+    var source=(window.CATALOG_DATA||{})[cat],items=categoryItems(cat,mode);if(!items.length)items=(Array.isArray(source)?source:[]).slice(0,6);
+    box.querySelector('.kcs-items').innerHTML=items.map(function(it){var i=(Array.isArray(source)?source:[]).indexOf(it),title=String(it.title||'Sem título').replace(/[<>&]/g,'');return '<button type="button" class="kcs-item" data-cat="'+cat+'" data-idx="'+i+'"><img loading="lazy" src="'+String(it.poster||it.image||'').replace(/"/g,'&quot;')+'" alt=""><b>'+title+'</b></button>';}).join('')||'<span style="color:#9fb8aa;font-size:11px">Nenhum conteúdo disponível nesta categoria.</span>';
+  }
+  function ensureCategorySystems(){D.querySelectorAll('.kawe-category-system:not(.kawe-launch-system)').forEach(function(x){x.remove();});return;
+    var list=[['filmes','FILMES'],['series','SÉRIES'],['animes','ANIMES'],['infantil','INFANTIL'],['curtas','CURTAS'],['documentarios','DOCUMENTÁRIOS'],['doramas','DORAMAS'],['novelas','NOVELAS'],['musica','MÚSICA'],['livros','LIVROS'],['podcasts','PODCASTS'],['radio','RÁDIO']];
+    list.forEach(function(pair){var sec=D.getElementById(pair[0]);if(!sec)return;var existing=sec.querySelector('.kawe-category-system:not(.kawe-extra-rail)');if(existing){renderCategorySystem(existing,pair[0],existing.querySelector('.kcs-tabs .active')?.dataset.mode||'destaques');}else{existing=D.createElement('div');existing.className='kawe-category-system';existing.innerHTML='<h3>'+pair[1]+' <span>DESTAQUES · VISTO POR ÚLTIMO · TOP 10</span></h3><div class="kcs-tabs"><button type="button" data-mode="destaques" class="active">DESTAQUES</button><button type="button" data-mode="vistos">VISTO POR ÚLTIMO</button><button type="button" data-mode="top10">TOP 10</button></div><div class="kcs-items"></div>';sec.insertBefore(existing,sec.firstElementChild||null);wireCategoryBox(existing,pair[0]);renderCategorySystem(existing,pair[0],'destaques');}
+      var extraModes=[['recomendados','RECOMENDADOS']];extraModes.forEach(function(mode){var rail=sec.querySelector('.kawe-extra-rail[data-mode="'+mode[0]+'"]');if(!rail){rail=D.createElement('div');rail.className='kawe-category-system kawe-extra-rail';rail.dataset.mode=mode[0];rail.innerHTML='<h3>'+pair[1]+' · '+mode[1]+' <span>SELEÇÃO DA CATEGORIA</span></h3><div class="kcs-items"></div>';sec.appendChild(rail);rail.querySelector('.kcs-items').onclick=function(e){var b=e.target.closest('[data-cat]');if(b&&typeof window.playCatalogItem==='function')window.playCatalogItem(b.dataset.cat,Number(b.dataset.idx));};}renderCategorySystem(rail,pair[0],'destaques');});
+    });
+  }
+  function wireCategoryBox(box,cat){box.querySelector('.kcs-tabs').onclick=function(e){var b=e.target.closest('button[data-mode]');if(!b)return;box.querySelectorAll('.kcs-tabs button').forEach(function(x){x.classList.remove('active');});b.classList.add('active');renderCategorySystem(box,cat,b.dataset.mode);};box.querySelector('.kcs-items').onclick=function(e){var b=e.target.closest('[data-cat]');if(b&&typeof window.playCatalogItem==='function')window.playCatalogItem(b.dataset.cat,Number(b.dataset.idx));};}
+  function ensureLaunchSystem(){
+    var sec=D.getElementById('lancamentos');if(!sec)return;var main=D.getElementById('main-content');if(main&&sec.parentNode===main){var first=main.querySelector('.section');if(first&&first!==sec)main.insertBefore(sec,first);}if(sec.querySelector('.kawe-launch-system'))return;var box=D.createElement('div');box.className='kawe-category-system kawe-launch-system';box.innerHTML='<h2>LANÇAMENTOS <span>CONTEÚDOS PUBLICADOS NA CATEGORIA LANÇAMENTOS</span></h2><div class="kcs-tabs"><button type="button" data-mode="recent" class="active">MAIS RECENTES</button><button type="button" data-mode="top10">MAIS VISTOS</button></div><div class="kcs-items"></div>';sec.insertBefore(box,sec.firstElementChild||null);var render=function(mode){var arr=Array.isArray((window.CATALOG_DATA||{}).lancamentos)?(window.CATALOG_DATA||{}).lancamentos:[],items=mode==='top10'?arr.slice().sort(function(a,b){return Number(b.views||b.rating||0)-Number(a.views||a.rating||0);}).slice(0,10):arr.slice().reverse().slice(0,10);box.querySelector('.kcs-items').innerHTML=items.map(function(it){var i=arr.indexOf(it);return '<button type="button" class="kcs-item" data-cat="lancamentos" data-idx="'+i+'"><img loading="lazy" src="'+String(it.poster||it.image||'').replace(/"/g,'&quot;')+'" alt=""><b>'+String(it.title||'Sem título').replace(/[<>&]/g,'')+'</b></button>';}).join('')||'<span style="color:#f9a8d4;font-size:11px">Nenhum lançamento cadastrado ainda.</span>';};box.querySelector('.kcs-tabs').onclick=function(e){var b=e.target.closest('button[data-mode]');if(!b)return;box.querySelectorAll('button').forEach(function(x){x.classList.remove('active');});b.classList.add('active');render(b.dataset.mode);};box.querySelector('.kcs-items').onclick=function(e){var b=e.target.closest('[data-cat]');if(b&&typeof window.playCatalogItem==='function')window.playCatalogItem(b.dataset.cat,Number(b.dataset.idx));};render('recent');
+  }
+  function firebaseOfficialSave(){
+    try{
+      var sync=window.kaweFirestoreSync;
+      if(sync && typeof sync.save==='function') return Promise.resolve(sync.save());
+    }catch(e){ console.warn('[KAWE] Firestore save:',e); }
+    return Promise.resolve(false);
+  }
+  window.kawePersistCatalogOnlyFirebase=firebaseOfficialSave;
+  var catalogSyncDone=false, catalogSyncPending=false;
+  function sync(force){
+    if(catalogSyncPending || (catalogSyncDone && !force)) return;
+    if(!window.CATALOG_DATA || !Object.keys(window.CATALOG_DATA).length) return;
+    if(!window.kaweFirestoreSync || typeof window.kaweFirestoreSync.save!=='function') return;
+    if(!window.kaweCanWriteFirebase || !window.kaweCanWriteFirebase()) return;
+    catalogSyncPending=true;
+    firebaseOfficialSave().then(function(ok){ if(ok) catalogSyncDone=true; })
+      .catch(function(e){ console.warn('[KAWE] sync inicial do catálogo:',e); })
+      .then(function(){ catalogSyncPending=false; });
+  }
+  function boot(){ moveTop(); wireSidebarTop(); modal(); addHeaderCategories(); enhanceMainHeader(); ensureLaunchSystem(); ensureCategorySystems(); ensureAdmin(); sync(); }
+  if(D.readyState==='loading') D.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+  [400,1200,2500,5000].forEach(function(t){setTimeout(boot,t);});
+  var kaweTopHook=setInterval(function(){try{wireSidebarTop();if(window.showSectionFromSidebar&&window.showSectionFromSidebar.__kaweTopWrapped)clearInterval(kaweTopHook);}catch(e){}},250);
+  D.addEventListener('click',function(e){var el=e.target&&e.target.closest&&e.target.closest('[onclick*="showSectionFromSidebar"],[onclick*="showSectionFromHeader"]');if(!el)return;var m=(el.getAttribute('onclick')||'').match(/showSectionFrom(?:Sidebar|Header)\(['"]([^'"]+)['"]\)/);if(m)setTimeout(function(){if(typeof placeCategory==='function')placeCategory(m[1]);},220);},true);
+  window.addEventListener('load',function(){setTimeout(sync,1500);});
+  window.addEventListener('kawe:catalog-updated',function(){moveTop(); ensureLaunchSystem(); ensureCategorySystems(); sync(true);});
+  try{ new MutationObserver(function(){moveTop();}).observe(D.getElementById('home')||D.body,{childList:true,subtree:true}); }catch(e){}
+  window.addEventListener('kawe:firestore-ready',function(){setTimeout(sync,300);});
+  function repairChatInput(){var i=D.getElementById('ksoc-msg-input');if(i){i.disabled=false;i.readOnly=false;i.removeAttribute('aria-disabled');i.setAttribute('type','text');i.style.setProperty('pointer-events','auto','important');i.style.setProperty('user-select','text','important');}}
+  D.addEventListener('focusin',function(e){if(e.target&&e.target.id==='ksoc-msg-input')repairChatInput();});
+  try{new MutationObserver(function(){repairChatInput();}).observe(D.getElementById('ksoc-msg-body')||D.body,{childList:true,subtree:true});}catch(e){}
+  setTimeout(repairChatInput,500);setTimeout(repairChatInput,1500);setTimeout(repairChatInput,3000);
+  D.addEventListener('keydown',function(e){
+    var m=D.getElementById('player-modal');
+    if(e.key==='Escape' && m && m.classList.contains('open') && typeof window.closePlayer==='function') window.closePlayer();
+    var d=D.getElementById('kawe-detail-modal');if(e.key==='Escape'&&d&&d.classList.contains('open')&&typeof window.kaweCloseDetail==='function')window.kaweCloseDetail();
+  });
+  D.addEventListener('click',function(e){
+    var close=e.target.closest && e.target.closest('#player-modal [data-close-player], #player-modal .kawe-repaired-close');
+    if(close && typeof window.closePlayer==='function') window.closePlayer();
+    if(e.target&&e.target.id==='kawe-detail-modal'&&typeof window.kaweCloseDetail==='function')window.kaweCloseDetail();
+  });
+})();
+</script>
+<!-- KAWE_FINAL_CORRECTION_V2_END -->
+
+<!-- KAWE_HEADER_SHORTCUTS_MENU_SEARCH_FIX_V1 -->
+<style id="kawe-header-shortcuts-menu-search-fix">
+  /* Cabeçalho previsível: controles principais em linhas claras, sem espremê-los. */
+  #main-content > header, body > header {
+    display:flex !important; flex-wrap:wrap !important; align-items:center !important;
+    justify-content:flex-start !important; gap:14px !important; overflow:visible !important;
+    min-height:0 !important; padding:16px clamp(12px,2vw,28px) !important;
+    box-sizing:border-box !important;
+  }
+  #main-content > header .header-left,
+  body > header .header-left,
+  #main-content > header #kawe-hz-left,
+  body > header #kawe-hz-left {
+    display:flex !important; flex:1 1 100% !important; width:100% !important;
+    min-width:0 !important; max-width:none !important; flex-wrap:wrap !important;
+    align-items:center !important; justify-content:flex-start !important; gap:14px !important;
+    box-sizing:border-box !important;
+  }
+
+  /* Botão de três barras bem maior, centralizado e com área de toque confortável. */
+  #main-content > header .hamburger,
+  body > header .hamburger,
+  #main-content > header #kawe-ham-slot,
+  body > header #kawe-ham-slot {
+    display:inline-flex !important; flex:0 0 82px !important; width:82px !important;
+    min-width:82px !important; height:82px !important; min-height:82px !important;
+    align-items:center !important; justify-content:center !important; gap:9px !important;
+    padding:16px !important; border-radius:19px !important; box-sizing:border-box !important;
+    position:relative !important; z-index:80 !important; transform:none !important;
+  }
+  #main-content > header .hamburger span,
+  body > header .hamburger span {
+    display:block !important; width:42px !important; height:5px !important;
+    min-height:5px !important; border-radius:999px !important; margin:0 !important;
+  }
+
+  /* Campo de pesquisa ampliado, sem largura rígida que empurre os outros elementos. */
+  #main-content > header .search-container,
+  body > header .search-container,
+  #main-content > header #kf-search,
+  body > header #kf-search {
+    display:flex !important; order:10 !important; flex:1 1 560px !important;
+    width:auto !important; min-width:min(100%,340px) !important; max-width:900px !important;
+    height:72px !important; min-height:72px !important; margin:0 !important;
+    border-radius:18px !important; box-sizing:border-box !important; overflow:visible !important;
+    position:relative !important; z-index:90 !important;
+  }
+  #main-content > header .search-container input,
+  body > header .search-container input,
+  #main-content > header #kf-search input,
+  body > header #kf-search input,
+  #main-content > header #kf-search #kf-q,
+  body > header #kf-search #kf-q {
+    width:100% !important; min-width:0 !important; max-width:100% !important;
+    height:72px !important; min-height:72px !important; padding:0 22px 0 58px !important;
+    border-radius:18px !important; font-size:clamp(18px,1.5vw,22px) !important;
+    line-height:1.3 !important; box-sizing:border-box !important;
+  }
+  #main-content > header .search-container .search-icon,
+  body > header .search-container .search-icon,
+  #main-content > header #kf-search .search-icon,
+  body > header #kf-search .search-icon {
+    width:28px !important; height:28px !important; left:18px !important;
+  }
+  #kawe-sugg, #kawe-sugg2 {
+    width:min(900px,94vw) !important; max-width:94vw !important; min-width:0 !important;
+    max-height:min(76vh,760px) !important; padding:14px !important; z-index:100020 !important;
+  }
+  #kawe-sugg .kawe-sg, #kawe-sugg2 .kawe-sg { min-height:96px !important; padding:14px !important; gap:16px !important; }
+  #kawe-sugg .kawe-sg img, #kawe-sugg2 .kawe-sg img { width:76px !important; height:112px !important; }
+  #kawe-sugg .kawe-sg .sg-t, #kawe-sugg2 .kawe-sg .sg-t { font-size:17px !important; }
+  #kawe-sugg .kawe-sg .sg-d, #kawe-sugg2 .kawe-sg .sg-d { font-size:14px !important; }
+
+  /* Atalhos viram uma grade ordenada, responsiva, com alvos uniformes e sem sobreposição. */
+  #main-content > header .header-category-strip,
+  body > header .header-category-strip {
+    display:grid !important; order:30 !important; flex:1 1 100% !important;
+    width:100% !important; min-width:0 !important; max-width:100% !important;
+    grid-template-columns:repeat(auto-fit,minmax(138px,1fr)) !important;
+    align-items:stretch !important; justify-content:stretch !important; gap:10px !important;
+    height:auto !important; min-height:0 !important; max-height:none !important;
+    padding:8px 0 2px !important; overflow:visible !important; white-space:normal !important;
+    box-sizing:border-box !important; scrollbar-width:auto !important;
+  }
+  #main-content > header .header-category-strip > .header-category-link,
+  body > header .header-category-strip > .header-category-link {
+    display:flex !important; position:relative !important; inset:auto !important;
+    float:none !important; transform:none !important; flex:initial !important;
+    width:100% !important; min-width:0 !important; min-height:50px !important; height:auto !important;
+    align-items:center !important; justify-content:center !important; text-align:center !important;
+    padding:12px 14px !important; margin:0 !important; border-radius:13px !important;
+    border:1px solid rgba(34,197,94,.42) !important;
+    background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(6,28,18,.92)) !important;
+    color:#eafff0 !important; font-size:14px !important; font-weight:900 !important;
+    letter-spacing:.45px !important; line-height:1.2 !important; white-space:normal !important;
+    box-sizing:border-box !important; cursor:pointer !important;
+    box-shadow:0 5px 16px rgba(0,0,0,.22) !important;
+    transition:background .16s ease,border-color .16s ease,box-shadow .16s ease !important;
+  }
+  #main-content > header .header-category-strip > .header-category-link:hover,
+  body > header .header-category-strip > .header-category-link:hover,
+  #main-content > header .header-category-strip > .header-category-link:focus-visible,
+  body > header .header-category-strip > .header-category-link:focus-visible {
+    background:linear-gradient(135deg,#22c55e,#16a34a) !important; border-color:#86efac !important;
+    color:#04150a !important; box-shadow:0 8px 22px rgba(34,197,94,.25) !important;
+    outline:3px solid rgba(134,239,172,.35) !important; outline-offset:2px !important;
+  }
+
+  /* Drawer de navegação e seus itens também ficam maiores e mais fáceis de tocar. */
+  #sidebar.sidebar, .sidebar#sidebar {
+    width:min(460px,92vw) !important; max-width:92vw !important;
+    box-sizing:border-box !important; padding:24px 18px 28px !important;
+  }
+  #sidebar .sidebar-menu { gap:10px !important; padding:10px 2px 24px !important; }
+  #sidebar .sidebar-link {
+    min-height:60px !important; padding:18px 20px !important; gap:14px !important;
+    border-radius:16px !important; font-size:18px !important; line-height:1.25 !important;
+  }
+  #sidebar .sidebar-link svg, #sidebar .sidebar-link img { width:28px !important; height:28px !important; flex:0 0 28px !important; }
+  #sidebar .sidebar-close { width:58px !important; height:58px !important; }
+
+  @media (max-width:760px) {
+    #main-content > header, body > header { gap:10px !important; padding:12px !important; }
+    #main-content > header .header-left,
+    body > header .header-left,
+    #main-content > header #kawe-hz-left,
+    body > header #kawe-hz-left { gap:10px !important; }
+    #main-content > header .hamburger,
+    body > header .hamburger,
+    #main-content > header #kawe-ham-slot,
+    body > header #kawe-ham-slot {
+      flex-basis:72px !important; width:72px !important; min-width:72px !important;
+      height:72px !important; min-height:72px !important; padding:13px !important;
+    }
+    #main-content > header .hamburger span, body > header .hamburger span { width:38px !important; }
+    #main-content > header .search-container,
+    body > header .search-container,
+    #main-content > header #kf-search,
+    body > header #kf-search {
+      flex:1 1 calc(100% - 86px) !important; width:calc(100% - 86px) !important;
+      min-width:0 !important; max-width:none !important; height:66px !important; min-height:66px !important;
+    }
+    #main-content > header .search-container input,
+    body > header .search-container input,
+    #main-content > header #kf-search input,
+    body > header #kf-search input,
+    #main-content > header #kf-search #kf-q,
+    body > header #kf-search #kf-q { height:66px !important; min-height:66px !important; font-size:18px !important; }
+    #main-content > header .header-category-strip,
+    body > header .header-category-strip {
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;
+    }
+    #main-content > header .header-category-strip > .header-category-link,
+    body > header .header-category-strip > .header-category-link {
+      min-height:52px !important; padding:11px 8px !important; font-size:12.5px !important;
+    }
+    #sidebar.sidebar, .sidebar#sidebar { width:min(430px,94vw) !important; max-width:94vw !important; }
+    #sidebar .sidebar-link { min-height:58px !important; font-size:17px !important; }
+  }
+  @media (max-width:380px) {
+    #main-content > header .header-category-strip,
+    body > header .header-category-strip { grid-template-columns:1fr 1fr !important; gap:6px !important; }
+    #main-content > header .header-category-strip > .header-category-link,
+    body > header .header-category-strip > .header-category-link { font-size:11.5px !important; }
+  }
+</style>
+<script id="kawe-header-shortcuts-menu-search-fix-js">
+(function(){
+  'use strict';
+  var categories = ['filmes','series','animes','infantil','curtas','documentarios','doramas','novelas','musica','livros','podcasts','radio'];
+  var labels = {filmes:'FILMES',series:'SÉRIES',animes:'ANIMES',infantil:'INFANTIL',curtas:'CURTAS',documentarios:'DOCUMENTÁRIOS',doramas:'DORAMAS',novelas:'NOVELAS',musica:'MÚSICA',livros:'LIVROS',podcasts:'PODCASTS',radio:'RÁDIO'};
+  function go(id){
+    if(categories.indexOf(id)<0) return;
+    try {
+      if(typeof window.showSectionFromHeader==='function') window.showSectionFromHeader(id);
+      else if(typeof window.showSectionFromSidebar==='function') window.showSectionFromSidebar(id);
+      else { var section=document.getElementById(id); if(section){ section.classList.add('active'); section.scrollIntoView({behavior:'smooth',block:'start'}); } }
+    } catch(e) { console.warn('[KAWE] falha ao abrir atalho '+id,e); }
+    window.setTimeout(function(){
+      try { if(typeof window.__kawePlaceCategory==='function' && window.__kawePlaceCategory(id)) return; } catch(e){}
+      var section=document.getElementById(id);
+      if(section){ section.classList.add('active'); section.scrollIntoView({behavior:'smooth',block:'start'}); }
+    },120);
+  }
+  function normalizeHeader(){
+    var header=document.querySelector('#main-content > header') || document.querySelector('body > header');
+    if(!header) return;
+    /* Remove somente barras antigas duplicadas; preserva a faixa principal de atalhos. */
+    ['kawe-header-category-buttons','kawe-hz-cats','kawe-hd-cats'].forEach(function(id){
+      var old=document.getElementById(id); if(old && header.contains(old)) old.remove();
+    });
+    var strip=header.querySelector('.header-category-strip');
+    if(strip){
+      var seen=Object.create(null);
+      strip.innerHTML='';
+      categories.forEach(function(id){
+        if(seen[id]) return; seen[id]=true;
+        var button=document.createElement('button');
+        button.type='button'; button.className='header-category-link '+id+'-btn';
+        button.setAttribute('data-kawe-header-cat',id);
+        button.setAttribute('aria-label','Abrir categoria '+labels[id]);
+        button.textContent=labels[id];
+        strip.appendChild(button);
+      });
+      strip.setAttribute('aria-label','Atalhos para categorias do catálogo');
+      strip.onclick=function(event){
+        var button=event.target.closest('[data-kawe-header-cat]');
+        if(!button || !strip.contains(button)) return;
+        event.preventDefault(); event.stopPropagation();
+        go(button.getAttribute('data-kawe-header-cat'));
+      };
+    }
+    var search=header.querySelector('#search-input, #kf-q');
+    if(search){
+      search.setAttribute('aria-label','Buscar filmes, séries e outros conteúdos');
+      if(!search.getAttribute('autocomplete')) search.setAttribute('autocomplete','off');
+    }
+    var ham=header.querySelector('.hamburger');
+    if(ham){ ham.setAttribute('aria-controls','sidebar'); if(!ham.getAttribute('aria-expanded')) ham.setAttribute('aria-expanded','false'); }
+  }
+  function boot(){ normalizeHeader(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+  [300,900,1800,3200,5200].forEach(function(ms){ window.setTimeout(boot,ms); });
+  window.addEventListener('resize',boot,{passive:true});
+})();
+</script>
+
+<!-- KAWE_PERFORMANCE_FIX_V1 -->
+<script id="kawe-performance-fix-v1">
+(function(){
+  'use strict';
+  /* Uma única busca após pequena pausa; os handlers originais e resultados são preservados. */
+  var original=window.searchContent, timer=0;
+  if(typeof original==='function' && !original.__kawePerfDebounced){
+    var debounced=function(){
+      var context=this, args=arguments;
+      window.clearTimeout(timer);
+      timer=window.setTimeout(function(){ original.apply(context,args); },220);
+    };
+    debounced.__kawePerfDebounced=true;
+    debounced.__kawePerfOriginal=original;
+    window.searchContent=debounced;
+  }
+})();
+</script>
+<style id="kawe-header-recovery-v1">
+  #main-content>header,body>header{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important;overflow:visible!important}
+  #main-content>header #kawe-hz-left,body>header #kawe-hz-left,#main-content>header .header-left,body>header .header-left{display:flex!important;flex:1 1 100%!important;width:100%!important;min-width:0!important;max-width:100%!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important}
+  #main-content>header .search-container,body>header .search-container,#main-content>header #kf-search,body>header #kf-search{display:flex!important;visibility:visible!important;opacity:1!important;flex:1 1 420px!important;width:auto!important;min-width:min(100%,280px)!important;max-width:760px!important;height:66px!important;min-height:66px!important;margin:0!important;position:relative!important;overflow:visible!important}
+  #main-content>header .search-container input,body>header .search-container input,#main-content>header #kf-search input,body>header #kf-search input{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;height:66px!important;min-height:66px!important;max-width:100%!important;font-size:19px!important;box-sizing:border-box!important}
+  #main-content>header .header-category-strip,body>header .header-category-strip{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(132px,1fr))!important;flex:1 1 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;order:30!important;gap:9px!important;height:auto!important;max-height:none!important;overflow:visible!important;white-space:normal!important}
+  #main-content>header .header-category-strip>.header-category-link,body>header .header-category-strip>.header-category-link{display:flex!important;visibility:visible!important;opacity:1!important;position:relative!important;inset:auto!important;transform:none!important;float:none!important;flex:initial!important;width:100%!important;min-width:0!important;min-height:48px!important;justify-content:center!important;align-items:center!important;text-align:center!important;white-space:normal!important}
+  #main-content>header .hamburger,body>header .hamburger{display:inline-flex!important;visibility:visible!important;opacity:1!important;flex:0 0 78px!important;width:78px!important;min-width:78px!important;height:78px!important;min-height:78px!important}
+  @media(max-width:760px){#main-content>header .search-container,body>header .search-container,#main-content>header #kf-search,body>header #kf-search{flex:1 1 calc(100% - 90px)!important;width:calc(100% - 90px)!important;min-width:0!important;max-width:none!important;height:64px!important;min-height:64px!important}#main-content>header .search-container input,body>header .search-container input,#main-content>header #kf-search input,body>header #kf-search input{height:64px!important;min-height:64px!important;font-size:17px!important}#main-content>header .header-category-strip,body>header .header-category-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}}
+</style>
+<script id="kawe-header-recovery-v1-js">
+(function(){
+  'use strict';
+  var CATS=[['filmes','FILMES'],['series','SÉRIES'],['animes','ANIMES'],['infantil','INFANTIL'],['curtas','CURTAS'],['documentarios','DOCUMENTÁRIOS'],['doramas','DORAMAS'],['novelas','NOVELAS'],['musica','MÚSICA'],['livros','LIVROS'],['podcasts','PODCASTS'],['radio','RÁDIO']];
+  function navigate(id){
+    try{if(typeof window.showSectionFromHeader==='function')window.showSectionFromHeader(id);else if(typeof window.showSectionFromSidebar==='function')window.showSectionFromSidebar(id);}catch(e){}
+    window.setTimeout(function(){try{if(typeof window.__kawePlaceCategory==='function'&&window.__kawePlaceCategory(id))return;}catch(e){}var sec=document.getElementById(id);if(sec){sec.classList.add('active');sec.scrollIntoView({behavior:'smooth',block:'start'});}},120);
+  }
+  function repair(){
+    var h=document.querySelector('#main-content>header')||document.querySelector('body>header');if(!h)return;
+    var input=document.getElementById('search-input')||document.getElementById('kf-q');
+    var search=input&&(input.closest('.search-container')||input.closest('#kf-search'));
+    if(input&&!search){search=document.createElement('div');search.className='search-container';search.id='kf-search';search.innerHTML='<svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15l.28.27v.79l5 5L20.5 19zM9.5 14a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>';search.appendChild(input);}
+    if(!input){search=h.querySelector('#kf-search,.search-container');if(!search){search=document.createElement('div');search.id='kf-search';search.className='search-container';search.innerHTML='<svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.5 6.5 0 1 0 13 15l.28.27v.79l5 5L20.5 19zM9.5 14a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"/></svg>';input=document.createElement('input');input.id='search-input';input.type='search';input.placeholder='Buscar filmes, séries, animes...';search.appendChild(input);input.addEventListener('input',function(){if(typeof window.searchContent==='function')window.searchContent();});input.addEventListener('keydown',function(e){if(e.key==='Enter'&&typeof window.searchContent==='function')window.searchContent();});}}
+    if(search&&!h.contains(search))h.appendChild(search);
+    if(input){input.setAttribute('aria-label','Buscar filmes, séries, animes e outros conteúdos');input.setAttribute('autocomplete','off');}
+    var strip=h.querySelector('.header-category-strip');
+    if(!strip){strip=document.createElement('nav');strip.className='header-category-strip';h.appendChild(strip);}
+    if(strip.parentNode!==h)h.appendChild(strip);
+    if(!strip.dataset.kaweRecoveryBuilt){
+      strip.innerHTML='';CATS.forEach(function(pair){var b=document.createElement('button');b.type='button';b.className='header-category-link '+pair[0]+'-btn';b.dataset.kaweHeaderCat=pair[0];b.textContent=pair[1];b.setAttribute('aria-label','Abrir categoria '+pair[1]);strip.appendChild(b);});
+      strip.dataset.kaweRecoveryBuilt='1';strip.setAttribute('aria-label','Atalhos de categorias');
+    }
+    if(!strip.dataset.kaweRecoveryBound){strip.addEventListener('click',function(e){var b=e.target.closest('[data-kawe-header-cat]');if(!b)return;e.preventDefault();navigate(b.dataset.kaweHeaderCat);});strip.dataset.kaweRecoveryBound='1';}
+    ['kawe-header-category-buttons','kawe-hz-cats','kawe-hd-cats'].forEach(function(id){var el=document.getElementById(id);if(el&&h.contains(el))el.style.setProperty('display','none','important');});
+    var ham=h.querySelector('.hamburger');if(ham){ham.setAttribute('aria-controls','sidebar');if(!ham.hasAttribute('aria-expanded'))ham.setAttribute('aria-expanded','false');}
+  }
+  function boot(){try{repair();}catch(e){console.warn('[KAWE] recuperação do cabeçalho:',e);}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  [250,800,1800,3500].forEach(function(ms){window.setTimeout(boot,ms);});
+})();
+</script>
+
+<!-- KAWE_BLANK_HOME_FIX_V1 -->
+<style id="kawe-blank-home-fix">
+  /* O modo leve desliga animações globalmente; a home usava hp-fade (opacity:0)
+     esperando uma animação que já não roda. Preserve o modo leve e mostre os cards. */
+  #kawe-hp .hp-fade,
+  #kawe-hp .hp-card.hp-fade {
+    opacity:1 !important;
+    visibility:visible !important;
+    transform:none !important;
+    animation:none !important;
+  }
+  /* Conteúdo fica renderizado; login e boas-vindas permanecem sobre ele. */
+  #main-content { opacity:1 !important; visibility:visible !important; }
+</style>
+<script id="kawe-blank-home-fix-js">
+(function(){
+  'use strict';
+  function revealHomeCards(){
+    document.querySelectorAll('#kawe-hp .hp-fade').forEach(function(card){
+      card.style.setProperty('opacity','1','important');
+      card.style.setProperty('visibility','visible','important');
+      card.style.setProperty('transform','none','important');
+    });
+    var main=document.getElementById('main-content');
+    if(main){
+      main.style.setProperty('opacity','1','important');
+      main.style.setProperty('visibility','visible','important');
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',revealHomeCards,{once:true});
+  else revealHomeCards();
+  window.addEventListener('load',revealHomeCards,{once:true});
+  window.addEventListener('kawe:catalog-updated',revealHomeCards);
+})();
+</script>
+
+<!-- KAWE_HEADER_MENU_SEARCH_ONLY_V1 -->
+<style id="kawe-header-menu-search-only">
+  /* No cabeçalho ficam somente o botão de menu e a pesquisa. */
+  #main-content > header,
+  body > header:not(#kawe-repaired-head) {
+    display:flex !important; flex-flow:row nowrap !important; align-items:center !important;
+    justify-content:flex-start !important; gap:14px !important; width:100% !important;
+    min-height:88px !important; padding:10px 16px !important; box-sizing:border-box !important;
+  }
+  #main-content > header .header-left, #main-content > header #kawe-hz-left,
+  body > header:not(#kawe-repaired-head) .header-left,
+  body > header:not(#kawe-repaired-head) #kawe-hz-left { display:contents !important; }
+  #main-content > header > #kawe-hz-left,
+  body > header:not(#kawe-repaired-head) > #kawe-hz-left {
+    display:flex !important; flex:0 0 78px !important; width:78px !important;
+    min-width:78px !important; max-width:78px !important; height:78px !important;
+    align-items:center !important; justify-content:center !important; overflow:visible !important;
+  }
+  #main-content > header #kawe-ham-slot,
+  body > header:not(#kawe-repaired-head) #kawe-ham-slot {
+    display:flex !important; flex:0 0 78px !important; order:0 !important;
+    align-items:center !important; justify-content:center !important;
+  }
+  #main-content > header .hamburger,
+  body > header:not(#kawe-repaired-head) .hamburger {
+    display:inline-flex !important; flex:0 0 78px !important; width:78px !important;
+    min-width:78px !important; height:78px !important; min-height:78px !important;
+    margin:0 !important; order:0 !important; align-items:center !important;
+    justify-content:center !important; visibility:visible !important; opacity:1 !important; z-index:100 !important;
+  }
+  #main-content > header .search-container, #main-content > header #kf-search,
+  body > header:not(#kawe-repaired-head) .search-container,
+  body > header:not(#kawe-repaired-head) #kf-search {
+    display:flex !important; flex:1 1 0 !important; width:auto !important; min-width:0 !important;
+    max-width:none !important; height:64px !important; min-height:64px !important;
+    margin:0 !important; order:1 !important; visibility:visible !important; opacity:1 !important; box-sizing:border-box !important;
+  }
+  #main-content > header .search-container input, #main-content > header #kf-search input,
+  body > header:not(#kawe-repaired-head) .search-container input,
+  body > header:not(#kawe-repaired-head) #kf-search input {
+    display:block !important; flex:1 1 auto !important; width:100% !important; min-width:0 !important;
+    height:64px !important; min-height:64px !important; font-size:18px !important; box-sizing:border-box !important;
+  }
+  #main-content > header .header-nav, #main-content > header .header-category-strip,
+  #main-content > header .logo, #main-content > header .auth-header-btn,
+  #main-content > header .catalogo-btn, #main-content > header #v12-tut-btn,
+  #main-content > header #kawe-hz-cats, #main-content > header #kawe-hz-extras-wrap,
+  #main-content > header #kawe-hz-spacer, #main-content > header #kawe-header-category-buttons,
+  #main-content > header #kawe-hd-cats, #main-content > header #kawe-header-cat-copy,
+  #main-content > header .kw-header-cat-tools, #main-content > header #kf-fs-btn,
+  #main-content > header button:not(.hamburger),
+  body > header:not(#kawe-repaired-head) .header-nav,
+  body > header:not(#kawe-repaired-head) .header-category-strip,
+  body > header:not(#kawe-repaired-head) .logo,
+  body > header:not(#kawe-repaired-head) .auth-header-btn,
+  body > header:not(#kawe-repaired-head) .catalogo-btn,
+  body > header:not(#kawe-repaired-head) #v12-tut-btn,
+  body > header:not(#kawe-repaired-head) #kawe-hz-cats,
+  body > header:not(#kawe-repaired-head) #kawe-hz-extras-wrap,
+  body > header:not(#kawe-repaired-head) #kawe-hz-spacer,
+  body > header:not(#kawe-repaired-head) #kawe-header-category-buttons,
+  body > header:not(#kawe-repaired-head) #kawe-hd-cats,
+  body > header:not(#kawe-repaired-head) #kawe-header-cat-copy,
+  body > header:not(#kawe-repaired-head) .kw-header-cat-tools,
+  body > header:not(#kawe-repaired-head) #kf-fs-btn,
+  body > header:not(#kawe-repaired-head) button:not(.hamburger) {
+    display:none !important; visibility:hidden !important;
+  }
+  /* Esconde apenas a chamada solicitada na home; mantém outros avisos e o login. */
+  #home > .welcome-msg { display:none !important; }
+
+  /* O painel tinha 360–460px, mas herdava left:-320px e ficava parcialmente visível.
+     Deslocamento por transform acompanha qualquer largura e mantém a abertura pelo botão. */
+  #sidebar.sidebar {
+    left:0 !important; transform:translateX(-105%) !important;
+    visibility:hidden !important; pointer-events:none !important;
+    transition:transform .28s ease, visibility 0s linear .28s !important;
+  }
+  #sidebar.sidebar.open {
+    left:0 !important; transform:translateX(0) !important;
+    visibility:visible !important; pointer-events:auto !important;
+    transition:transform .28s ease, visibility 0s linear 0s !important;
+  }
+  #sidebarOverlay { display:none !important; opacity:0 !important; pointer-events:none !important; }
+  #sidebarOverlay.active { display:block !important; opacity:1 !important; pointer-events:auto !important; }
+
+  @media (max-width:600px) {
+    #main-content > header, body > header:not(#kawe-repaired-head) { gap:10px !important; padding:8px 10px !important; min-height:72px !important; }
+    #main-content > header #kawe-ham-slot, body > header:not(#kawe-repaired-head) #kawe-ham-slot,
+    #main-content > header .hamburger, body > header:not(#kawe-repaired-head) .hamburger {
+      flex-basis:62px !important; width:62px !important; min-width:62px !important;
+      height:62px !important; min-height:62px !important;
+    }
+    #main-content > header .search-container, #main-content > header #kf-search,
+    body > header:not(#kawe-repaired-head) .search-container,
+    body > header:not(#kawe-repaired-head) #kf-search,
+    #main-content > header .search-container input, #main-content > header #kf-search input,
+    body > header:not(#kawe-repaired-head) .search-container input,
+    body > header:not(#kawe-repaired-head) #kf-search input { height:58px !important; min-height:58px !important; font-size:16px !important; }
+  }
+</style>
+<script id="kawe-header-menu-search-only-js">
+(function(){
+  'use strict';
+  var sidebar=document.getElementById('sidebar');
+  var overlay=document.getElementById('sidebarOverlay');
+  var initialCloseDone=false;
+  function setOpen(open){
+    sidebar=document.getElementById('sidebar');
+    overlay=document.getElementById('sidebarOverlay');
+    if(!sidebar)return;
+    open=!!open;
+    sidebar.classList.toggle('open',open);
+    if(overlay){overlay.classList.toggle('active',open);overlay.setAttribute('aria-hidden',open?'false':'true');}
+    document.body.classList.toggle('kawe-sidebar-open',open);
+    document.querySelectorAll('.hamburger').forEach(function(button){
+      button.setAttribute('aria-expanded',open?'true':'false');
+      button.setAttribute('aria-label',open?'Fechar menu':'Abrir menu');
+    });
+  }
+  window.toggleSidebar=function(){sidebar=document.getElementById('sidebar');setOpen(!(sidebar&&sidebar.classList.contains('open')));};
+  window.closeSidebar=function(){setOpen(false);};
+  function clean(){
+    var home=document.getElementById('home');
+    if(home) home.querySelectorAll(':scope > .welcome-msg').forEach(function(el){el.remove();});
+    var header=document.querySelector('#main-content > header') || document.querySelector('body > header:not(#kawe-repaired-head)');
+    if(header){
+      header.style.setProperty('display','flex','important');
+      header.style.setProperty('flex-flow','row nowrap','important');
+      header.style.setProperty('align-items','center','important');
+      header.style.setProperty('gap','14px','important');
+      var left=header.querySelector('#kawe-hz-left');
+      if(left){
+        left.style.setProperty('display','flex','important'); left.style.setProperty('flex','0 0 78px','important');
+        left.style.setProperty('width','78px','important'); left.style.setProperty('min-width','78px','important');
+        left.style.setProperty('max-width','78px','important'); left.style.setProperty('height','78px','important');
+        left.style.setProperty('align-items','center','important'); left.style.setProperty('justify-content','center','important');
+      }
+      header.querySelectorAll('.header-nav,.header-category-strip,#kawe-hz-cats,#kawe-header-category-buttons,#kawe-hd-cats,#kawe-header-cat-copy,#kawe-hz-extras-wrap,#v12-tut-btn,.auth-header-btn,.catalogo-btn,.kw-header-cat-tools,#kf-fs-btn').forEach(function(el){
+        el.style.setProperty('display','none','important'); el.style.setProperty('visibility','hidden','important');
+      });
+      var ham=header.querySelector('.hamburger');
+      if(ham){var open=!!(sidebar&&sidebar.classList.contains('open'));ham.setAttribute('aria-controls','sidebar');ham.setAttribute('aria-expanded',open?'true':'false');ham.setAttribute('aria-label',open?'Fechar menu':'Abrir menu');}
+      var search=header.querySelector('#kf-search')||header.querySelector('.search-container');
+      if(search){
+        search.style.setProperty('display','flex','important'); search.style.setProperty('flex','1 1 0','important');
+        search.style.setProperty('width','auto','important'); search.style.setProperty('min-width','0','important');
+        search.style.setProperty('max-width','none','important'); search.style.setProperty('height','64px','important');
+      }
+      header.querySelectorAll('#search-input,#kf-q').forEach(function(input){input.setAttribute('aria-label','Buscar filmes, séries e outros conteúdos');});
+      var input=header.querySelector('#search-input,#kf-q');
+      if(input)input.setAttribute('aria-label','Buscar filmes, séries e outros conteúdos');
+    }
+    if(!initialCloseDone){setOpen(false);initialCloseDone=true;}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean,{once:true});else clean();
+  document.addEventListener('keydown',function(event){if(event.key==='Escape')window.closeSidebar();});
+  document.querySelectorAll('#sidebar .sidebar-close').forEach(function(button){
+    button.addEventListener('click',function(){window.closeSidebar();},true);
+  });
+  [300,900,1800,3500,6000].forEach(function(ms){window.setTimeout(clean,ms);});
+})();
+</script>
+
+<!-- KAWE_FINAL_PATCH_V1 -->
+<style id="kawe-final-patch-css">
+/* Menu grande, proporcionado ao campo de pesquisa */
+#main-content>header .hamburger,body>header .hamburger{box-sizing:border-box!important;flex:0 0 76px!important;width:76px!important;min-width:76px!important;height:68px!important;min-height:68px!important;display:inline-flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;padding:10px!important;border-radius:17px!important}
+#main-content>header .hamburger span,body>header .hamburger span{display:block!important;width:38px!important;height:4px!important;min-height:4px!important;border-radius:99px!important;transform:none!important}
+#main-content>header #kawe-ham-slot,body>header #kawe-ham-slot{flex:0 0 82px!important;width:82px!important;min-width:82px!important;min-height:68px!important}
+#main-content>header #kf-search,#main-content>header .search-container,body>header #kf-search,body>header .search-container{box-sizing:border-box!important;flex:1 1 460px!important;width:auto!important;min-width:180px!important;min-height:68px!important;height:68px!important;border-radius:17px!important}
+#main-content>header #kf-search input,#main-content>header .search-container input,body>header #kf-search input,body>header .search-container input{height:68px!important;min-height:68px!important;font-size:19px!important;padding-left:58px!important}
+#main-content>header #kf-search .search-icon,#main-content>header .search-container .search-icon,body>header #kf-search .search-icon,body>header .search-container .search-icon{width:25px!important;height:25px!important;left:18px!important}
+main>section.kawe-route-top{scroll-margin-top:100px}
+/* Chat amplo e responsivo */
+#chat.active{padding:clamp(78px,8vh,110px) clamp(12px,2vw,32px) 36px!important}#chat .chat-container{width:min(1320px,100%)!important;height:min(900px,calc(100vh - 130px))!important;min-height:650px!important}#chat .chat-messages{padding:clamp(22px,3vw,42px) clamp(16px,4vw,64px)!important}#chat .chat-message{font-size:16px!important;max-width:min(82%,820px)!important}#chat .chat-input-row{gap:12px!important;padding:20px 28px 24px!important}#chat .chat-input{height:58px!important;font-size:17px!important}#chat .chat-attach-btn,#chat .chat-send{height:58px!important;min-width:58px!important;font-size:14px!important}
+#kawe-chat-status{min-height:22px;padding:4px 18px;color:#b8ffcf;font-size:12px}#kawe-chat-status[data-state=error]{color:#fecaca}#kawe-chat-status[data-state=sending]{color:#fde68a}#chat .chat-message.is-sending{opacity:.7}
+/* Loja de produtos */
+.kawe-store-tools{display:grid;grid-template-columns:minmax(220px,2fr) repeat(2,minmax(150px,1fr)) auto;gap:10px;align-items:center;margin:18px 0 20px}.kawe-store-tools input,.kawe-store-tools select{width:100%;min-width:0;height:46px;box-sizing:border-box;padding:0 13px;border-radius:12px;color:#f8fafc;background:#0d1720;border:1px solid rgba(148,163,184,.28);outline:none}.kawe-store-tools input:focus,.kawe-store-tools select:focus{border-color:#22c55e}.kawe-store-tools button,.kawe-store-fav{min-height:44px;padding:0 15px;border-radius:12px;border:1px solid rgba(34,197,94,.45);color:#bbf7d0;background:rgba(34,197,94,.10);font-weight:800;cursor:pointer}.kawe-store-count{grid-column:1/-1;color:rgba(255,255,255,.62);font-size:12px}
+#kloja-grid.kawe-store-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:18px}#kloja-grid .kl-prod{min-height:270px;border-radius:19px;overflow:hidden;transition:transform .18s ease,border-color .18s ease}#kloja-grid .kl-prod:hover{transform:translateY(-3px);border-color:rgba(34,197,94,.5)}#kloja-grid .kl-thumb{min-height:106px;font-size:40px}#kloja-grid .kl-price{font-size:21px;font-weight:900}.kawe-store-product-actions{display:flex;gap:8px;align-items:center;margin-top:10px}.kawe-store-product-actions .kx-btn{flex:1}.kawe-store-fav{min-width:46px;padding:0 11px}.kl-cart-item.kawe-cart-row{align-items:center;gap:10px}.kawe-cart-qty{display:inline-flex;align-items:center;gap:8px;margin-left:10px}.kawe-cart-qty button{width:30px;height:30px;border-radius:9px;border:1px solid rgba(148,163,184,.3);color:#fff;background:rgba(255,255,255,.07);cursor:pointer;font-weight:900}
+/* Sistema: resultado real, somente leitura */
+#ksys-live{margin:18px 0;padding:18px;border:1px solid rgba(56,189,248,.25);border-radius:16px;background:rgba(8,20,31,.55)}#ksys-live h3{margin:0 0 6px;color:#7dd3fc}#ksys-live p{color:rgba(255,255,255,.65);font-size:12px;line-height:1.5}#ksys-live button{min-height:40px;padding:0 14px;border:1px solid rgba(56,189,248,.45);border-radius:10px;background:rgba(56,189,248,.1);color:#bae6fd;font-weight:800;cursor:pointer}.kawe-live-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin-top:12px}.kawe-live-row{padding:10px 12px;border-radius:10px;border:1px solid rgba(148,163,184,.22);background:rgba(255,255,255,.035);color:#e2e8f0;font-size:12px;overflow-wrap:anywhere}.kawe-live-row.ok{border-color:rgba(34,197,94,.4)}.kawe-live-row.bad{border-color:rgba(239,68,68,.4)}
+/* Limites visuais de ferramentas de risco no modo Moderador; não substituem Rules/claims no servidor. */
+#admin-panel.mod-mode .kawe-mod-blocked-tab,#admin-panel.mod-mode #admin-password,#admin-panel.mod-mode #admin-backup,#admin-panel.mod-mode #admin-firebase,#admin-panel.mod-mode #admin-source{display:none!important}#admin-panel.mod-mode .admin-btn-danger,#admin-panel.mod-mode [onclick*="clearAll"],#admin-panel.mod-mode [onclick*="deleteMovie"],#admin-panel.mod-mode [onclick*="kaweDel"],#admin-panel.mod-mode [onclick*="restore"]{display:none!important}
+.kawe-mod-dashboard{margin:14px 0 22px;padding:18px;border:1px solid rgba(168,85,247,.35);border-radius:16px;background:linear-gradient(145deg,rgba(88,28,135,.16),rgba(3,10,18,.35))}.kawe-mod-dashboard h3{color:#d8b4fe}.kawe-mod-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:12px 0}.kawe-mod-stat{padding:13px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.kawe-mod-stat b{display:block;font-size:21px;color:#e9d5ff}.kawe-mod-stat span{color:rgba(255,255,255,.62);font-size:11px}.kawe-mod-list{max-height:340px;overflow:auto}.kawe-mod-list table{width:100%;border-collapse:collapse;font-size:12px}.kawe-mod-list td,.kawe-mod-list th{padding:9px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}.kawe-mod-list button{border:1px solid rgba(168,85,247,.4);border-radius:8px;background:rgba(168,85,247,.13);color:#e9d5ff;padding:7px 10px;cursor:pointer}
+@media(max-width:760px){#main-content>header .hamburger,body>header .hamburger{flex-basis:66px!important;width:66px!important;min-width:66px!important;height:62px!important;min-height:62px!important}#main-content>header .hamburger span,body>header .hamburger span{width:33px!important}#main-content>header #kf-search,#main-content>header .search-container,body>header #kf-search,body>header .search-container{min-height:62px!important;height:62px!important}#main-content>header #kf-search input,#main-content>header .search-container input,body>header #kf-search input,body>header .search-container input{height:62px!important;min-height:62px!important;font-size:16px!important}#chat.active{padding:68px 8px 16px!important}#chat .chat-container{width:100%!important;height:calc(100dvh - 100px)!important;min-height:500px!important;border-radius:18px!important}#chat .chat-header{padding:0 14px!important;font-size:17px!important}#chat .chat-header:after{content:"SALA PÚBLICA"!important;font-size:8px!important;padding:6px 7px!important}#chat .chat-message{max-width:92%!important;font-size:14px!important}#chat .chat-input-row{padding:10px!important;gap:7px!important}#chat .chat-input{height:48px!important;font-size:15px!important}#chat .chat-attach-btn,#chat .chat-send{height:46px!important;min-width:46px!important}.kawe-store-tools{grid-template-columns:1fr 1fr}.kawe-store-tools input,.kawe-store-tools button{grid-column:1/-1}}
+</style>
+<script id="kawe-final-patch-js">
+(function(){'use strict';var D=document,REL='kawe-release-2026-09-final';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}function ja(s){return JSON.stringify(String(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}function say(s){try{if(typeof window.toast==='function')window.toast(s);else console.log(s);}catch(e){}}
+/* Route the chosen existing section above the rest; preserve and restore its exact origin. */
+function restoreOld(){D.querySelectorAll('.kawe-moved-category').forEach(function(s){var p=s.__kawePlaceholder;if(p&&p.parentNode){p.parentNode.insertBefore(s,p.nextSibling);p.remove();}delete s.__kawePlaceholder;s.classList.remove('kawe-moved-category');});}
+function restoreRoute(){D.querySelectorAll('main>section.kawe-route-top').forEach(function(s){var p=s.__kaweRoutePlaceholder;if(p&&p.parentNode){p.parentNode.insertBefore(s,p);p.remove();}delete s.__kaweRoutePlaceholder;s.classList.remove('kawe-route-top');});}
+function routeTop(id){var main=D.querySelector('#main-content main')||D.querySelector('main'),s=D.getElementById(id);if(!main||!s)return false;restoreRoute();restoreOld();if(id==='home'){main.insertBefore(s,main.firstElementChild);s.classList.add('active');window.scrollTo({top:0,behavior:'auto'});return true;}var p=D.createComment('KAWE_ROUTE_ORIGIN_'+id);s.parentNode.insertBefore(p,s);s.__kaweRoutePlaceholder=p;main.insertBefore(s,main.firstElementChild);s.classList.add('active','kawe-route-top');Array.prototype.forEach.call(main.children,function(n){if(n!==s&&n.classList&&n.classList.contains('section'))n.classList.remove('active');});window.scrollTo({top:0,behavior:'auto'});return true;}window.kawePlaceSectionAtTop=routeTop;
+function navWrap(n){var base=window[n];if(typeof base!=='function'||base.__kaweFinalRoute)return;var w=function(id){var r;try{r=base.apply(this,arguments);}catch(e){console.warn('[KAWE navegação]',e);}setTimeout(function(){if(id==='embed'){try{if(typeof window.renderEmbed==='function')window.renderEmbed();}catch(e){}}if(id==='atualizacoes'&&typeof window.renderAtualizacoes==='function')window.renderAtualizacoes();if(id==='sistema'){if(typeof window.renderSistema==='function')window.renderSistema();ensureSys();probe();}routeTop(id);},180);return r;};w.__kaweFinalRoute=true;window[n]=w;}['showSectionFromHeader','showSectionFromSidebar','showSection'].forEach(navWrap);
+/* Read-only health checks */
+function ensureSys(){var s=D.getElementById('sistema');if(!s||D.getElementById('ksys-live'))return;var h=s.querySelector('.ksys-hero');if(!h)return;var x=D.createElement('div');x.id='ksys-live';x.innerHTML='<h3>🔌 Conexões em tempo real</h3><p>Verificação somente de leitura. Nenhum dado será alterado.</p><button type="button" id="kawe-live-check">VERIFICAR AGORA</button><div id="kawe-live-results" class="kawe-live-results" aria-live="polite"></div>';h.insertAdjacentElement('afterend',x);D.getElementById('kawe-live-check').onclick=probe;}
+function lr(n,ok,t){return '<div class="kawe-live-row '+(ok?'ok':'bad')+'"><b>'+(ok?'✓ ':'! ')+esc(n)+'</b><br>'+esc(t)+'</div>';}
+function to(p,ms){return Promise.race([p,new Promise(function(_,r){setTimeout(function(){r(new Error('timeout '+ms+'ms'));},ms);})]);}var busy=false;
+async function probe(){ensureSys();var out=D.getElementById('kawe-live-results');if(!out||busy)return;busy=true;out.innerHTML='<div class="kawe-live-row">Verificando…</div>';var a=[],rt=window.kaweDB,fs=window.kaweFS,on=navigator.onLine!==false;a.push(lr('Internet',on,on?'Navegador conectado.':'Navegador offline.'));a.push(lr('Realtime Database SDK',!!(rt&&rt.ref),rt?'SDK disponível.':'SDK não inicializado.'));if(rt&&rt.ref){try{var s=await to(rt.ref('.info/connected').once('value'),5000),ok=!!(s&&s.val()===true);a.push(lr('Realtime Database conexão',ok,ok?'Conexão ativa confirmada.':'Não foi possível confirmar uma conexão ativa.'));}catch(e){a.push(lr('Realtime Database conexão',false,(e.code?e.code+': ':'')+(e.message||'Falha de leitura')));}}a.push(lr('Firestore SDK',!!(fs&&fs.collection),fs?'SDK disponível.':'SDK não inicializado.'));if(fs&&fs.collection){try{var q=await to(fs.collection('catalog_chunks').limit(1).get({source:'server'}),7000);a.push(lr('Firestore catálogo',!!q,q&&q.size?'Leitura no servidor confirmada; '+q.size+' documento(s) na amostra.':'Consulta respondeu; amostra vazia.'));}catch(e){a.push(lr('Firestore catálogo',false,(e.code?e.code+': ':'')+(e.message||'Falha de leitura')));}}out.innerHTML=a.join()+'<div class="kawe-live-row">Verificado em '+esc(new Date().toLocaleString('pt-BR'))+'</div>';busy=false;}window.kaweProbeFirebaseReadOnly=probe;
+/* Storefront: search, category filters, sort, favorite toggle and quantity controls. */
+var FAV='kawe_store_favorites_v1',DEFAULTS=[{id:'vip-bronze',nome:'VIP Bronze — 30 dias',preco:9.9,emoji:'🥉',tag:'PLANO',desc:'Acesso à categoria Bronze, sem anúncios e player turbinado.'},{id:'vip-prata',nome:'VIP Prata — 30 dias',preco:14.9,emoji:'🥈',tag:'PLANO',desc:'Tudo do Bronze + categoria Prata e downloads liberados.'},{id:'vip-ouro',nome:'VIP Ouro — 30 dias',preco:19.9,emoji:'🥇',tag:'TOP',desc:'Ouro + lançamentos antecipados e suporte prioritário.'},{id:'vip-diam',nome:'VIP Diamante — 90 dias',preco:49.9,emoji:'💎',tag:'PREMIUM',desc:'Todas as categorias VIP liberadas por 3 meses.'},{id:'vip-vital',nome:'VIP Vitalício',preco:149.9,emoji:'👑',tag:'ELITE',desc:'Acesso vitalício a todo o catálogo e a todos os servidores.'},{id:'camiseta',nome:'Camiseta KAWE Cinema',preco:69.9,emoji:'👕',tag:'FÍSICO',desc:'Algodão premium, estampa refletiva do logo KAWE. P ao GG.'},{id:'moletom',nome:'Moletom KAWE Neon',preco:139.9,emoji:'🧥',tag:'FÍSICO',desc:'Moletom com capuz, bordado neon verde. Edição limitada.'},{id:'bone',nome:'Boné KAWE Snapback',preco:59.9,emoji:'🧢',tag:'FÍSICO',desc:'Aba reta, ajuste snapback, logo bordado 3D.'},{id:'caneca',nome:'Caneca Cinema 350ml',preco:39.9,emoji:'☕',tag:'FÍSICO',desc:'Caneca cerâmica com arte exclusiva do KAWE Cinema.'},{id:'poster',nome:'Kit 3 Pôsteres A3',preco:49.9,emoji:'🖼️',tag:'FÍSICO',desc:'Pôsteres em papel fotográfico dos maiores clássicos.'},{id:'gift50',nome:'Gift Card R$ 50',preco:50,emoji:'🎁',tag:'PRESENTE',desc:'Créditos para usar em qualquer produto ou plano da loja.'},{id:'combo',nome:'Combo Pipoca + VIP',preco:89.9,emoji:'🍿',tag:'COMBO',desc:'Balde de pipoca oficial + 30 dias de VIP Ouro.'},{id:'chaveiro',nome:'Chaveiro Claquete',preco:24.9,emoji:'🔑',tag:'FÍSICO',desc:'Chaveiro em metal esmaltado no formato de claquete.'},{id:'adesivos',nome:'Cartela de Adesivos',preco:19.9,emoji:'✨',tag:'FÍSICO',desc:'12 adesivos vinílicos resistentes à água.'}];
+function read(k,d){try{var x=JSON.parse(localStorage.getItem(k));return x==null?d:x;}catch(e){return d;}}function prods(){var a=read('kawe_loja_v3',null);return Array.isArray(a)&&a.length?a:DEFAULTS;}function favs(){var a=read(FAV,[]);return Array.isArray(a)?a.map(String):[];}
+function ensureStore(){var s=D.getElementById('loja'),g=D.getElementById('kloja-grid');if(!s||!g)return;g.classList.add('kawe-store-grid');if(!D.getElementById('kawe-store-tools')){var x=D.createElement('div');x.id='kawe-store-tools';x.className='kawe-store-tools';x.innerHTML='<input id="kawe-store-search" type="search" placeholder="Buscar produto ou plano…" aria-label="Buscar na loja"><select id="kawe-store-category" aria-label="Categoria"><option value="">Todas as categorias</option></select><select id="kawe-store-sort" aria-label="Ordenação"><option value="featured">Em destaque</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome A–Z</option></select><button type="button" id="kawe-store-favs" aria-pressed="false">♡ Favoritos</button><div id="kawe-store-count" class="kawe-store-count"></div>';var sub=s.querySelector('.kx-sub');if(sub)sub.insertAdjacentElement('afterend',x);else g.insertAdjacentElement('beforebegin',x);D.getElementById('kawe-store-search').oninput=renderStore;D.getElementById('kawe-store-category').onchange=renderStore;D.getElementById('kawe-store-sort').onchange=renderStore;D.getElementById('kawe-store-favs').onclick=function(){var b=this.getAttribute('aria-pressed')==='true';this.setAttribute('aria-pressed',String(!b));this.textContent=b?'♡ Favoritos':'♥ Favoritos';renderStore();};}var sel=D.getElementById('kawe-store-category');if(sel){var val=sel.value,tags=Array.from(new Set(prods().map(function(p){return String(p.tag||'LOJA');}))).sort();sel.innerHTML='<option value="">Todas as categorias</option>'+tags.map(function(t){return '<option value="'+esc(t)+'">'+esc(t)+'</option>';}).join('');sel.value=tags.indexOf(val)>=0?val:'';}}
+var lastGrid='';function renderCart(){var e=D.getElementById('kloja-cart');if(!e)return;var c=read('kawe_loja_cart_v3',[]);if(!Array.isArray(c))c=[];var units=0,total=0;c.forEach(function(x){x.qtd=Math.max(1,Math.min(99,Math.floor(Number(x.qtd)||1)));x.preco=Math.max(0,Number(x.preco)||0);units+=x.qtd;total+=x.preco*x.qtd;});try{localStorage.setItem('kawe_loja_cart_v3',JSON.stringify(c));}catch(e){}function m(n){return'R$ '+Number(n).toFixed(2).replace('.',',');}e.innerHTML='<h3>🛒 CARRINHO ('+units+' unidade(s))</h3>'+(c.length?c.map(function(x){return'<div class="kl-cart-item kawe-cart-row"><span>'+esc(x.nome)+' <span class="kawe-cart-qty"><button type="button" aria-label="Diminuir" onclick="kaweLojaSetQty('+ja(x.id)+',-1)">−</button><b>'+x.qtd+'</b><button type="button" aria-label="Aumentar" onclick="kaweLojaSetQty('+ja(x.id)+',1)">+</button></span></span><span>'+m(x.preco*x.qtd)+' <button class="kx-btn red" type="button" onclick="kaweLojaRemove('+ja(x.id)+')" aria-label="Remover">✕</button></span></div>';}).join(''):'<div style="color:var(--text-muted);padding:8px 0">Seu carrinho está vazio. Explore a loja acima.</div>')+'<div class="kl-total"><span>SUBTOTAL</span><span>'+m(total)+'</span></div><div class="kx-row" style="margin-top:12px"><button class="kx-btn mix" type="button" onclick="kaweLojaCheckout()">FINALIZAR PEDIDO PELO SUPORTE</button><button class="kx-btn red" type="button" onclick="kaweLojaClear()">LIMPAR CARRINHO</button></div><small style="display:block;margin-top:9px;color:rgba(255,255,255,.55)">O pedido segue pelo suporte; pagamento e estoque não são processados neste HTML.</small>';}
+function renderStore(){var g=D.getElementById('kloja-grid');if(!g)return;ensureStore();var q=((D.getElementById('kawe-store-search')||{}).value||'').trim().toLowerCase(),cat=(D.getElementById('kawe-store-category')||{}).value||'',sort=(D.getElementById('kawe-store-sort')||{}).value||'featured',only=(D.getElementById('kawe-store-favs')||{}).getAttribute('aria-pressed')==='true',f=favs(),a=prods().filter(function(x){return(!q||[x.nome,x.desc,x.tag].join(' ').toLowerCase().indexOf(q)>=0)&&(!cat||String(x.tag||'LOJA')===cat)&&(!only||f.indexOf(String(x.id))>=0);});if(sort==='price-asc')a.sort(function(x,y){return Number(x.preco)-Number(y.preco);});else if(sort==='price-desc')a.sort(function(x,y){return Number(y.preco)-Number(x.preco);});else if(sort==='name')a.sort(function(x,y){return String(x.nome).localeCompare(String(y.nome),'pt-BR');});var c=D.getElementById('kawe-store-count');if(c)c.textContent=a.length+' produto(s). Pedido e disponibilidade são confirmados pelo suporte.';g.innerHTML=a.length?a.map(function(x){var rawId=x.id,id=String(x.id),fav=f.indexOf(id)>=0;return'<article class="kl-prod"><div class="kl-thumb">'+esc(x.emoji||'🛍️')+'</div><div class="kl-body"><span class="kl-tag">'+esc(x.tag||'LOJA')+'</span><div class="kl-name">'+esc(x.nome||'Produto')+'</div><div class="kl-desc">'+esc(x.desc||'')+'</div><div class="kl-price">R$ '+Number(x.preco||0).toFixed(2).replace('.',',')+'</div><div class="kawe-store-product-actions"><button class="kx-btn mix" type="button" onclick="kaweLojaAdd('+ja(rawId)+')">🛒 ADICIONAR</button><button class="kawe-store-fav" type="button" aria-label="Favorito" aria-pressed="'+fav+'" onclick="kaweStoreToggleFavorite('+ja(id)+')">'+(fav?'♥':'♡')+'</button></div></div></article>';}).join(''):'<div class="kupd-empty">Nenhum produto encontrado. Altere a busca ou os filtros.</div>';lastGrid=g.innerHTML;renderCart();}
+window.kaweStoreToggleFavorite=function(id){var a=favs(),i=a.indexOf(String(id));if(i>=0)a.splice(i,1);else a.push(String(id));try{localStorage.setItem(FAV,JSON.stringify(a));}catch(e){}renderStore();};window.kaweLojaSetQty=function(id,delta){var a=read('kawe_loja_cart_v3',[]);if(!Array.isArray(a))a=[];var i=a.findIndex(function(x){return String(x.id)===String(id);});if(i<0)return;a[i].qtd=Math.max(0,Math.min(99,(Number(a[i].qtd)||1)+Number(delta||0)));if(!a[i].qtd)a.splice(i,1);try{localStorage.setItem('kawe_loja_cart_v3',JSON.stringify(a));}catch(e){}renderCart();};
+['kaweLojaAdd','kaweLojaRemove','kaweLojaClear'].forEach(function(n){var f=window[n];if(typeof f!=='function'||f.__kaweFinalStore)return;var w=function(){var r=f.apply(this,arguments);renderStore();return r;};w.__kaweFinalStore=true;window[n]=w;});
+function watchStore(){var g=D.getElementById('kloja-grid');if(!g||!window.MutationObserver||g.__kaweStoreObserved)return;g.__kaweStoreObserved=true;new MutationObserver(function(){if(g.innerHTML!==lastGrid)setTimeout(renderStore,20);}).observe(g,{childList:true,subtree:true});}
+/* Chat: reliable async Firebase confirmation and visible failure; no silent data loss. */
+function dbChat(){try{return window.kaweDB||(window.firebase&&firebase.apps&&firebase.apps.length?firebase.database():null);}catch(e){return null;}}function status(t,s){var x=D.getElementById('kawe-chat-status');if(x){x.textContent=t;x.dataset.state=s||'info';}}
+function who(){var u=null;try{if(typeof window.kaweCurrentUser==='function')u=window.kaweCurrentUser();}catch(e){}var id='';try{if(window.firebase&&firebase.apps&&firebase.auth().currentUser)id=firebase.auth().currentUser.uid||'';}catch(e){}id=id||(u&&(u.id||u.uid))||'';try{id=id||localStorage.getItem('kawe_current_user_id')||localStorage.getItem('kawe_anon_id')||'';if(!id){id='a_'+Math.random().toString(36).slice(2,10);localStorage.setItem('kawe_anon_id',id);}}catch(e){id=id||'anon';}var name=(u&&(u.username||u.fullname||u.email))||'';try{name=name||localStorage.getItem('kawe_user_name')||'';}catch(e){}return{id:String(id),name:String(name||'Visitante').slice(0,80)};}
+function bubble(m,pending){var b=D.getElementById('chat-messages');if(!b)return null;var e=D.createElement('div');e.className='chat-message user'+(pending?' is-sending':'');e.dataset.mid=m.id;var h=D.createElement('b');h.textContent=m.name;h.style.cssText='display:block;font-size:11px;opacity:.75;margin-bottom:3px';var t=D.createElement('span');t.textContent=m.text;var tm=D.createElement('small');tm.textContent=new Date(m.at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});e.appendChild(h);e.appendChild(t);e.appendChild(tm);b.appendChild(e);b.scrollTop=b.scrollHeight;return e;}
+var sending=false;function sendChat(){var i=D.getElementById('chat-input'),btn=D.querySelector('#chat .chat-send'),b=D.getElementById('chat-messages');if(!i||!b||sending)return;var text=String(i.value||'').trim();if(!text)return;if(text.length>2000){status('Limite de 2.000 caracteres.','error');return;}var db=dbChat();if(!db||!db.ref){status('Firebase indisponível. O texto continua no campo; mensagem não enviada.','error');return;}var u=who(),m={id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),at:new Date().toISOString(),uid:u.id,name:u.name,type:'text',text:text};sending=true;i.disabled=true;if(btn)btn.disabled=true;status('Enviando…','sending');var el=bubble(m,true),p;try{p=db.ref('kawe_chat_global/'+m.id).set(m);}catch(e){p=Promise.reject(e);}Promise.resolve(p).then(function(){if(el)el.classList.remove('is-sending');i.value='';status('Mensagem confirmada pelo Firebase.','ok');}).catch(function(e){if(el&&el.parentNode)el.remove();i.value=text;var code=String(e&&e.code||'');status(/PERMISSION_DENIED|permission-denied/i.test(code)?'O Firebase negou a gravação. Verifique autenticação e regras do nó kawe_chat_global.':(navigator.onLine===false?'Sem conexão. Reconecte e tente novamente.':'Falha Firebase ('+(code||'rede/permissão')+'). O texto foi restaurado. A mensagem não foi enviada.'),'error');}).finally(function(){sending=false;i.disabled=false;if(btn)btn.disabled=false;i.focus();});}window.sendChatMessage=sendChat;
+function attach(e,kind){var f=e&&e.target&&e.target.files&&e.target.files[0];if(!f)return;if(f.size>1048576){status('Anexo maior que 1 MB.','error');e.target.value='';return;}var db=dbChat();if(!db){status('Firebase indisponível. Anexo não enviado.','error');e.target.value='';return;}var r=new FileReader();r.onload=function(x){var u=who(),id='m_'+Date.now()+'_'+Math.random().toString(36).slice(2,9),m={id:id,at:new Date().toISOString(),uid:u.id,name:u.name,type:kind==='image'&&/^image\//.test(f.type)?'image':'file',data:String(x.target.result||''),filename:String(f.name||'arquivo').slice(0,180)};status('Enviando anexo…','sending');try{Promise.resolve(db.ref('kawe_chat_global/'+id).set(m)).then(function(){status('Anexo confirmado pelo Firebase.','ok');}).catch(function(err){status('Falha no envio: '+String(err.code||'Firebase'),'error');});}catch(err){status('Não foi possível iniciar o envio.','error');}};r.onerror=function(){status('Não foi possível ler o arquivo.','error');};r.readAsDataURL(f);e.target.value='';}window.handleChatAttach=attach;
+function bindChat(){var row=D.querySelector('#chat .chat-input-row'),i=D.getElementById('chat-input');if(row&&!D.getElementById('kawe-chat-status')){var s=D.createElement('div');s.id='kawe-chat-status';s.setAttribute('role','status');s.setAttribute('aria-live','polite');row.parentNode.insertBefore(s,row);}if(i&&!i.__kaweEnterBound){i.__kaweEnterBound=true;i.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});}}
+/* Useful moderator maintenance: quality counts and editing, no automatic deletion. */
+var blocked=/\b(BACKUP|RESTORE|RESTAURAR|SENHA|PASSWORD|CÓDIGO FONTE|FIREBASE|USUÁRIOS|CATEGORIAS|API \/ IMPORTAR|PAGAMENTOS?|PEDIDOS|LINKS DE PAGAMENTO|EXCLUIR CONTA)\b/i;
+function restrict(){var p=D.getElementById('admin-panel');if(!p||window.__KAWE_PANEL_ROLE!=='moderador')return;p.classList.add('mod-mode');p.querySelectorAll('.admin-tab').forEach(function(t){if(blocked.test(t.textContent||''))t.classList.add('kawe-mod-blocked-tab');});}
+function renderMaint(){var stats=D.getElementById('kawe-mod-stats'),list=D.getElementById('kawe-mod-list');if(!stats||!list)return;var data=window.CATALOG_DATA||{},items=[],seen=Object.create(null),dups=0;Object.keys(data).forEach(function(cat){(Array.isArray(data[cat])?data[cat]:[]).forEach(function(x,index){if(!x||typeof x!=='object')return;var title=String(x.title||'').trim(),key=title.toLowerCase().replace(/\s+/g,' ');if(key&&seen[key])dups++;else if(key)seen[key]=1;var miss=[];if(!title)miss.push('título');if(!(x.poster||x.image||x.backdrop))miss.push('capa');if(!(x.description||x.overview))miss.push('descrição');if(!(x.genre||x.genres))miss.push('gênero');var player=!!(x.videoUrl||(Array.isArray(x.videoSources)&&x.videoSources.some(function(s){return s&&s.url;}))||x.embed);if(!player)miss.push('player');items.push({cat:cat,index:index,title:title||'Sem título',miss:miss,player:player});});});var bad=items.filter(function(x){return x.miss.length;});stats.innerHTML=[['Títulos',items.length],['Com pendências',bad.length],['Sem player',items.filter(function(x){return!x.player;}).length],['Possíveis duplicados',dups]].map(function(x){return'<div class="kawe-mod-stat"><b>'+x[1]+'</b><span>'+x[0]+'</span></div>';}).join('');var rows=bad.slice(0,100);list.innerHTML=rows.length?'<table><thead><tr><th>Título</th><th>Categoria</th><th>Faltando</th><th>Ação</th></tr></thead><tbody>'+rows.map(function(x){return'<tr><td>'+esc(x.title)+'</td><td>'+esc(x.cat)+'</td><td>'+esc(x.miss.join(', '))+'</td><td><button type="button" onclick="window.kaweKS&&window.kaweKS.edit('+ja(x.cat)+','+x.index+')">Editar dados</button></td></tr>';}).join('')+'</tbody></table>':'<p>Nenhuma pendência essencial encontrada.</p>';if(bad.length>100)list.insertAdjacentHTML('beforeend','<p>Exibindo 100 de '+bad.length+' pendências. Use Catálogo Status para filtrar o catálogo completo.</p>');}
+function addMod(){var p=D.getElementById('admin-panel'),tabs=p&&p.querySelector('.admin-tabs'),box=p&&p.querySelector('.admin-box');if(!tabs||!box)return;if(D.getElementById('admin-kawe-maintenance')){restrict();return;}var t=D.createElement('div');t.id='kawe-tab-moderator-maintenance';t.className='admin-tab';t.textContent='🛠️ MANUTENÇÃO DE CONTEÚDO';t.onclick=function(){tabs.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active')});D.querySelectorAll('#admin-panel .admin-content-section').forEach(function(x){x.classList.remove('active')});t.classList.add('active');D.getElementById('admin-kawe-maintenance').classList.add('active');renderMaint();};tabs.appendChild(t);var s=D.createElement('div');s.id='admin-kawe-maintenance';s.className='admin-content-section';s.innerHTML='<div class="kawe-mod-dashboard"><h3>🛠️ Manutenção e qualidade do catálogo</h3><p class="admin-subtitle">Encontra títulos sem dados essenciais, sem player e possíveis duplicados. O editor existente permite corrigir; nenhuma exclusão automática é feita.</p><div id="kawe-mod-stats" class="kawe-mod-stats"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0"><button type="button" class="admin-btn-secondary" id="kawe-mod-refresh">↻ Atualizar revisão</button><button type="button" class="admin-btn-secondary" id="kawe-mod-catalog">Abrir Catálogo Status</button></div><div id="kawe-mod-list" class="kawe-mod-list"></div></div>';box.appendChild(s);D.getElementById('kawe-mod-refresh').onclick=renderMaint;D.getElementById('kawe-mod-catalog').onclick=function(){var x=D.getElementById('kawe-tab-catalog-status');if(x)x.click();else say('Catálogo Status ainda está carregando.');};restrict();}
+window.kaweModMaintenanceRefresh=renderMaint;
+var denied=new Set(['password','backup','firebase','source','usuarios','categorias','api','pedidos','payment','payments','admin-kupd','admin-ksys']);if(typeof window.switchAdminTab==='function'&&!window.switchAdminTab.__kaweModGuard){var old=window.switchAdminTab;var guard=function(id){if(window.__KAWE_PANEL_ROLE==='moderador'&&denied.has(String(id)))return false;return old.apply(this,arguments);};guard.__kaweModGuard=true;window.switchAdminTab=guard;}
+D.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#admin-panel .admin-tab');if(window.__KAWE_PANEL_ROLE==='moderador'&&t&&blocked.test(t.textContent||'')){e.preventDefault();e.stopImmediatePropagation();say('Esta ferramenta é exclusiva do Admin.');}},true);D.addEventListener('click',function(){if(window.__KAWE_PANEL_ROLE==='moderador')setTimeout(restrict,0);},true);
+function changelog(){try{var k='kawe_updates_v1',a=JSON.parse(localStorage.getItem(k)||'[]');if(!Array.isArray(a))a=[];if(a.some(function(x){return x&&x.id===REL;}))return;a.push({id:REL,type:'fix',title:'Correções de navegação, chat, loja e diagnóstico',version:'2026.09',date:new Date().toISOString().slice(0,10),body:'Corrigido: a seção selecionada é movida para o topo e restaurada ao sair. Chat: confirmação assíncrona Firebase; o texto só é apagado após confirmação e é restaurado se o envio falhar. Loja: busca, filtro de categoria, ordenação, favoritos e ajuste de quantidades no carrinho. Sistema: checagem somente de leitura do Realtime Database e de uma amostra do Firestore. Moderador: revisão de pendências do catálogo, sem exclusão automática.'});localStorage.setItem(k,JSON.stringify(a));if(typeof window.renderAtualizacoes==='function')window.renderAtualizacoes();}catch(e){console.warn('[KAWE changelog]',e);}}
+function sizeHeader(){function put(el,k,v){if(el.style.getPropertyValue(k)!==v||el.style.getPropertyPriority(k)!=='important')el.style.setProperty(k,v,'important');}D.querySelectorAll('header .hamburger').forEach(function(b){[['width','76px'],['min-width','76px'],['height','68px'],['min-height','68px'],['flex','0 0 76px'],['display','inline-flex'],['flex-direction','column'],['align-items','center'],['justify-content','center'],['gap','7px']].forEach(function(x){put(b,x[0],x[1]);});b.querySelectorAll('span').forEach(function(x){[['width','38px'],['height','4px'],['min-height','4px']].forEach(function(y){put(x,y[0],y[1]);});});var w=b.parentElement;if(w&&w.id==='kawe-ham-slot')[['width','82px'],['min-width','82px'],['flex','0 0 82px'],['height','68px']].forEach(function(x){put(w,x[0],x[1]);});});D.querySelectorAll('header #kf-search input,header .search-container input').forEach(function(i){[['height','68px'],['min-height','68px'],['font-size','19px']].forEach(function(x){put(i,x[0],x[1]);});});}
+function observeHeaderSizing(){D.querySelectorAll('header').forEach(function(h){if(h.__kaweHeaderSizeObserver||!window.MutationObserver)return;var mo=new MutationObserver(function(){sizeHeader();});mo.observe(h,{attributes:true,childList:true,subtree:true,attributeFilter:['style','class']});h.__kaweHeaderSizeObserver=mo;});}
+function boot(){bindChat();ensureSys();ensureStore();watchStore();addMod();restrict();sizeHeader();observeHeaderSizing();}
+function boot(){bindChat();ensureSys();ensureStore();watchStore();addMod();restrict();sizeHeader();}
+if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,1000);},{once:true});else setTimeout(boot,1000);[2400,5000,8200].forEach(function(n){setTimeout(boot,n);});setTimeout(changelog,2600);
+})();
+</script>
+<!-- /KAWE_FINAL_PATCH_V1 -->
+
+<!-- KAWE_MODERATOR_LOGIN_FIELDS_AND_ROLE_GUARD_V1 -->
+<style id="kawe-mod-role-guard-css">
+#admin-panel:not(.mod-mode) #kawe-tab-moderator-maintenance,#admin-panel:not(.mod-mode) #admin-kawe-maintenance{display:none!important}
+#admin-panel.mod-mode #admin-categorias{display:none!important}
+#admin-panel.mod-mode [onclick*="saveParsedChannels(true)"]{display:none!important}
+#mod-auth-modal .pass-box,#mod-start-screen .mss-box{max-height:92vh;overflow-y:auto}
+.kawe-mod-login-fields{display:grid;gap:11px;margin:14px 0;text-align:left}
+.kawe-mod-login-fields label{display:block;margin:0 0 5px;color:#d8b4fe;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.kawe-mod-login-fields input{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:10px;border:1px solid rgba(168,85,247,.4);background:rgba(255,255,255,.05);color:#fff}
+.kawe-mod-pin-row{display:flex;gap:8px}.kawe-mod-pin-row input{text-align:center;font-size:18px;font-weight:800}.kawe-mod-login-help{font-size:10px;line-height:1.45;color:#c4b5fd}
+</style>
+<script id="kawe-moderator-login-fields-js">
+(function(){
+ 'use strict';
+ var EMAIL='kawe.cinema.conta.oficial@gmail.com';
+ var UID=function(){return String(window.KAWE_ADMIN_UID||'').trim();};
+ function byId(x){return document.getElementById(x);}
+ function show(s){try{if(typeof window.toast==='function')window.toast(s);else console.log(s);}catch(e){}}
+ function addFields(inputId,prefix){
+   var old=byId(inputId);if(!old||byId(prefix+'-fields'))return;
+   var holder=document.createElement('div');holder.id=prefix+'-fields';holder.className='kawe-mod-login-fields';
+   holder.innerHTML='<div><label for="'+prefix+'-email">E-mail da conta Firebase</label><input id="'+prefix+'-email" type="email" autocomplete="username" value="'+EMAIL+'"></div>'+
+    '<div><label for="'+prefix+'-uid">UID autorizado no Firebase</label><input id="'+prefix+'-uid" type="text" autocomplete="off" spellcheck="false" value="'+UID()+'"></div>'+
+    '<div><label>PIN de 4 dígitos</label><div class="kawe-mod-pin-row">'+[1,2,3,4].map(function(n){return '<input id="'+prefix+'-pin-'+n+'" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="Dígito '+n+'">';}).join('')+'</div></div>'+
+    '<div class="kawe-mod-login-help">A senha é verificada pelo Firebase Authentication e nunca é pré-preenchida. O e-mail e UID precisam corresponder à conta autorizada. O PIN é conferido com o PIN local do painel. Como permissões e segredos no HTML podem ser vistos no navegador, proteja dados sensíveis também com Firebase Rules/claims no servidor.</div>';
+   var isModal=inputId==='mod-auth-password';
+   if(isModal){var wrap=old.parentElement;wrap.parentNode.insertBefore(holder,wrap);var label=wrap.querySelector('label');if(label)label.textContent='Senha Firebase';old.placeholder='Senha da conta autorizada';}
+   else {old.insertAdjacentElement('beforebegin',holder);var l=document.createElement('label');l.textContent='Senha Firebase';l.style.cssText='display:block;text-align:left;margin:10px 0 5px;color:#d8b4fe;font-size:11px;font-weight:800;text-transform:uppercase';old.insertAdjacentElement('beforebegin',l);old.placeholder='Senha da conta autorizada';}
+   var inputs=holder.querySelectorAll('.kawe-mod-pin-row input');inputs.forEach(function(el,i){el.addEventListener('input',function(){this.value=this.value.replace(/\D/g,'').slice(0,1);if(this.value&&inputs[i+1])inputs[i+1].focus();});el.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!this.value&&inputs[i-1])inputs[i-1].focus();if(e.key==='Enter')login(prefix,inputId);});});
+ }
+ function getPin(prefix){var p='';for(var n=1;n<=4;n++)p+=(byId(prefix+'-pin-'+n)||{}).value||'';return p;}
+ function expectedPin(){try{if(typeof ADMIN_PASS!=='undefined'&&ADMIN_PASS)return String(ADMIN_PASS);}catch(e){}return '';}
+ async function login(prefix,passwordId){
+   var email=((byId(prefix+'-email')||{}).value||'').trim().toLowerCase(),uid=((byId(prefix+'-uid')||{}).value||'').trim(),password=((byId(passwordId)||{}).value||''),pin=getPin(prefix),target=UID();
+   if(!email||!password){show('Informe o e-mail e a senha Firebase.');return false;}
+   if(uid!==target||!target){show('O UID informado não corresponde ao UID autorizado.');return false;}
+   if(!/^\d{4}$/.test(pin)){show('Informe os 4 dígitos do PIN.');return false;}
+   var expected=expectedPin();if(pin!==expected){show('PIN incorreto.');for(var n=1;n<=4;n++){var d=byId(prefix+'-pin-'+n);if(d)d.value='';}return false;}
+   var auth=null;try{auth=window.firebase&&firebase.apps&&firebase.apps.length?firebase.auth():null;}catch(e){}
+   if(!auth){show('Firebase Authentication não está carregado.');return false;}
+   try{
+     var cred=await auth.signInWithEmailAndPassword(email,password);
+     if(!cred.user||cred.user.uid!==target||(cred.user.email||'').toLowerCase()!==email){show('A sessão autenticada não corresponde ao e-mail/UID informado.');return false;}
+     window.__KAWE_ADMIN_AUTHENTICATED__=true;window.__KAWE_PANEL_ROLE='moderador';
+     var m=byId('mod-auth-modal'),s=byId('mod-start-screen');if(m)m.classList.remove('open');if(s)s.classList.remove('open');
+     if(typeof window.openAdminPanel==='function')window.openAdminPanel();window.__KAWE_PANEL_ROLE='moderador';
+     var panel=byId('admin-panel');if(panel)panel.classList.add('mod-mode');
+     setTimeout(function(){var h=document.querySelector('#admin-panel .admin-header h2');if(h){h.textContent='🛡️ PAINEL MODERADOR';h.style.color='#a855f7';}if(typeof window.kaweModMaintenanceRefresh==='function')window.kaweModMaintenanceRefresh();show('Acesso Moderador autenticado pelo Firebase.');},150);
+     return true;
+   }catch(e){var code=String(e&&e.code||'');show(/too-many-requests/.test(code)?'Muitas tentativas; aguarde antes de tentar novamente.':/network-request-failed/.test(code)?'Não foi possível conectar ao Firebase.':/invalid-credential|wrong-password|user-not-found/.test(code)?'Credenciais Firebase inválidas.':'Falha no login Firebase ('+(code||'erro')+').');return false;}
+ }
+ window.tryModeradorLogin=function(){return login('kawe-mod-auth','mod-auth-password');};
+ window.tryModeradorStartLogin=function(){return login('kawe-mod-start','mod-start-password');};
+ function wrapOpen(name,prefix,inputId){var old=window[name];if(typeof old!=='function'||old.__kaweFinalModOpen)return;var w=function(){var r=old.apply(this,arguments);setTimeout(function(){for(var n=1;n<=4;n++){var d=byId(prefix+'-pin-'+n);if(d)d.value='';}var i=byId(inputId);if(i)i.value='';},0);return r;};w.__kaweFinalModOpen=true;window[name]=w;}
+ function init(){addFields('mod-auth-password','kawe-mod-auth');addFields('mod-start-password','kawe-mod-start');wrapOpen('openModeradorAuth','kawe-mod-auth','mod-auth-password');wrapOpen('openModeradorStart','kawe-mod-start','mod-start-password');}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();setTimeout(init,1600);setTimeout(init,3600);
+})();
+</script>
+<!-- /KAWE_MODERATOR_LOGIN_FIELDS_AND_ROLE_GUARD_V1 -->
 
 </body>
 </html>
