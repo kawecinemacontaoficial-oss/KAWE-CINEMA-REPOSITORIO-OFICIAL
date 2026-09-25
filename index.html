@@ -302,14 +302,13 @@ letter-spacing:.5px;text-transform:uppercase;}
     var l=document.createElement("link"); l.rel="manifest"; l.href=url; document.head.appendChild(l);
   }catch(e){}
 
-  // Service worker (necessário para instalar como app quando hospedado em http/https)
+  // Moneytag service worker: hospede sw(3).js na mesma pasta deste HTML, via HTTPS.
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
-    var sw="self.addEventListener('install',function(){self.skipWaiting()});"+
-           "self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim())});"+
-           "self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request)}))});";
     try{
-      navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:"text/javascript"}))).catch(function(){});
-    }catch(e){}
+      navigator.serviceWorker.register("./sw(3).js").catch(function(error){
+        console.error("Não foi possível registrar o service worker da Moneytag:", error);
+      });
+    }catch(e){ console.error("Falha ao iniciar o service worker da Moneytag:", e); }
   }
 
   var deferred=null;
