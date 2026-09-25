@@ -37038,6 +37038,104 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){set
 </script>
 <!-- /KAWE_MODERATOR_LOGIN_FIELDS_AND_ROLE_GUARD_V1 -->
 
+
+<!-- KAWE_TEMPORADAS_EPISODIOS_MODULO_START -->
+<style id="kawe-temporadas-modulo-css">
+#admin-kawe-temporadas-section{color:#f8fafc}#admin-kawe-temporadas-section h3{color:#86efac}.ktm-picker{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin:16px 0;padding:14px;border:1px solid rgba(134,239,172,.2);border-radius:12px;background:rgba(34,197,94,.05)}.ktm-picker label{display:flex;flex-direction:column;gap:6px;color:#a1a1aa;font-size:11px;font-weight:800;text-transform:uppercase}.ktm-picker select,.ktm-fields input,.ktm-fields textarea,.ktm-source input{width:100%;box-sizing:border-box;background:rgba(0,0,0,.3);color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:10px;font:inherit;font-size:13px}.ktm-item-summary{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0;padding:13px 15px;border-radius:11px;background:linear-gradient(90deg,rgba(34,197,94,.14),rgba(59,130,246,.08));border:1px solid rgba(134,239,172,.24)}.ktm-item-summary b{font-size:18px;color:#fff}.ktm-item-summary span{font-size:12px;color:#bbf7d0}.ktm-season{margin:14px 0;padding:15px;border:1px solid rgba(134,239,172,.25);border-radius:13px;background:rgba(255,255,255,.025)}.ktm-season-head,.ktm-ep-head,.ktm-subhead,.ktm-savebar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.ktm-season-head{margin-bottom:12px}.ktm-season-head h4{margin:0;color:#86efac;font-size:16px}.ktm-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.ktm-fields label{display:flex;flex-direction:column;gap:5px;color:#a1a1aa;font-size:11px;font-weight:700}.ktm-fields .full{grid-column:1/-1}.ktm-fields textarea{min-height:68px;resize:vertical}.ktm-subhead{margin:10px 0;color:#d1fae5;font-size:12px;font-weight:800;text-transform:uppercase}.ktm-subhead em{font-style:normal;color:#86efac}.ktm-episode{margin:10px 0;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.09)}.ktm-ep-head{margin-bottom:10px;color:#fff;font-size:13px}.ktm-sources{border-top:1px dashed rgba(255,255,255,.12);padding-top:8px}.ktm-source{display:grid;grid-template-columns:150px 1fr auto;gap:7px;margin:7px 0}.ktm-mini,.ktm-add-season,.ktm-save{border:1px solid rgba(134,239,172,.35);background:rgba(34,197,94,.12);color:#bbf7d0;border-radius:8px;padding:8px 11px;cursor:pointer;font:800 11px inherit}.ktm-mini:hover,.ktm-add-season:hover{background:rgba(34,197,94,.25)}.ktm-mini.danger{border-color:rgba(248,113,113,.35);color:#fecaca;background:rgba(239,68,68,.1)}.ktm-add-season{margin:5px 0 12px;width:100%;padding:11px;border-style:dashed}.ktm-savebar{border-top:1px solid rgba(255,255,255,.1);padding-top:14px;margin-top:5px}.ktm-save{background:#22c55e;color:#052e16;border-color:#22c55e;padding:11px 15px}.ktm-empty{padding:18px;text-align:center;color:#a1a1aa;border:1px dashed rgba(255,255,255,.16);border-radius:10px;margin:10px 0;font-size:13px}@media(max-width:700px){.ktm-picker,.ktm-fields{grid-template-columns:1fr}.ktm-fields .full{grid-column:auto}.ktm-source{grid-template-columns:1fr}.ktm-source .ktm-mini{width:100%}}
+</style>
+
+<script id="kawe-temporadas-modulo-js">
+/* KAWE TEMPORADAS & EPISÓDIOS — módulo dedicado */
+(function(){
+  'use strict';
+  if(window.__KAWE_TEMPORADAS_MODULO_V1__) return;
+  window.__KAWE_TEMPORADAS_MODULO_V1__ = true;
+  var D=document, seriesCats=['series','animes','doramas','novelas'];
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});}
+  function arr(v){if(Array.isArray(v))return v;if(!v||typeof v!=='object')return[];return Object.keys(v).sort(function(a,b){return Number(a)-Number(b)}).map(function(k){return v[k]});}
+  function data(){return window.CATALOG_DATA||(window.CATALOG_DATA={});}
+  function isCat(c){return seriesCats.indexOf(String(c||'').toLowerCase())>=0;}
+  function cats(){var d=data();return seriesCats.filter(function(c){return Array.isArray(d[c]);});}
+  function item(){var c=D.getElementById('ktm-cat'),i=D.getElementById('ktm-item');return c&&i&&c.value&&data()[c.value]&&data()[c.value][Number(i.value)]?data()[c.value][Number(i.value)]:null;}
+  function sourceRows(sources){
+    sources=Array.isArray(sources)?sources:[];
+    if(!sources.length) sources=[{label:'Player 1',url:''}];
+    return sources.map(function(s){return '<div class="ktm-source"><input class="ktm-src-label" value="'+esc(s.label||'Player')+'" placeholder="Nome do player"><input class="ktm-src-url" value="'+esc(s.url||'')+'" placeholder="URL ou iframe"><button type="button" class="ktm-mini danger" data-action="rm-source">Remover</button></div>';}).join('');
+  }
+  function episodeHTML(ep,n){ep=ep||{};return '<article class="ktm-episode" data-ep="'+n+'"><div class="ktm-ep-head"><b>Episódio '+n+'</b><button type="button" class="ktm-mini danger" data-action="rm-episode">Remover</button></div><div class="ktm-fields"><label>Número<input class="ktm-ep-number" type="number" min="1" value="'+esc(ep.number||n)+'"></label><label>Título do episódio<input class="ktm-ep-title" value="'+esc(ep.title||'')+'" placeholder="Ex.: O começo"></label><label>Duração<input class="ktm-ep-duration" value="'+esc(ep.duration||ep.dur||'')+'" placeholder="Ex.: 45 min"></label><label>Capa / thumbnail URL<input class="ktm-ep-thumb" value="'+esc(ep.thumb||ep.image||'')+'" placeholder="https://..."></label><label class="full">Sinopse do episódio<textarea class="ktm-ep-desc" placeholder="Resumo opcional">'+esc(ep.description||ep.desc||'')+'</textarea></label></div><div class="ktm-sources"><div class="ktm-subhead"><span>Players deste episódio</span><button type="button" class="ktm-mini" data-action="add-source">+ Adicionar player</button></div><div class="ktm-source-list">'+sourceRows(ep.videoSources||((ep.videoUrl)?[{label:'Player 1',url:ep.videoUrl}]:[]))+'</div></div></article>';}
+  function seasonHTML(s,n){s=s||{};var eps=arr(s.episodes);return '<section class="ktm-season" data-season="'+n+'"><div class="ktm-season-head"><h4>Temporada '+n+'</h4><button type="button" class="ktm-mini danger" data-action="rm-season">Remover temporada</button></div><div class="ktm-fields"><label>Nome da temporada<input class="ktm-season-title" value="'+esc(s.title||'Temporada '+n)+'"></label><label>Ano<input class="ktm-season-year" type="number" value="'+esc(s.year||'')+'" placeholder="2026"></label><label class="full">Descrição da temporada<input class="ktm-season-desc" value="'+esc(s.desc||s.description||'')+'" placeholder="Descrição opcional"></label></div><div class="ktm-subhead"><span>Episódios <em class="ktm-ep-count">'+eps.length+'</em></span><button type="button" class="ktm-mini" data-action="add-episode">+ Adicionar episódio</button></div><div class="ktm-episodes">'+eps.map(function(e,i){return episodeHTML(e,i+1)}).join('')+'</div></section>';}
+  function renderItems(){var c=D.getElementById('ktm-cat'),i=D.getElementById('ktm-item');if(!c||!i)return;var list=data()[c.value]||[],prev=i.value;i.innerHTML=list.map(function(x,n){return '<option value="'+n+'">'+esc(x.title||'Sem título')+'</option>';}).join('')||'<option value="">Nenhum título cadastrado</option>';if(list[Number(prev)])i.value=prev;renderEditor();}
+  function renderCats(){var c=D.getElementById('ktm-cat');if(!c)return;var prev=c.value;c.innerHTML=cats().map(function(x){return '<option value="'+x+'">'+x.toUpperCase()+'</option>';}).join('')||'<option value="">Nenhuma categoria encontrada</option>';if(cats().indexOf(prev)>=0)c.value=prev;renderItems();}
+  function renderEditor(){var root=D.getElementById('ktm-editor'),it=item();if(!root)return;if(!it){root.innerHTML='<div class="ktm-empty">Cadastre primeiro um anime, série, dorama ou novela.</div>';return;}var ss=arr(it.seasons);root.innerHTML='<div class="ktm-item-summary"><b>'+esc(it.title||'Sem título')+'</b><span>'+ss.length+' temporada(s) · '+ss.reduce(function(t,s){return t+arr(s.episodes).length},0)+' episódio(s)</span></div><div id="ktm-seasons">'+ss.map(function(s,n){return seasonHTML(s,n+1)}).join('')+'</div><button type="button" class="ktm-add-season" data-action="add-season">+ Adicionar temporada</button><div class="ktm-savebar"><button type="button" class="ktm-save" data-action="save">💾 Salvar temporadas e episódios</button><button type="button" class="ktm-mini" data-action="reload">Recarregar</button></div>'+(ss.length?'':'<div class="ktm-empty">Nenhuma temporada cadastrada. Clique em “Adicionar temporada”.</div>');}
+  function collect(){var seasons=[];D.querySelectorAll('#ktm-seasons>.ktm-season').forEach(function(card,si){var eps=[];card.querySelectorAll('.ktm-episode').forEach(function(ep,ei){var sources=[];ep.querySelectorAll('.ktm-source').forEach(function(row){var url=(row.querySelector('.ktm-src-url')||{}).value||'';if(url.trim())sources.push({label:((row.querySelector('.ktm-src-label')||{}).value||'Player '+(sources.length+1)).trim(),url:url.trim()});});var num=Number((ep.querySelector('.ktm-ep-number')||{}).value)||ei+1;eps.push({number:num,title:((ep.querySelector('.ktm-ep-title')||{}).value||'').trim(),duration:((ep.querySelector('.ktm-ep-duration')||{}).value||'').trim(),thumb:((ep.querySelector('.ktm-ep-thumb')||{}).value||'').trim(),description:((ep.querySelector('.ktm-ep-desc')||{}).value||'').trim(),videoSources:sources,videoUrl:sources[0]?sources[0].url:''});});seasons.push({title:((card.querySelector('.ktm-season-title')||{}).value||'Temporada '+(si+1)).trim(),year:Number((card.querySelector('.ktm-season-year')||{}).value)||null,desc:((card.querySelector('.ktm-season-desc')||{}).value||'').trim(),eps:eps.length,episodes:eps});});return seasons;}
+  function persist(){try{localStorage.setItem('kawe_catalog',JSON.stringify(data()));}catch(e){}try{if(typeof window.kawePersistCatalogLinks==='function')window.kawePersistCatalogLinks('temporadas-episodios');}catch(e){}}
+  function act(e){var b=e.target.closest('[data-action]');if(!b)return;var action=b.dataset.action;
+    if(action==='add-season'){var box=D.getElementById('ktm-seasons');box.insertAdjacentHTML('beforeend',seasonHTML({episodes:[]},box.children.length+1));return;}
+    if(action==='rm-season'){b.closest('.ktm-season').remove();return;}
+    if(action==='add-episode'){var card=b.closest('.ktm-season'),box=card.querySelector('.ktm-episodes');box.insertAdjacentHTML('beforeend',episodeHTML({},box.children.length+1));card.querySelector('.ktm-ep-count').textContent=box.children.length;return;}
+    if(action==='rm-episode'){var card=b.closest('.ktm-season'),ep=b.closest('.ktm-episode');ep.remove();card.querySelectorAll('.ktm-episode').forEach(function(x,i){x.dataset.ep=i+1;x.querySelector('.ktm-ep-head b').textContent='Episódio '+(i+1);});card.querySelector('.ktm-ep-count').textContent=card.querySelectorAll('.ktm-episode').length;return;}
+    if(action==='add-source'){var list=b.closest('.ktm-sources').querySelector('.ktm-source-list');list.insertAdjacentHTML('beforeend',sourceRows([{label:'Player '+(list.children.length+1),url:''}]));return;}
+    if(action==='rm-source'){var row=b.closest('.ktm-source');if(row.parentElement.children.length>1)row.remove();else{row.querySelector('.ktm-src-url').value='';}return;}
+    if(action==='save'){var it=item();if(!it)return;var ss=collect(),obj={};ss.forEach(function(s,i){obj[i+1]=s;});it.seasons=obj;it.seasonsCount=ss.length;it.episodesTotal=ss.reduce(function(t,s){return t+s.episodes.length},0);persist();if(typeof window.updateAdminMoviesList==='function')window.updateAdminMoviesList();if(typeof window.renderCards==='function')try{window.renderCards(D.getElementById('ktm-cat').value,1)}catch(x){};if(typeof window.toast==='function')window.toast('✅ '+it.title+' salvo com '+ss.length+' temporada(s) e '+it.episodesTotal+' episódio(s).');renderEditor();return;}
+    if(action==='reload')renderEditor();
+  }
+  function inject(){var panel=D.getElementById('admin-panel'),tabs=panel&&panel.querySelector('.admin-tabs'),box=panel&&panel.querySelector('.admin-box');if(!tabs||!box||D.getElementById('admin-kawe-temporadas'))return;var tab=D.createElement('div');tab.className='admin-tab';tab.id='admin-kawe-temporadas';tab.textContent='📺 TEMPORADAS & EPISÓDIOS';tab.onclick=function(){tabs.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active')});box.querySelectorAll('.admin-content-section').forEach(function(x){x.classList.remove('active')});tab.classList.add('active');D.getElementById('admin-kawe-temporadas-section').classList.add('active');renderCats();};tabs.appendChild(tab);var sec=D.createElement('div');sec.id='admin-kawe-temporadas-section';sec.className='admin-content-section';sec.innerHTML='<h3>Gerenciar temporadas e episódios</h3><p class="admin-subtitle">Carregue um anime, série, dorama ou novela e cadastre cada temporada, episódio e player separadamente.</p><div class="ktm-picker"><label>Categoria<select id="ktm-cat"></select></label><label>Título<select id="ktm-item"></select></label></div><div id="ktm-editor"></div>';box.appendChild(sec);D.getElementById('ktm-cat').onchange=renderItems;D.getElementById('ktm-item').onchange=renderEditor;sec.addEventListener('click',act);}
+  function boot(){inject();}
+  if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,500)});else setTimeout(boot,500);
+  [1200,3000,6000].forEach(function(t){setTimeout(boot,t)});
+})();
+
+</script>
+<!-- KAWE_TEMPORADAS_EPISODIOS_MODULO_END -->
+
+<!-- KAWE_SVG_ICONS_AND_FIREBASE_HEALTH_START -->
+<style id="kawe-svg-icon-normalizer-css">.kawe-svg-icon{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-inline:.08em;pointer-events:none}</style>
+<script id="kawe-svg-icon-normalizer-js">
+(function(){
+  'use strict';
+  if(window.__KAWE_SVG_ICON_NORMALIZER__)return;
+  window.__KAWE_SVG_ICON_NORMALIZER__=true;
+  var D=document;
+  var emoji=/[\u{1F000}-\u{1FAFF}\u{1FC00}-\u{1FFFF}\u{2300}-\u{23FF}\u{2500}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+  var skip={SCRIPT:1,STYLE:1,TEXTAREA:1,INPUT:1,SELECT:1,OPTION:1,CODE:1,PRE:1};
+  function hasEmoji(s){emoji.lastIndex=0;return emoji.test(s);}
+  function icon(){var s=D.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('class','kawe-svg-icon');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('aria-hidden','true');s.innerHTML='<circle cx="12" cy="12" r="9"></circle><path d="M8 12.2 10.7 15 16.5 9"></path>';return s;}
+  function replaceText(node){if(!node||!node.nodeValue||!node.parentNode||skip[node.parentNode.nodeName])return;if(!hasEmoji(node.nodeValue))return;var parts=node.nodeValue.split(emoji);if(parts.length<2)return;var frag=D.createDocumentFragment();for(var i=0;i<parts.length;i++){if(parts[i])frag.appendChild(D.createTextNode(parts[i]));if(i<parts.length-1)frag.appendChild(icon());}node.parentNode.replaceChild(frag,node);}
+  function scan(root){if(!root)return;var w=D.createTreeWalker(root,NodeFilter.SHOW_TEXT);var nodes=[];while(w.nextNode())nodes.push(w.currentNode);nodes.forEach(replaceText);}
+  function boot(){scan(D.body||D.documentElement);if(!D.body)return;var mo=new MutationObserver(function(list){list.forEach(function(r){Array.prototype.forEach.call(r.addedNodes,function(n){if(n.nodeType===3)replaceText(n);else if(n.nodeType===1)scan(n);});});});mo.observe(D.body,{childList:true,subtree:true});}
+  if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
+
+
+<script id="kawe-firebase-health-v2">
+(function(){
+  'use strict';
+  if(window.__KAWE_FIREBASE_HEALTH_V2__)return;
+  window.__KAWE_FIREBASE_HEALTH_V2__=true;
+  function timeout(p,ms){return Promise.race([p,new Promise(function(_,rej){setTimeout(function(){rej(new Error('Tempo limite excedido ('+ms+' ms)'));},ms);})]);}
+  function current(){return window.__KAWE_FIREBASE_HEALTH__||{status:'pending',firebaseSdk:false,realtime:false,firestore:false,checkedAt:null,details:[]};}
+  window.kaweCheckFirebaseHealth=function(){
+    var h=current();h.status='checking';h.firebaseSdk=!!(window.firebase&&firebase.apps&&firebase.apps.length);h.realtime=false;h.firestore=false;h.details=[];
+    if(!h.firebaseSdk){h.status='offline';h.details.push('SDK Firebase não carregado.');window.__KAWE_FIREBASE_HEALTH__=h;return Promise.resolve(h);}
+    var rt=window.kaweDB;
+    var rtCheck=rt&&typeof rt.ref==='function'?timeout(rt.ref('.info/connected').once('value'),7000).then(function(s){h.realtime=s&&s.val()===true;h.details.push(h.realtime?'Realtime Database conectado.':'Realtime Database respondeu como desconectado.');}).catch(function(e){h.details.push('Realtime Database: '+(e.message||e));}):Promise.resolve(h.details.push('Realtime Database SDK indisponível.'));
+    var fs=window.kaweFS;
+    var fsCheck=fs&&typeof fs.collection==='function'?timeout(fs.collection('catalog_chunks').limit(1).get({source:'server'}),9000).then(function(s){h.firestore=true;h.details.push('Firestore acessível ('+(s.size||0)+' documento(s) consultado(s)).');}).catch(function(e){h.details.push('Firestore carregado, mas a leitura foi recusada: '+(e.code||e.message||e));}):Promise.resolve(h.details.push('Firestore SDK indisponível.'));
+    return Promise.all([rtCheck,fsCheck]).then(function(){h.status=(h.realtime||h.firestore)?'connected':'offline';h.checkedAt=new Date().toISOString();window.__KAWE_FIREBASE_HEALTH__=h;return h;});
+  };
+  window.kaweFirebaseHealthLabel=function(){var h=current();if(h.status==='checking')return 'VERIFICANDO FIREBASE…';if(h.status==='connected')return 'FIREBASE CONECTADO';if(h.status==='offline')return 'FIREBASE OFFLINE / SEM ACESSO';return 'FIREBASE AINDA NÃO VERIFICADO';};
+  function wrapDiagnostics(){
+    var old=window.runFirebaseDiagnostics;
+    if(typeof old!=='function'||old.__kaweHealthWrapped)return;
+    var wrapped=function(){return window.kaweCheckFirebaseHealth().then(function(h){return old.apply(this,arguments).then(function(){var box=document.getElementById('firebase-diagnostic-status');if(box){var n=document.createElement('div');n.setAttribute('data-kawe-firebase-health','1');n.style.cssText='margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid '+(h.status==='connected'?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)')+';background:'+(h.status==='connected'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)')+';color:'+(h.status==='connected'?'#bbf7d0':'#fecaca');n.innerHTML='<b>'+window.kaweFirebaseHealthLabel()+'</b><br><span style="font-size:12px">'+h.details.map(function(x){return String(x).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}).join('<br>')+'</span>';var prev=box.querySelector('[data-kawe-firebase-health]');if(prev)prev.remove();box.insertBefore(n,box.firstChild);}});});};wrapped.__kaweHealthWrapped=true;window.runFirebaseDiagnostics=wrapped;
+  }
+  function boot(){wrapDiagnostics();window.kaweCheckFirebaseHealth();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,800)});else setTimeout(boot,800);
+  [1800,4000,8000].forEach(function(t){setTimeout(wrapDiagnostics,t);});
+})();
+</script>
+<!-- KAWE_SVG_ICONS_AND_FIREBASE_HEALTH_END -->
 </body>
 </html>
 
