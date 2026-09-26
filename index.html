@@ -19808,7 +19808,7 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
 #kdl-overlay{
   position:fixed; inset:0; z-index:100000; display:none;
   background:radial-gradient(1100px 600px at 50% 0%, rgba(34,197,94,.16), rgba(0,0,0,.92) 60%), rgba(0,0,0,.94);
-   -webkit-
+  -webkit-overflow-scrolling:touch;
   overflow-y:auto; padding:26px 14px;
 }
 #kdl-overlay.open{ display:block; }
@@ -37155,17 +37155,19 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){set
   window.kaweCheckFirebaseHealth=function(){
     var h=current();h.status='checking';h.firebaseSdk=!!(window.firebase&&firebase.apps&&firebase.apps.length);h.realtime=false;h.firestore=false;h.details=[];
     if(!h.firebaseSdk){h.status='offline';h.details.push('SDK Firebase não carregado.');window.__KAWE_FIREBASE_HEALTH__=h;return Promise.resolve(h);}
+    h.downloadsRead=null;
     var rt=window.kaweDB;
     var rtCheck=rt&&typeof rt.ref==='function'?timeout(rt.ref('.info/connected').once('value'),7000).then(function(s){h.realtime=s&&s.val()===true;h.details.push(h.realtime?'Realtime Database conectado.':'Realtime Database respondeu como desconectado.');}).catch(function(e){h.details.push('Realtime Database: '+(e.message||e));}):Promise.resolve(h.details.push('Realtime Database SDK indisponível.'));
+    var downloadCheck=rt&&typeof rt.ref==='function'?timeout(rt.ref('kawe_downloads').once('value'),7000).then(function(){h.downloadsRead=true;h.details.push('Downloads: leitura de /kawe_downloads permitida.');}).catch(function(e){h.downloadsRead=false;h.details.push('Downloads: leitura de /kawe_downloads negada pelas regras ('+(e.code||e.message||e)+').');}):Promise.resolve(h.details.push('Downloads: Realtime Database indisponível.'));
     var fs=window.kaweFS;
     var fsCheck=fs&&typeof fs.collection==='function'?timeout(fs.collection('catalog_chunks').limit(1).get({source:'server'}),9000).then(function(s){h.firestore=true;h.details.push('Firestore acessível ('+(s.size||0)+' documento(s) consultado(s)).');}).catch(function(e){h.details.push('Firestore carregado, mas a leitura foi recusada: '+(e.code||e.message||e));}):Promise.resolve(h.details.push('Firestore SDK indisponível.'));
-    return Promise.all([rtCheck,fsCheck]).then(function(){h.status=(h.realtime||h.firestore)?'connected':'offline';h.checkedAt=new Date().toISOString();window.__KAWE_FIREBASE_HEALTH__=h;return h;});
+    return Promise.all([rtCheck,downloadCheck,fsCheck]).then(function(){h.status=(h.realtime||h.firestore)?'connected':'offline';h.checkedAt=new Date().toISOString();window.__KAWE_FIREBASE_HEALTH__=h;return h;});
   };
-  window.kaweFirebaseHealthLabel=function(){var h=current();if(h.status==='checking')return 'VERIFICANDO FIREBASE…';if(h.status==='connected')return 'FIREBASE CONECTADO';if(h.status==='offline')return 'FIREBASE OFFLINE / SEM ACESSO';return 'FIREBASE AINDA NÃO VERIFICADO';};
+  window.kaweFirebaseHealthLabel=function(){var h=current();if(h.status==='checking')return 'VERIFICANDO FIREBASE…';if(h.status==='connected'&&h.downloadsRead===false)return 'FIREBASE PARCIAL — REGRAS LIMITAM DOWNLOADS';if(h.status==='connected')return 'FIREBASE CONECTADO';if(h.status==='offline')return 'FIREBASE OFFLINE / SEM ACESSO';return 'FIREBASE AINDA NÃO VERIFICADO';};
   function wrapDiagnostics(){
     var old=window.runFirebaseDiagnostics;
     if(typeof old!=='function'||old.__kaweHealthWrapped)return;
-    var wrapped=function(){return window.kaweCheckFirebaseHealth().then(function(h){return old.apply(this,arguments).then(function(){var box=document.getElementById('firebase-diagnostic-status');if(box){var n=document.createElement('div');n.setAttribute('data-kawe-firebase-health','1');n.style.cssText='margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid '+(h.status==='connected'?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)')+';background:'+(h.status==='connected'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)')+';color:'+(h.status==='connected'?'#bbf7d0':'#fecaca');n.innerHTML='<b>'+window.kaweFirebaseHealthLabel()+'</b><br><span style="font-size:12px">'+h.details.map(function(x){return String(x).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}).join('<br>')+'</span>';var prev=box.querySelector('[data-kawe-firebase-health]');if(prev)prev.remove();box.insertBefore(n,box.firstChild);}});});};wrapped.__kaweHealthWrapped=true;window.runFirebaseDiagnostics=wrapped;
+    var wrapped=function(){return window.kaweCheckFirebaseHealth().then(function(h){return old.apply(this,arguments).then(function(){var box=document.getElementById('firebase-diagnostic-status');if(box){var n=document.createElement('div');n.setAttribute('data-kawe-firebase-health','1');n.style.cssText='margin-bottom:10px;padding:12px;border-radius:10px;border:1px solid '+(h.status==='connected'&&h.downloadsRead!==false?'rgba(34,197,94,.45)':(h.status==='connected'?'rgba(245,158,11,.55)':'rgba(239,68,68,.45)'))+';background:'+(h.status==='connected'&&h.downloadsRead!==false?'rgba(34,197,94,.1)':(h.status==='connected'?'rgba(245,158,11,.1)':'rgba(239,68,68,.1)'))+';color:'+(h.status==='connected'&&h.downloadsRead!==false?'#bbf7d0':(h.status==='connected'?'#fde68a':'#fecaca'));n.innerHTML='<b>'+window.kaweFirebaseHealthLabel()+'</b><br><span style="font-size:12px">'+h.details.map(function(x){return String(x).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}).join('<br>')+'</span>';var prev=box.querySelector('[data-kawe-firebase-health]');if(prev)prev.remove();box.insertBefore(n,box.firstChild);}});});};wrapped.__kaweHealthWrapped=true;window.runFirebaseDiagnostics=wrapped;
   }
   function boot(){wrapDiagnostics();window.kaweCheckFirebaseHealth();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,800)});else setTimeout(boot,800);
@@ -37563,7 +37565,23 @@ var rows=[    {id:1,name:"Firebase SDK",description:"Confere se os SDKs Firebase
   window.kaweAdminFn150=function(){return run(150)};
 function render(){var g=D.getElementById('ka150-grid'),q=((D.getElementById('ka150-search')||{}).value||'').toLowerCase(),f=(D.getElementById('ka150-category')||{}).value||'';if(!g)return;var a=rows.filter(function(x){return(!f||x.kind.split(':')[0]===f)&&(!q||(x.name+' '+x.description).toLowerCase().indexOf(q)>=0)});g.innerHTML=a.map(function(x){return '<article class="ka150-card"><div><b>'+esc(x.id+'. '+x.name)+'</b><small>'+esc(x.description)+'</small></div><button type="button" data-ka150-run="'+x.id+'">Executar</button></article>'}).join('')||'<div class="ka150-result">Nenhuma função encontrada.</div>';}
 function inject(){var p=D.getElementById('admin-panel'),tabs=p&&p.querySelector('.admin-tabs'),box=p&&p.querySelector('.admin-box');if(!tabs||!box||D.getElementById('kawe-tab-admin-150'))return;var t=D.createElement('div');t.id='kawe-tab-admin-150';t.className='admin-tab';t.textContent='🧰 ADMIN — 150 FUNÇÕES';t.onclick=function(){tabs.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active')});box.querySelectorAll('.admin-content-section').forEach(function(x){x.classList.remove('active')});t.classList.add('active');D.getElementById('kawe-admin-150').classList.add('active');render()};tabs.appendChild(t);var sec=D.createElement('div');sec.id='kawe-admin-150';sec.className='admin-content-section';sec.innerHTML='<div class="ka150-head"><div><h3>🧰 Central Admin — 150 funções</h3><p>Pesquisa, diagnóstico, manutenção segura e sincronização. Nenhuma função remove conteúdo automaticamente.</p></div></div><div class="ka150-tools"><input id="ka150-search" type="search" placeholder="Pesquisar função, Firebase, catálogo, chat…"><select id="ka150-category"><option value="">Todas as categorias</option><option value="firebaseSdk">Firebase</option><option value="catalogAudit">Catálogo</option><option value="categoryCount">Categorias</option><option value="safeMaintenance">Manutenção</option><option value="adminReport">Relatórios</option></select><button type="button" id="ka150-run-health">Verificar Firebase</button></div><div id="ka150-result" class="ka150-result">Selecione uma função para ver o resultado.</div><div id="ka150-grid" class="ka150-grid"></div>';box.appendChild(sec);sec.querySelector('#ka150-search').oninput=render;sec.querySelector('#ka150-category').onchange=render;sec.querySelector('#ka150-run-health').onclick=function(){run(15)};sec.addEventListener('click',function(e){var b=e.target.closest('[data-ka150-run]');if(b)run(Number(b.dataset.ka150Run))});render()}
-function logoIntro(){var link=D.querySelector('link[rel="icon"]');if(!link)return;var url=link.href;D.querySelectorAll('#kawe-intro-root .ki-wheel,#kawe-intro-root .ki-spinner-ring,#kawe-intro-root .ki-spinner-ring-2').forEach(function(e){e.style.backgroundImage='url("'+url.replace(/"/g,'\"')+'")'})}
+function logoIntro(){
+  var mark=D.querySelector('.auth-logo-img');
+  var url=mark&&(mark.getAttribute('src')||mark.src)||'';
+  if(!url){var link=D.querySelector('link[rel~="icon"]');url=link&&(link.getAttribute('href')||link.href)||'';}
+  if(!url)return;
+  var selectors='#kawe-intro-root .ki-wheel,#kawe-intro-root .ki-spinner-ring,#kawe-intro-root .ki-spinner-ring-2,#kawe-dev-intro .ki-wheel,#kawe-dev-intro .ki-spinner-ring,#kawe-dev-intro .ki-spinner-ring-2';
+  D.querySelectorAll(selectors).forEach(function(e){
+    e.style.setProperty('background-image','url("'+url.replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'")','important');
+    e.style.setProperty('background-repeat','no-repeat','important');
+    e.style.setProperty('background-position','center','important');
+    e.style.setProperty('background-size','contain','important');
+    e.style.setProperty('border','0','important');
+    e.style.setProperty('box-shadow','none','important');
+    e.style.setProperty('animation','none','important');
+    e.style.setProperty('transform','none','important');
+  });
+}
 function boot(){inject();logoIntro()}if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,900)});else setTimeout(boot,900);[1800,4000,8000].forEach(function(t){setTimeout(boot,t)});
 })();
 </script>
@@ -37589,6 +37607,45 @@ function boot(){install()}if(D.readyState==='loading')D.addEventListener('DOMCon
 })();
 </script>
 <!-- /KAWE_ADMIN_DUAL_SEARCH_V1 -->
+<!-- KAWE DOWNLOADS SIDEBAR HOTFIX -->
+<style id="kawe-download-sidebar-hotfix-css">
+#kawe-sb-download-platform{cursor:pointer!important}
+#kawe-sb-download-platform:focus-visible{outline:2px solid #86efac!important;outline-offset:2px!important}
+</style>
+<script id="kawe-download-sidebar-hotfix-js">
+(function(){
+  'use strict';
+  if(window.__KAWE_DOWNLOAD_SIDEBAR_HOTFIX__)return;
+  window.__KAWE_DOWNLOAD_SIDEBAR_HOTFIX__=true;
+  var LABEL='BAIXAR PLATAFORMA';
+  function norm(el){return String(el&&(el.innerText||el.textContent)||'').replace(/[\s›»•]+/g,' ').trim().toLocaleUpperCase('pt-BR');}
+  function candidates(){return Array.prototype.slice.call(document.querySelectorAll('#sidebar .sidebar-link,#sidebar .nav-link,.sidebar .sidebar-link,.sidebar-link'));}
+  function ensure(){
+    var list=candidates().filter(function(el){return /^(BAIXAR APP|BAIXAR PLATAFORMA)$/.test(norm(el));});
+    if(list.length>1){list.slice(1).forEach(function(el){if(el.parentNode)el.parentNode.removeChild(el);});list=list.slice(0,1);}
+    var menu=document.querySelector('#sidebar .sidebar-menu,.sidebar .sidebar-menu,#sidebar');
+    if(!list.length&&menu){
+      var el=document.createElement('div');el.id='kawe-sb-download-platform';el.className='sidebar-link';el.setAttribute('role','button');el.tabIndex=0;
+      el.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg> '+LABEL;
+      menu.appendChild(el);list=[el];
+    }
+    list.forEach(function(el){
+      if(!el.id)el.id='kawe-sb-download-platform';
+      el.setAttribute('role','button');el.setAttribute('aria-label',LABEL);el.tabIndex=el.tabIndex>=0?el.tabIndex:0;
+      Array.prototype.forEach.call(el.childNodes,function(n){if(n.nodeType===3&&/BAIXAR APP|BAIXAR PLATAFORMA/i.test(n.nodeValue||''))n.nodeValue=' '+LABEL;});
+      if(el.dataset.kaweDlHotfixBound==='1')return;
+      el.dataset.kaweDlHotfixBound='1';
+      function open(e){if(e){e.preventDefault();e.stopImmediatePropagation();}if(typeof window.kaweOpenDownloads==='function')window.kaweOpenDownloads();}
+      el.addEventListener('click',open,true);
+      el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){open(e);}},true);
+    });
+  }
+  function boot(){ensure();if(window.MutationObserver&&document.body){var mo=new MutationObserver(function(){ensure();});mo.observe(document.body,{childList:true,subtree:true});}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  [500,1200,2500,5000,9000].forEach(function(t){setTimeout(ensure,t);});
+})();
+</script>
+<!-- /KAWE DOWNLOADS SIDEBAR HOTFIX -->
 </body>
 </html>
 
