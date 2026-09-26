@@ -7981,8 +7981,13 @@ if (document.readyState !== 'loading') loadSocialLinks();
 // ===== SISTEMA DE SUPORTE (formulário + admin) =====
 (function(){
   const KEY = 'kawe_support_messages';
+  const CLOUD_KEY = 'kawe_support_messages';
   function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e){ return []; } }
-  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
+  function save(list){ try { localStorage.setItem(KEY, JSON.stringify(list)); } catch(e){} }
+  function db(){ try { return window.kaweDB || (window.firebase && firebase.apps && firebase.apps.length ? firebase.database() : null); } catch(e){ return null; } }
+  function isAdmin(){ try { return typeof window.kaweCanWriteFirebase === 'function' && window.kaweCanWriteFirebase(); } catch(e){ return false; } }
+  function saveCloud(item){ var d=db(); if(!d || !d.ref) return Promise.resolve(false); return Promise.resolve(d.ref(CLOUD_KEY+'/'+item.id).set(item)).then(function(){ return true; }).catch(function(e){ console.warn('[KAWE Suporte] Firebase:',e); return false; }); }
+  function loadCloud(){ var d=db(); if(!d || !d.ref || !isAdmin()) return Promise.resolve(false); return d.ref(CLOUD_KEY).once('value').then(function(s){ var v=s&&s.val()||{}, a=Object.keys(v).map(function(k){return v[k];}).filter(Boolean); if(!a.length)return false; a.sort(function(x,y){return String(y.date||'').localeCompare(String(x.date||''));}); save(a); return true; }).catch(function(e){ console.warn('[KAWE Suporte] leitura Firebase:',e); return false; }); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   window.sendSupportMessage = function(ev){
@@ -8005,6 +8010,7 @@ if (document.readyState !== 'loading') loadSocialLinks();
       read: false
     });
     save(list);
+    saveCloud(list[0]).then(function(ok){ if(!ok) console.warn('[KAWE Suporte] mensagem preservada localmente; Firebase indisponível.'); });
     document.getElementById('suporte-form').reset();
     fb.style.color = '#22c55e';
     fb.textContent = '✅ Mensagem enviada com sucesso! Nossa equipe entrará em contato em breve.';
@@ -8051,13 +8057,15 @@ if (document.readyState !== 'loading') loadSocialLinks();
 
   window.deleteSupportMessage = function(id){
     if (!confirm('Excluir esta mensagem?')) return;
-    save(load().filter(m => m.id !== id));
+    var next = load().filter(m => m.id !== id); save(next);
+    var d=db(); if(d && d.ref && isAdmin()) d.ref(CLOUD_KEY+'/'+id).remove().catch(function(e){console.warn('[KAWE Suporte] exclusão Firebase:',e);});
     renderSupportMessages();
   };
 
   window.clearAllSupportMessages = function(){
     if (!confirm('Apagar TODAS as mensagens de suporte?')) return;
     save([]);
+    var d=db(); if(d && d.ref && isAdmin()) d.ref(CLOUD_KEY).remove().catch(function(e){console.warn('[KAWE Suporte] limpeza Firebase:',e);});
     renderSupportMessages();
   };
 
@@ -8080,7 +8088,8 @@ if (document.readyState !== 'loading') loadSocialLinks();
     else { badge.style.display='none'; }
   };
 
-  document.addEventListener('DOMContentLoaded', updateSupportBadge);
+  document.addEventListener('DOMContentLoaded', function(){ updateSupportBadge(); setTimeout(function(){ loadCloud().then(function(ok){ if(ok && typeof window.renderSupportMessages==='function') window.renderSupportMessages(); }); },1200); });
+  window.addEventListener('kawe:auth-state', function(){ loadCloud().then(function(ok){ if(ok && typeof window.renderSupportMessages==='function') window.renderSupportMessages(); }); });
 })();
 
 
@@ -19897,7 +19906,27 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
   function fixUrl(u){ u=String(u||'').trim(); if(!u) return ''; if(!/^https?:\/\//i.test(u) && !/^mailto:|^tel:/i.test(u)) u='https://'+u; return u; }
   function say(t){ try{ if(typeof toast==='function') return toast(t); }catch(e){} console.log(t); }
   function read(){ try{ var v=JSON.parse(localStorage.getItem(KEY)||'null'); if(Array.isArray(v)&&v.length) return v; }catch(e){} return JSON.parse(JSON.stringify(DEFAULTS)); }
-  function save(list){ try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){} }
+  var CLOUD_PATH = 'kawe_downloads';
+  function db(){ try{ return window.kaweDB || (window.firebase && firebase.apps && firebase.apps.length ? firebase.database() : null); }catch(e){ return null; } }
+  function canWrite(){ try{ return typeof window.kaweCanWriteFirebase === 'function' && window.kaweCanWriteFirebase(); }catch(e){ return false; } }
+  function syncCloud(list){
+    var d=db();
+    if(!d || !d.ref || !canWrite()) return Promise.resolve(false);
+    return Promise.resolve(d.ref(CLOUD_PATH).set({items:list,updatedAt:new Date().toISOString(),updatedBy:(window.KAWE_ADMIN_UID||'admin')}))
+      .then(function(){ say('☁️ Links de download sincronizados com o Firebase'); return true; })
+      .catch(function(e){ console.warn('[KAWE Downloads] Firebase:',e); say('⚠️ Salvo localmente; Firebase recusou a sincronização'); return false; });
+  }
+  function save(list){ try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){} syncCloud(list); }
+  function loadCloud(){
+    var d=db(); if(!d || !d.ref) return;
+    d.ref(CLOUD_PATH).once('value').then(function(s){
+      var v=s&&s.val(), list=Array.isArray(v)?v:(v&&Array.isArray(v.items)?v.items:null);
+      if(!list || !list.length) return;
+      try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){}
+      try{ if(typeof renderAdmin==='function') renderAdmin(); }catch(e){}
+      try{ renderModal(); }catch(e){}
+    }).catch(function(e){ console.warn('[KAWE Downloads] leitura Firebase:',e); });
+  }
 
   /* ══ MODAL DE DOWNLOADS ══ */
   function buildModal(){
@@ -20060,11 +20089,13 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
     }catch(e){}
   }
 
+  window.kaweReloadDownloadsFromFirebase = loadCloud;
   function init(){
     try{ buildModal(); }catch(e){}
     try{ injectEntries(); }catch(e){}
     try{ addTab(); }catch(e){}
     try{ fixTexts(); }catch(e){}
+    try{ loadCloud(); }catch(e){}
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(init,600); });
   else setTimeout(init,600);
@@ -20072,6 +20103,12 @@ body.kawe-light .kx-input, body.kawe-light .kx-select{ background:#fff; color:#0
   setInterval(function(){ try{ injectEntries(); addTab(); }catch(e){} }, 2500);
 })();
 </script>
+<script id="kawe-downloads-firebase-hooks">(function(){
+  function sync(){try{if(typeof window.kaweReloadDownloadsFromFirebase==='function')window.kaweReloadDownloadsFromFirebase();if(typeof window.kaweOpenDownloads==='function')window.dispatchEvent(new Event('kawe:downloads-firebase-ready'));}catch(e){}}
+  window.addEventListener('kawe:firebase-ready',sync);
+  window.addEventListener('kawe:auth-state',sync);
+  [1200,3000,6000].forEach(function(t){setTimeout(sync,t);});
+})();</script>
 <!--KAWE_DOWNLOADS_END-->
 <!--KAWE_SOCIAL_START-->
 <style id="kawe-social-css">
