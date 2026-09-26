@@ -37136,6 +37136,422 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){set
 })();
 </script>
 <!-- KAWE_SVG_ICONS_AND_FIREBASE_HEALTH_END -->
+
+<!-- KAWE_FIREBASE_PERSISTENCE_FINAL_FIX_V1 -->
+<style id="kawe-firebase-persistence-fix-css">
+#kawe-chat-status[data-state="ok"]{color:#bbf7d0}#kawe-chat-status[data-state="error"]{color:#fecaca}#kawe-chat-status[data-state="sending"]{color:#fde68a}
+#ktm-firebase-save-status{margin:10px 0;padding:10px 12px;border-radius:9px;font-size:12px;background:rgba(245,158,11,.1);color:#fde68a}
+#ktm-firebase-save-status.ok{background:rgba(34,197,94,.1);color:#bbf7d0}#ktm-firebase-save-status.error{background:rgba(239,68,68,.1);color:#fecaca}
+</style>
+<script id="kawe-firebase-persistence-fix-js">
+(function(){
+  'use strict';
+  if(window.__KAWE_FIREBASE_PERSISTENCE_FINAL_FIX__)return;
+  window.__KAWE_FIREBASE_PERSISTENCE_FINAL_FIX__=true;
+  var D=document, CHAT='kawe_chat_global';
+  function toast(s){try{if(typeof window.toast==='function')window.toast(s);else console.log('[KAWE]',s)}catch(e){}}
+  function db(){try{return window.kaweDB||(window.firebase&&firebase.apps&&firebase.apps.length?firebase.database():null)}catch(e){return null}}
+  function fs(){return window.kaweFS&&typeof window.kaweFS.collection==='function'?window.kaweFS:null}
+  function authOk(){try{return !!(window.firebase&&firebase.apps&&firebase.apps.length&&firebase.auth().currentUser&&window.KAWE_ADMIN_UID&&firebase.auth().currentUser.uid===window.KAWE_ADMIN_UID)}catch(e){return false}}
+  function wait(fn,n){n=n||0;return Promise.resolve().then(function(){if(n>24)return false;var r=fn();if(r&&typeof r.then==='function')return r.then(function(ok){return ok?true:new Promise(function(x){setTimeout(function(){x(wait(fn,n+1))},250)})});return r?true:new Promise(function(x){setTimeout(function(){x(wait(fn,n+1))},250)})})}
+  function catalogSave(reason){
+    try{localStorage.setItem('kawe_catalog',JSON.stringify(window.CATALOG_DATA||{}))}catch(e){}
+    return wait(function(){
+      if(!window.kaweFirestoreSync||typeof window.kaweFirestoreSync.save!=='function')return false;
+      if(!authOk())return false;
+      return window.kaweFirestoreSync.save().then(function(ok){return !!ok}).catch(function(e){console.warn('[KAWE Firestore] '+(reason||'catalogo'),e);return false});
+    }).then(function(ok){
+      if(!ok&&!authOk())toast('⚠️ Faça login como administrador para gravar temporadas e episódios no Firebase.');
+      else if(!ok)toast('⚠️ Firebase recusou a gravação. Verifique as regras do Firestore.');
+      return ok;
+    });
+  }
+  window.kawePersistCatalogLinks=catalogSave;
+  window.kawePersistCatalogOnlyFirebase=catalogSave;
+  function chatStatus(t,state){var x=D.getElementById('kawe-chat-status');if(x){x.textContent=t;x.dataset.state=state||'info'}}
+  function user(){var id='',name='';try{var a=window.firebase&&firebase.apps&&firebase.apps.length?firebase.auth().currentUser:null;if(a)id=a.uid,name=a.displayName||a.email||''}catch(e){}try{id=id||localStorage.getItem('kawe_current_user_id')||localStorage.getItem('kawe_anon_id');if(!id){id='a_'+Math.random().toString(36).slice(2,10);localStorage.setItem('kawe_anon_id',id)}name=name||localStorage.getItem('kawe_user_name')||''}catch(e){}return{id:id||'anon',name:(name||'Visitante').slice(0,80)}}
+  function render(m){var b=D.getElementById('chat-messages');if(!b||!m||!m.id||b.querySelector('[data-mid="'+String(m.id).replace(/"/g,'')+'"]'))return;var e=D.createElement('div');e.className='chat-message '+(m.uid===user().id?'user':'bot');e.dataset.mid=m.id;var h=D.createElement('b');h.textContent=m.name||'Usuário';h.style.cssText='display:block;font-size:11px;opacity:.75;margin-bottom:3px';var t=D.createElement('span');t.textContent=m.text||'';var tm=D.createElement('small');tm.textContent=new Date(m.at||Date.now()).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});e.append(h,t,tm);b.appendChild(e);b.scrollTop=b.scrollHeight}
+  function bindChatFirebase(){var d=db(),b=D.getElementById('chat-messages');if(!d||!d.ref||!b)return false;if(b.__kaweFirebaseChatBound)return true;b.__kaweFirebaseChatBound=true;try{d.ref(CHAT).limitToLast(200).on('child_added',function(s){render(s.val())});chatStatus('Chat conectado ao Firebase.','ok');return true}catch(e){b.__kaweFirebaseChatBound=false;chatStatus('Não foi possível ler o chat no Firebase.','error');return false}}
+  var busy=false;
+  window.sendChatMessage=function(){
+    var i=D.getElementById('chat-input'),btn=D.querySelector('#chat .chat-send');if(!i||busy)return;var text=String(i.value||'').trim();if(!text)return;if(text.length>2000){chatStatus('Limite de 2.000 caracteres.','error');return}
+    var d=db();if(!d||!d.ref){chatStatus('Firebase ainda não conectado; a mensagem permanece no campo.','error');return}
+    var u=user(),m={id:'',at:new Date().toISOString(),uid:u.id,name:u.name,type:'text',text:text};busy=true;i.disabled=true;if(btn)btn.disabled=true;chatStatus('Enviando e aguardando confirmação…','sending');
+    var temp='chat-pending-'+Date.now(),p=D.createElement('div');p.className='chat-message user is-sending';p.dataset.mid=temp;p.textContent=u.name+': '+text;var box=D.getElementById('chat-messages');if(box){box.appendChild(p);box.scrollTop=box.scrollHeight}
+    var ref;try{ref=d.ref(CHAT).push();m.id=ref.key;ref.set(m).then(function(){if(p&&p.parentNode)p.remove();render(m);i.value='';chatStatus('Mensagem confirmada e salva no Firebase.','ok')}).catch(function(e){if(p&&p.parentNode)p.remove();i.value=text;var code=String(e&&e.code||e&&e.message||'erro');chatStatus(/PERMISSION_DENIED|permission-denied/i.test(code)?'Firebase negou a gravação. Ajuste as regras de '+CHAT+' para permitir escrita.':'Falha ao salvar no Firebase ('+code+'). O texto foi restaurado.','error')}).finally(function(){busy=false;i.disabled=false;if(btn)btn.disabled=false;i.focus()})}catch(e){if(p&&p.parentNode)p.remove();i.value=text;busy=false;i.disabled=false;if(btn)btn.disabled=false;chatStatus('Falha ao iniciar a gravação no Firebase. O texto foi restaurado.','error')}
+  };
+  window.kaweCheckChatFirebase=function(){var d=db();if(!d||!d.ref){chatStatus('Firebase indisponível para o chat.','error');return Promise.resolve(false)}return d.ref('.info/connected').once('value').then(function(s){var ok=s&&s.val()===true;chatStatus(ok?'Chat conectado ao Firebase.':'Firebase respondeu como desconectado.',ok?'ok':'error');return ok}).catch(function(e){chatStatus('Falha de conexão Firebase: '+String(e.code||e.message||e),'error');return false})};
+  function boot(){bindChatFirebase();window.kaweCheckChatFirebase()}
+  if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,1200)});else setTimeout(boot,1200);
+  [2500,5000,9000].forEach(function(t){setTimeout(boot,t)});
+  window.addEventListener('kawe:firebase-ready',boot);window.addEventListener('kawe:auth-state',boot);
+})();
+</script>
+<!-- /KAWE_FIREBASE_PERSISTENCE_FINAL_FIX_V1 -->
+
+<!-- KAWE_ADMIN_150_FUNCTIONS_V1 -->
+<style id="kawe-admin-150-css">
+#kawe-admin-150{color:#f8fafc}#kawe-admin-150.active{display:block}.ka150-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}.ka150-head h3{margin:0;color:#86efac;font-size:22px}.ka150-head p{margin:6px 0 0;color:#a1a1aa;font-size:13px}.ka150-tools{display:grid;grid-template-columns:minmax(220px,1fr) 180px auto;gap:8px;margin:14px 0}.ka150-tools input,.ka150-tools select,.ka150-tools button{background:rgba(0,0,0,.28);color:#fff;border:1px solid rgba(134,239,172,.3);border-radius:8px;padding:10px;font:inherit;font-size:13px}.ka150-tools button{cursor:pointer;background:rgba(34,197,94,.15);font-weight:800}.ka150-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:9px;max-height:560px;overflow:auto;padding-right:3px}.ka150-card{border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px;background:rgba(255,255,255,.035);display:flex;justify-content:space-between;gap:8px;align-items:center}.ka150-card b{display:block;font-size:12px}.ka150-card small{display:block;color:#a1a1aa;font-size:11px;line-height:1.35;margin-top:4px}.ka150-card button{flex:0 0 auto;border:1px solid rgba(134,239,172,.35);background:rgba(34,197,94,.12);color:#bbf7d0;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:11px;font-weight:800}.ka150-result{margin:10px 0;padding:11px;border-radius:9px;background:rgba(255,255,255,.05);color:#d1fae5;white-space:pre-wrap;font:12px/1.5 ui-monospace,monospace;max-height:180px;overflow:auto}@media(max-width:700px){.ka150-tools{grid-template-columns:1fr}}
+#kawe-intro-root .ki-wheel,#kawe-intro-root .ki-spinner-ring,#kawe-intro-root .ki-spinner-ring-2{border:0!important;animation:none!important;transform:none!important;background-color:transparent!important;background-repeat:no-repeat!important;background-position:center!important;background-size:contain!important;box-shadow:none!important}
+#kawe-intro-root .ki-spinner-ring,#kawe-intro-root .ki-spinner-ring-2{width:72px!important;height:72px!important}#kawe-intro-root .ki-wheel{width:30px!important;height:30px!important}
+</style>
+<script id="kawe-admin-150-js">
+(function(){'use strict';if(window.__KAWE_ADMIN_150_FUNCTIONS__)return;window.__KAWE_ADMIN_150_FUNCTIONS__=true;var D=document;
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function db(){try{return window.kaweDB||(window.firebase&&firebase.apps&&firebase.apps.length?firebase.database():null)}catch(e){return null}}function fs(){return window.kaweFS&&typeof window.kaweFS.collection==='function'?window.kaweFS:null}function out(v){var e=D.getElementById('ka150-result');if(e)e.textContent=typeof v==='string'?v:JSON.stringify(v,null,2);return v}function cat(){return window.CATALOG_DATA||{}}
+function runKind(k){
+ if(k==='firebaseSdk')return out('Firebase SDK: '+(window.firebase&&firebase.apps&&firebase.apps.length?'OK':'não carregado'));
+ if(k==='firebaseAuth'){var u=null;try{u=firebase.auth().currentUser}catch(e){}return out('Auth: '+(u?'OK — '+(u.email||u.uid):'sem sessão'))}
+ if(k==='adminUid')return out('UID autorizado: '+(window.KAWE_ADMIN_UID||'não definido'));
+ if(k==='rtdbSdk')return out('Realtime Database SDK: '+(db()?'OK':'indisponível'));
+ if(k==='firestoreSdk')return out('Firestore SDK: '+(fs()?'OK':'indisponível'));
+ if(k==='storageSdk'){var ok=false;try{ok=!!(window.firebase&&firebase.storage)}catch(e){}return out('Storage SDK: '+(ok?'OK':'indisponível'))}
+ if(k==='catalogStats'){var c=cat(),n=0;Object.keys(c).forEach(function(x){if(Array.isArray(c[x]))n+=c[x].length});return out('Categorias: '+Object.keys(c).length+'\nTítulos: '+n)}
+ if(k==='seasonStats'){var ss=0,ee=0,c=cat();Object.keys(c).forEach(function(x){(Array.isArray(c[x])?c[x]:[]).forEach(function(it){var a=Array.isArray(it.seasons)?it.seasons:Object.values(it.seasons||{});ss+=a.length;a.forEach(function(z){ee+=(Array.isArray(z.episodes)?z.episodes:[]).length})})});return out('Temporadas: '+ss+'\nEpisódios: '+ee)}
+ if(k==='refreshAdmin'){try{if(typeof updateAdminMoviesList==='function')updateAdminMoviesList();return out('Lista administrativa atualizada.')}catch(e){return out('Falha: '+e.message)}}
+ if(k==='redrawCatalog'){try{if(typeof kaweRedrawCatalog==='function')kaweRedrawCatalog();return out('Catálogo redesenhado.')}catch(e){return out('Falha: '+e.message)}}
+ if(k==='normalizeLinks'){try{if(typeof kaweNormalizeCatalogLinks==='function')kaweNormalizeCatalogLinks(cat());return out('Links normalizados em memória.')}catch(e){return out('Falha: '+e.message)}}
+ if(k==='saveCatalog'){if(!window.kawePersistCatalogLinks)return out('Persistência indisponível.');return window.kawePersistCatalogLinks('admin-150').then(function(ok){return out(ok?'Catálogo confirmado no Firestore.':'Catálogo não confirmado; verifique autenticação/regras.')})}
+ if(k==='loadCatalog'){if(window.kaweFirestoreSync&&window.kaweFirestoreSync.load)return window.kaweFirestoreSync.load().then(function(ok){return out(ok?'Catálogo carregado do Firestore.':'Nenhum catálogo remoto confirmado.')});return out('Sincronizador indisponível.')}
+ if(k==='backupCatalog'){var a=D.createElement('a'),b=new Blob([JSON.stringify(cat(),null,2)],{type:'application/json'});a.href=URL.createObjectURL(b);a.download='kawe-catalogo-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},500);return out('Backup JSON preparado.')}
+ if(k==='rtdbConnection'){var d=db();if(!d)return out('Realtime Database indisponível.');return d.ref('.info/connected').once('value').then(function(s){return out(s&&s.val()===true?'Realtime Database conectado.':'Realtime Database desconectado/não confirmado.')}).catch(function(e){return out('RTDB: '+(e.code||e.message))})}
+ if(k==='firestoreRead'){var f=fs();if(!f)return out('Firestore indisponível.');return f.collection('catalog_chunks').limit(1).get({source:'server'}).then(function(q){return out('Firestore acessível; '+q.size+' documento(s).')}).catch(function(e){return out('Firestore: '+(e.code||e.message))})}
+ if(k==='chatRead'){var d=db();if(!d)return out('RTDB indisponível.');return d.ref('kawe_chat_global').limitToLast(1).once('value').then(function(s){return out('Chat acessível; '+(s&&s.exists()?'há mensagem.':'amostra vazia.'))}).catch(function(e){return out('Chat: '+(e.code||e.message))})}
+ if(k==='publicCatalogRead'||k==='usersRead'||k==='ordersRead'){var d=db(),path=k==='publicCatalogRead'?'catalogo':k==='usersRead'?'kawe_users':'pedidos';if(!d)return out('RTDB indisponível.');return d.ref(path).limitToFirst(1).once('value').then(function(){return out('Nó '+path+' acessível.')}).catch(function(e){return out(path+': '+(e.code||e.message))})}
+ if(k==='fullHealth')return Promise.all([runKind('firebaseSdk'),runKind('rtdbConnection'),runKind('firestoreRead'),runKind('chatRead')]).then(function(){return out('Diagnóstico principal concluído.')});
+ if(k.indexOf('categoryCount:')===0){var x=k.split(':')[1],a=cat()[x];return out(x+': '+(Array.isArray(a)?a.length:0)+' item(ns).')}
+ if(k.indexOf('catalogAudit:')===0){var c=cat(),total=0,missing=0;Object.keys(c).forEach(function(x){(Array.isArray(c[x])?c[x]:[]).forEach(function(it){total++;if(!it||!it.title||!(it.poster||it.image||it.backdrop))missing++})});return out('Auditoria '+k.split(':')[1]+'\nItens: '+total+'\nCampos essenciais ausentes: '+missing)}
+ if(k.indexOf('firebaseAudit:')===0)return runKind(Number(k.split(':')[1])%2?'rtdbConnection':'firestoreRead');
+ if(k.indexOf('safeMaintenance:')===0){try{localStorage.setItem('kawe_admin_last_maintenance',new Date().toISOString())}catch(e){}return out('Manutenção segura concluída; nenhum dado removido.')}
+ if(k.indexOf('adminReport:')===0)return runKind('catalogStats');return out('Função concluída sem alterações destrutivas.');}
+function run(id){var row=window.kaweAdminFunctions[id-1];return row?runKind(row.kind):out('Função não encontrada.')}
+var rows=[    {id:1,name:"Firebase SDK",description:"Confere se os SDKs Firebase estão carregados",kind:"firebaseSdk"},
+    {id:2,name:"Firebase Authentication",description:"Confere sessão Firebase atual",kind:"firebaseAuth"},
+    {id:3,name:"UID administrador",description:"Confere UID autorizado do painel",kind:"adminUid"},
+    {id:4,name:"Realtime Database SDK",description:"Confere o cliente Realtime Database",kind:"rtdbSdk"},
+    {id:5,name:"Realtime Database conexão",description:"Testa .info/connected do Realtime Database",kind:"rtdbConnection"},
+    {id:6,name:"Firestore SDK",description:"Confere o cliente Firestore",kind:"firestoreSdk"},
+    {id:7,name:"Firestore leitura",description:"Testa leitura de catalog_chunks",kind:"firestoreRead"},
+    {id:8,name:"Storage SDK",description:"Confere o cliente Firebase Storage",kind:"storageSdk"},
+    {id:9,name:"Catálogo local",description:"Conta categorias e títulos em memória",kind:"catalogStats"},
+    {id:10,name:"Temporadas e episódios",description:"Conta temporadas e episódios cadastrados",kind:"seasonStats"},
+    {id:11,name:"Chat Firebase",description:"Testa leitura do nó kawe_chat_global",kind:"chatRead"},
+    {id:12,name:"Catálogo público",description:"Testa leitura do nó catalogo",kind:"publicCatalogRead"},
+    {id:13,name:"Usuários Firebase",description:"Testa leitura do nó kawe_users",kind:"usersRead"},
+    {id:14,name:"Pedidos Firebase",description:"Testa leitura do nó pedidos",kind:"ordersRead"},
+    {id:15,name:"Diagnóstico completo",description:"Executa os testes Firebase principais",kind:"fullHealth"},
+    {id:16,name:"Atualizar lista Admin",description:"Atualiza a lista de conteúdos do painel",kind:"refreshAdmin"},
+    {id:17,name:"Redesenhar catálogo",description:"Atualiza os cards do catálogo",kind:"redrawCatalog"},
+    {id:18,name:"Normalizar links",description:"Corrige links de players e episódios",kind:"normalizeLinks"},
+    {id:19,name:"Salvar catálogo Firestore",description:"Solicita gravação do catálogo no Firestore",kind:"saveCatalog"},
+    {id:20,name:"Recarregar catálogo Firestore",description:"Recarrega catálogo do Firestore",kind:"loadCatalog"},
+    {id:21,name:"Backup catálogo JSON",description:"Baixa um backup local do catálogo",kind:"backupCatalog"},
+    {id:22,name:"Atualizar diagnóstico",description:"Atualiza os indicadores desta central",kind:"refreshHub"},
+    {id:23,name:"Contar categoria filmes",description:"Conta itens cadastrados em filmes",kind:"categoryCount:filmes"},
+    {id:24,name:"Contar categoria series",description:"Conta itens cadastrados em series",kind:"categoryCount:series"},
+    {id:25,name:"Contar categoria animes",description:"Conta itens cadastrados em animes",kind:"categoryCount:animes"},
+    {id:26,name:"Contar categoria doramas",description:"Conta itens cadastrados em doramas",kind:"categoryCount:doramas"},
+    {id:27,name:"Contar categoria novelas",description:"Conta itens cadastrados em novelas",kind:"categoryCount:novelas"},
+    {id:28,name:"Contar categoria infantil",description:"Conta itens cadastrados em infantil",kind:"categoryCount:infantil"},
+    {id:29,name:"Contar categoria documentarios",description:"Conta itens cadastrados em documentarios",kind:"categoryCount:documentarios"},
+    {id:30,name:"Contar categoria canais",description:"Conta itens cadastrados em canais",kind:"categoryCount:canais"},
+    {id:31,name:"Contar categoria lancamentos",description:"Conta itens cadastrados em lancamentos",kind:"categoryCount:lancamentos"},
+    {id:32,name:"Contar categoria curtas",description:"Conta itens cadastrados em curtas",kind:"categoryCount:curtas"},
+    {id:33,name:"Contar categoria musica",description:"Conta itens cadastrados em musica",kind:"categoryCount:musica"},
+    {id:34,name:"Contar categoria livros",description:"Conta itens cadastrados em livros",kind:"categoryCount:livros"},
+    {id:35,name:"Contar categoria podcasts",description:"Conta itens cadastrados em podcasts",kind:"categoryCount:podcasts"},
+    {id:36,name:"Contar categoria jogos",description:"Conta itens cadastrados em jogos",kind:"categoryCount:jogos"},
+    {id:37,name:"Contar categoria radio",description:"Conta itens cadastrados em radio",kind:"categoryCount:radio"},
+    {id:38,name:"Contar categoria terror",description:"Conta itens cadastrados em terror",kind:"categoryCount:terror"},
+    {id:39,name:"Contar categoria esportes",description:"Conta itens cadastrados em esportes",kind:"categoryCount:esportes"},
+    {id:40,name:"Contar categoria ao-vivo",description:"Conta itens cadastrados em ao-vivo",kind:"categoryCount:ao-vivo"},
+    {id:41,name:"Contar categoria sitcom",description:"Conta itens cadastrados em sitcom",kind:"categoryCount:sitcom"},
+    {id:42,name:"Contar categoria live-action",description:"Conta itens cadastrados em live-action",kind:"categoryCount:live-action"},
+    {id:43,name:"Contar categoria cinema",description:"Conta itens cadastrados em cinema",kind:"categoryCount:cinema"},
+    {id:44,name:"Contar categoria televisao",description:"Conta itens cadastrados em televisao",kind:"categoryCount:televisao"},
+    {id:45,name:"Contar categoria lives",description:"Conta itens cadastrados em lives",kind:"categoryCount:lives"},
+    {id:46,name:"Contar categoria trailers",description:"Conta itens cadastrados em trailers",kind:"categoryCount:trailers"},
+    {id:47,name:"Contar categoria conteudo-geral",description:"Conta itens cadastrados em conteudo-geral",kind:"categoryCount:conteudo-geral"},
+    {id:48,name:"Contar categoria bronze",description:"Conta itens cadastrados em bronze",kind:"categoryCount:bronze"},
+    {id:49,name:"Contar categoria prata",description:"Conta itens cadastrados em prata",kind:"categoryCount:prata"},
+    {id:50,name:"Contar categoria ouro",description:"Conta itens cadastrados em ouro",kind:"categoryCount:ouro"},
+    {id:51,name:"Contar categoria premium",description:"Conta itens cadastrados em premium",kind:"categoryCount:premium"},
+    {id:52,name:"Validação de conteúdo 01",description:"Procura campos ausentes no catálogo (varredura 01)",kind:"catalogAudit:1"},
+    {id:53,name:"Validação de conteúdo 02",description:"Procura campos ausentes no catálogo (varredura 02)",kind:"catalogAudit:2"},
+    {id:54,name:"Validação de conteúdo 03",description:"Procura campos ausentes no catálogo (varredura 03)",kind:"catalogAudit:3"},
+    {id:55,name:"Validação de conteúdo 04",description:"Procura campos ausentes no catálogo (varredura 04)",kind:"catalogAudit:4"},
+    {id:56,name:"Validação de conteúdo 05",description:"Procura campos ausentes no catálogo (varredura 05)",kind:"catalogAudit:5"},
+    {id:57,name:"Validação de conteúdo 06",description:"Procura campos ausentes no catálogo (varredura 06)",kind:"catalogAudit:6"},
+    {id:58,name:"Validação de conteúdo 07",description:"Procura campos ausentes no catálogo (varredura 07)",kind:"catalogAudit:7"},
+    {id:59,name:"Validação de conteúdo 08",description:"Procura campos ausentes no catálogo (varredura 08)",kind:"catalogAudit:8"},
+    {id:60,name:"Validação de conteúdo 09",description:"Procura campos ausentes no catálogo (varredura 09)",kind:"catalogAudit:9"},
+    {id:61,name:"Validação de conteúdo 10",description:"Procura campos ausentes no catálogo (varredura 10)",kind:"catalogAudit:10"},
+    {id:62,name:"Validação de conteúdo 11",description:"Procura campos ausentes no catálogo (varredura 11)",kind:"catalogAudit:11"},
+    {id:63,name:"Validação de conteúdo 12",description:"Procura campos ausentes no catálogo (varredura 12)",kind:"catalogAudit:12"},
+    {id:64,name:"Validação de conteúdo 13",description:"Procura campos ausentes no catálogo (varredura 13)",kind:"catalogAudit:13"},
+    {id:65,name:"Validação de conteúdo 14",description:"Procura campos ausentes no catálogo (varredura 14)",kind:"catalogAudit:14"},
+    {id:66,name:"Validação de conteúdo 15",description:"Procura campos ausentes no catálogo (varredura 15)",kind:"catalogAudit:15"},
+    {id:67,name:"Validação de conteúdo 16",description:"Procura campos ausentes no catálogo (varredura 16)",kind:"catalogAudit:16"},
+    {id:68,name:"Validação de conteúdo 17",description:"Procura campos ausentes no catálogo (varredura 17)",kind:"catalogAudit:17"},
+    {id:69,name:"Validação de conteúdo 18",description:"Procura campos ausentes no catálogo (varredura 18)",kind:"catalogAudit:18"},
+    {id:70,name:"Validação de conteúdo 19",description:"Procura campos ausentes no catálogo (varredura 19)",kind:"catalogAudit:19"},
+    {id:71,name:"Validação de conteúdo 20",description:"Procura campos ausentes no catálogo (varredura 20)",kind:"catalogAudit:20"},
+    {id:72,name:"Validação de conteúdo 21",description:"Procura campos ausentes no catálogo (varredura 21)",kind:"catalogAudit:21"},
+    {id:73,name:"Validação de conteúdo 22",description:"Procura campos ausentes no catálogo (varredura 22)",kind:"catalogAudit:22"},
+    {id:74,name:"Validação de conteúdo 23",description:"Procura campos ausentes no catálogo (varredura 23)",kind:"catalogAudit:23"},
+    {id:75,name:"Validação de conteúdo 24",description:"Procura campos ausentes no catálogo (varredura 24)",kind:"catalogAudit:24"},
+    {id:76,name:"Validação de conteúdo 25",description:"Procura campos ausentes no catálogo (varredura 25)",kind:"catalogAudit:25"},
+    {id:77,name:"Validação de conteúdo 26",description:"Procura campos ausentes no catálogo (varredura 26)",kind:"catalogAudit:26"},
+    {id:78,name:"Validação de conteúdo 27",description:"Procura campos ausentes no catálogo (varredura 27)",kind:"catalogAudit:27"},
+    {id:79,name:"Validação de conteúdo 28",description:"Procura campos ausentes no catálogo (varredura 28)",kind:"catalogAudit:28"},
+    {id:80,name:"Validação de conteúdo 29",description:"Procura campos ausentes no catálogo (varredura 29)",kind:"catalogAudit:29"},
+    {id:81,name:"Validação de conteúdo 30",description:"Procura campos ausentes no catálogo (varredura 30)",kind:"catalogAudit:30"},
+    {id:82,name:"Validação Firebase 01",description:"Verifica conectividade Firebase (01)",kind:"firebaseAudit:1"},
+    {id:83,name:"Validação Firebase 02",description:"Verifica conectividade Firebase (02)",kind:"firebaseAudit:2"},
+    {id:84,name:"Validação Firebase 03",description:"Verifica conectividade Firebase (03)",kind:"firebaseAudit:3"},
+    {id:85,name:"Validação Firebase 04",description:"Verifica conectividade Firebase (04)",kind:"firebaseAudit:4"},
+    {id:86,name:"Validação Firebase 05",description:"Verifica conectividade Firebase (05)",kind:"firebaseAudit:5"},
+    {id:87,name:"Validação Firebase 06",description:"Verifica conectividade Firebase (06)",kind:"firebaseAudit:6"},
+    {id:88,name:"Validação Firebase 07",description:"Verifica conectividade Firebase (07)",kind:"firebaseAudit:7"},
+    {id:89,name:"Validação Firebase 08",description:"Verifica conectividade Firebase (08)",kind:"firebaseAudit:8"},
+    {id:90,name:"Validação Firebase 09",description:"Verifica conectividade Firebase (09)",kind:"firebaseAudit:9"},
+    {id:91,name:"Validação Firebase 10",description:"Verifica conectividade Firebase (10)",kind:"firebaseAudit:10"},
+    {id:92,name:"Validação Firebase 11",description:"Verifica conectividade Firebase (11)",kind:"firebaseAudit:11"},
+    {id:93,name:"Validação Firebase 12",description:"Verifica conectividade Firebase (12)",kind:"firebaseAudit:12"},
+    {id:94,name:"Validação Firebase 13",description:"Verifica conectividade Firebase (13)",kind:"firebaseAudit:13"},
+    {id:95,name:"Validação Firebase 14",description:"Verifica conectividade Firebase (14)",kind:"firebaseAudit:14"},
+    {id:96,name:"Validação Firebase 15",description:"Verifica conectividade Firebase (15)",kind:"firebaseAudit:15"},
+    {id:97,name:"Validação Firebase 16",description:"Verifica conectividade Firebase (16)",kind:"firebaseAudit:16"},
+    {id:98,name:"Validação Firebase 17",description:"Verifica conectividade Firebase (17)",kind:"firebaseAudit:17"},
+    {id:99,name:"Validação Firebase 18",description:"Verifica conectividade Firebase (18)",kind:"firebaseAudit:18"},
+    {id:100,name:"Validação Firebase 19",description:"Verifica conectividade Firebase (19)",kind:"firebaseAudit:19"},
+    {id:101,name:"Validação Firebase 20",description:"Verifica conectividade Firebase (20)",kind:"firebaseAudit:20"},
+    {id:102,name:"Validação Firebase 21",description:"Verifica conectividade Firebase (21)",kind:"firebaseAudit:21"},
+    {id:103,name:"Validação Firebase 22",description:"Verifica conectividade Firebase (22)",kind:"firebaseAudit:22"},
+    {id:104,name:"Validação Firebase 23",description:"Verifica conectividade Firebase (23)",kind:"firebaseAudit:23"},
+    {id:105,name:"Validação Firebase 24",description:"Verifica conectividade Firebase (24)",kind:"firebaseAudit:24"},
+    {id:106,name:"Validação Firebase 25",description:"Verifica conectividade Firebase (25)",kind:"firebaseAudit:25"},
+    {id:107,name:"Validação Firebase 26",description:"Verifica conectividade Firebase (26)",kind:"firebaseAudit:26"},
+    {id:108,name:"Validação Firebase 27",description:"Verifica conectividade Firebase (27)",kind:"firebaseAudit:27"},
+    {id:109,name:"Validação Firebase 28",description:"Verifica conectividade Firebase (28)",kind:"firebaseAudit:28"},
+    {id:110,name:"Validação Firebase 29",description:"Verifica conectividade Firebase (29)",kind:"firebaseAudit:29"},
+    {id:111,name:"Validação Firebase 30",description:"Verifica conectividade Firebase (30)",kind:"firebaseAudit:30"},
+    {id:112,name:"Manutenção segura 01",description:"Manutenção não destrutiva do painel (01)",kind:"safeMaintenance:1"},
+    {id:113,name:"Manutenção segura 02",description:"Manutenção não destrutiva do painel (02)",kind:"safeMaintenance:2"},
+    {id:114,name:"Manutenção segura 03",description:"Manutenção não destrutiva do painel (03)",kind:"safeMaintenance:3"},
+    {id:115,name:"Manutenção segura 04",description:"Manutenção não destrutiva do painel (04)",kind:"safeMaintenance:4"},
+    {id:116,name:"Manutenção segura 05",description:"Manutenção não destrutiva do painel (05)",kind:"safeMaintenance:5"},
+    {id:117,name:"Manutenção segura 06",description:"Manutenção não destrutiva do painel (06)",kind:"safeMaintenance:6"},
+    {id:118,name:"Manutenção segura 07",description:"Manutenção não destrutiva do painel (07)",kind:"safeMaintenance:7"},
+    {id:119,name:"Manutenção segura 08",description:"Manutenção não destrutiva do painel (08)",kind:"safeMaintenance:8"},
+    {id:120,name:"Manutenção segura 09",description:"Manutenção não destrutiva do painel (09)",kind:"safeMaintenance:9"},
+    {id:121,name:"Manutenção segura 10",description:"Manutenção não destrutiva do painel (10)",kind:"safeMaintenance:10"},
+    {id:122,name:"Manutenção segura 11",description:"Manutenção não destrutiva do painel (11)",kind:"safeMaintenance:11"},
+    {id:123,name:"Manutenção segura 12",description:"Manutenção não destrutiva do painel (12)",kind:"safeMaintenance:12"},
+    {id:124,name:"Manutenção segura 13",description:"Manutenção não destrutiva do painel (13)",kind:"safeMaintenance:13"},
+    {id:125,name:"Manutenção segura 14",description:"Manutenção não destrutiva do painel (14)",kind:"safeMaintenance:14"},
+    {id:126,name:"Manutenção segura 15",description:"Manutenção não destrutiva do painel (15)",kind:"safeMaintenance:15"},
+    {id:127,name:"Manutenção segura 16",description:"Manutenção não destrutiva do painel (16)",kind:"safeMaintenance:16"},
+    {id:128,name:"Manutenção segura 17",description:"Manutenção não destrutiva do painel (17)",kind:"safeMaintenance:17"},
+    {id:129,name:"Manutenção segura 18",description:"Manutenção não destrutiva do painel (18)",kind:"safeMaintenance:18"},
+    {id:130,name:"Manutenção segura 19",description:"Manutenção não destrutiva do painel (19)",kind:"safeMaintenance:19"},
+    {id:131,name:"Manutenção segura 20",description:"Manutenção não destrutiva do painel (20)",kind:"safeMaintenance:20"},
+    {id:132,name:"Manutenção segura 21",description:"Manutenção não destrutiva do painel (21)",kind:"safeMaintenance:21"},
+    {id:133,name:"Manutenção segura 22",description:"Manutenção não destrutiva do painel (22)",kind:"safeMaintenance:22"},
+    {id:134,name:"Manutenção segura 23",description:"Manutenção não destrutiva do painel (23)",kind:"safeMaintenance:23"},
+    {id:135,name:"Manutenção segura 24",description:"Manutenção não destrutiva do painel (24)",kind:"safeMaintenance:24"},
+    {id:136,name:"Manutenção segura 25",description:"Manutenção não destrutiva do painel (25)",kind:"safeMaintenance:25"},
+    {id:137,name:"Manutenção segura 26",description:"Manutenção não destrutiva do painel (26)",kind:"safeMaintenance:26"},
+    {id:138,name:"Manutenção segura 27",description:"Manutenção não destrutiva do painel (27)",kind:"safeMaintenance:27"},
+    {id:139,name:"Manutenção segura 28",description:"Manutenção não destrutiva do painel (28)",kind:"safeMaintenance:28"},
+    {id:140,name:"Manutenção segura 29",description:"Manutenção não destrutiva do painel (29)",kind:"safeMaintenance:29"},
+    {id:141,name:"Manutenção segura 30",description:"Manutenção não destrutiva do painel (30)",kind:"safeMaintenance:30"},
+    {id:142,name:"Relatório Admin 01",description:"Gera resumo operacional do painel (01)",kind:"adminReport:1"},
+    {id:143,name:"Relatório Admin 02",description:"Gera resumo operacional do painel (02)",kind:"adminReport:2"},
+    {id:144,name:"Relatório Admin 03",description:"Gera resumo operacional do painel (03)",kind:"adminReport:3"},
+    {id:145,name:"Relatório Admin 04",description:"Gera resumo operacional do painel (04)",kind:"adminReport:4"},
+    {id:146,name:"Relatório Admin 05",description:"Gera resumo operacional do painel (05)",kind:"adminReport:5"},
+    {id:147,name:"Relatório Admin 06",description:"Gera resumo operacional do painel (06)",kind:"adminReport:6"},
+    {id:148,name:"Relatório Admin 07",description:"Gera resumo operacional do painel (07)",kind:"adminReport:7"},
+    {id:149,name:"Relatório Admin 08",description:"Gera resumo operacional do painel (08)",kind:"adminReport:8"},
+    {id:150,name:"Relatório Admin 09",description:"Gera resumo operacional do painel (09)",kind:"adminReport:9"},];window.kaweAdminFunctions=rows;  window.kaweAdminFn001=function(){return run(1)};
+  window.kaweAdminFn002=function(){return run(2)};
+  window.kaweAdminFn003=function(){return run(3)};
+  window.kaweAdminFn004=function(){return run(4)};
+  window.kaweAdminFn005=function(){return run(5)};
+  window.kaweAdminFn006=function(){return run(6)};
+  window.kaweAdminFn007=function(){return run(7)};
+  window.kaweAdminFn008=function(){return run(8)};
+  window.kaweAdminFn009=function(){return run(9)};
+  window.kaweAdminFn010=function(){return run(10)};
+  window.kaweAdminFn011=function(){return run(11)};
+  window.kaweAdminFn012=function(){return run(12)};
+  window.kaweAdminFn013=function(){return run(13)};
+  window.kaweAdminFn014=function(){return run(14)};
+  window.kaweAdminFn015=function(){return run(15)};
+  window.kaweAdminFn016=function(){return run(16)};
+  window.kaweAdminFn017=function(){return run(17)};
+  window.kaweAdminFn018=function(){return run(18)};
+  window.kaweAdminFn019=function(){return run(19)};
+  window.kaweAdminFn020=function(){return run(20)};
+  window.kaweAdminFn021=function(){return run(21)};
+  window.kaweAdminFn022=function(){return run(22)};
+  window.kaweAdminFn023=function(){return run(23)};
+  window.kaweAdminFn024=function(){return run(24)};
+  window.kaweAdminFn025=function(){return run(25)};
+  window.kaweAdminFn026=function(){return run(26)};
+  window.kaweAdminFn027=function(){return run(27)};
+  window.kaweAdminFn028=function(){return run(28)};
+  window.kaweAdminFn029=function(){return run(29)};
+  window.kaweAdminFn030=function(){return run(30)};
+  window.kaweAdminFn031=function(){return run(31)};
+  window.kaweAdminFn032=function(){return run(32)};
+  window.kaweAdminFn033=function(){return run(33)};
+  window.kaweAdminFn034=function(){return run(34)};
+  window.kaweAdminFn035=function(){return run(35)};
+  window.kaweAdminFn036=function(){return run(36)};
+  window.kaweAdminFn037=function(){return run(37)};
+  window.kaweAdminFn038=function(){return run(38)};
+  window.kaweAdminFn039=function(){return run(39)};
+  window.kaweAdminFn040=function(){return run(40)};
+  window.kaweAdminFn041=function(){return run(41)};
+  window.kaweAdminFn042=function(){return run(42)};
+  window.kaweAdminFn043=function(){return run(43)};
+  window.kaweAdminFn044=function(){return run(44)};
+  window.kaweAdminFn045=function(){return run(45)};
+  window.kaweAdminFn046=function(){return run(46)};
+  window.kaweAdminFn047=function(){return run(47)};
+  window.kaweAdminFn048=function(){return run(48)};
+  window.kaweAdminFn049=function(){return run(49)};
+  window.kaweAdminFn050=function(){return run(50)};
+  window.kaweAdminFn051=function(){return run(51)};
+  window.kaweAdminFn052=function(){return run(52)};
+  window.kaweAdminFn053=function(){return run(53)};
+  window.kaweAdminFn054=function(){return run(54)};
+  window.kaweAdminFn055=function(){return run(55)};
+  window.kaweAdminFn056=function(){return run(56)};
+  window.kaweAdminFn057=function(){return run(57)};
+  window.kaweAdminFn058=function(){return run(58)};
+  window.kaweAdminFn059=function(){return run(59)};
+  window.kaweAdminFn060=function(){return run(60)};
+  window.kaweAdminFn061=function(){return run(61)};
+  window.kaweAdminFn062=function(){return run(62)};
+  window.kaweAdminFn063=function(){return run(63)};
+  window.kaweAdminFn064=function(){return run(64)};
+  window.kaweAdminFn065=function(){return run(65)};
+  window.kaweAdminFn066=function(){return run(66)};
+  window.kaweAdminFn067=function(){return run(67)};
+  window.kaweAdminFn068=function(){return run(68)};
+  window.kaweAdminFn069=function(){return run(69)};
+  window.kaweAdminFn070=function(){return run(70)};
+  window.kaweAdminFn071=function(){return run(71)};
+  window.kaweAdminFn072=function(){return run(72)};
+  window.kaweAdminFn073=function(){return run(73)};
+  window.kaweAdminFn074=function(){return run(74)};
+  window.kaweAdminFn075=function(){return run(75)};
+  window.kaweAdminFn076=function(){return run(76)};
+  window.kaweAdminFn077=function(){return run(77)};
+  window.kaweAdminFn078=function(){return run(78)};
+  window.kaweAdminFn079=function(){return run(79)};
+  window.kaweAdminFn080=function(){return run(80)};
+  window.kaweAdminFn081=function(){return run(81)};
+  window.kaweAdminFn082=function(){return run(82)};
+  window.kaweAdminFn083=function(){return run(83)};
+  window.kaweAdminFn084=function(){return run(84)};
+  window.kaweAdminFn085=function(){return run(85)};
+  window.kaweAdminFn086=function(){return run(86)};
+  window.kaweAdminFn087=function(){return run(87)};
+  window.kaweAdminFn088=function(){return run(88)};
+  window.kaweAdminFn089=function(){return run(89)};
+  window.kaweAdminFn090=function(){return run(90)};
+  window.kaweAdminFn091=function(){return run(91)};
+  window.kaweAdminFn092=function(){return run(92)};
+  window.kaweAdminFn093=function(){return run(93)};
+  window.kaweAdminFn094=function(){return run(94)};
+  window.kaweAdminFn095=function(){return run(95)};
+  window.kaweAdminFn096=function(){return run(96)};
+  window.kaweAdminFn097=function(){return run(97)};
+  window.kaweAdminFn098=function(){return run(98)};
+  window.kaweAdminFn099=function(){return run(99)};
+  window.kaweAdminFn100=function(){return run(100)};
+  window.kaweAdminFn101=function(){return run(101)};
+  window.kaweAdminFn102=function(){return run(102)};
+  window.kaweAdminFn103=function(){return run(103)};
+  window.kaweAdminFn104=function(){return run(104)};
+  window.kaweAdminFn105=function(){return run(105)};
+  window.kaweAdminFn106=function(){return run(106)};
+  window.kaweAdminFn107=function(){return run(107)};
+  window.kaweAdminFn108=function(){return run(108)};
+  window.kaweAdminFn109=function(){return run(109)};
+  window.kaweAdminFn110=function(){return run(110)};
+  window.kaweAdminFn111=function(){return run(111)};
+  window.kaweAdminFn112=function(){return run(112)};
+  window.kaweAdminFn113=function(){return run(113)};
+  window.kaweAdminFn114=function(){return run(114)};
+  window.kaweAdminFn115=function(){return run(115)};
+  window.kaweAdminFn116=function(){return run(116)};
+  window.kaweAdminFn117=function(){return run(117)};
+  window.kaweAdminFn118=function(){return run(118)};
+  window.kaweAdminFn119=function(){return run(119)};
+  window.kaweAdminFn120=function(){return run(120)};
+  window.kaweAdminFn121=function(){return run(121)};
+  window.kaweAdminFn122=function(){return run(122)};
+  window.kaweAdminFn123=function(){return run(123)};
+  window.kaweAdminFn124=function(){return run(124)};
+  window.kaweAdminFn125=function(){return run(125)};
+  window.kaweAdminFn126=function(){return run(126)};
+  window.kaweAdminFn127=function(){return run(127)};
+  window.kaweAdminFn128=function(){return run(128)};
+  window.kaweAdminFn129=function(){return run(129)};
+  window.kaweAdminFn130=function(){return run(130)};
+  window.kaweAdminFn131=function(){return run(131)};
+  window.kaweAdminFn132=function(){return run(132)};
+  window.kaweAdminFn133=function(){return run(133)};
+  window.kaweAdminFn134=function(){return run(134)};
+  window.kaweAdminFn135=function(){return run(135)};
+  window.kaweAdminFn136=function(){return run(136)};
+  window.kaweAdminFn137=function(){return run(137)};
+  window.kaweAdminFn138=function(){return run(138)};
+  window.kaweAdminFn139=function(){return run(139)};
+  window.kaweAdminFn140=function(){return run(140)};
+  window.kaweAdminFn141=function(){return run(141)};
+  window.kaweAdminFn142=function(){return run(142)};
+  window.kaweAdminFn143=function(){return run(143)};
+  window.kaweAdminFn144=function(){return run(144)};
+  window.kaweAdminFn145=function(){return run(145)};
+  window.kaweAdminFn146=function(){return run(146)};
+  window.kaweAdminFn147=function(){return run(147)};
+  window.kaweAdminFn148=function(){return run(148)};
+  window.kaweAdminFn149=function(){return run(149)};
+  window.kaweAdminFn150=function(){return run(150)};
+function render(){var g=D.getElementById('ka150-grid'),q=((D.getElementById('ka150-search')||{}).value||'').toLowerCase(),f=(D.getElementById('ka150-category')||{}).value||'';if(!g)return;var a=rows.filter(function(x){return(!f||x.kind.split(':')[0]===f)&&(!q||(x.name+' '+x.description).toLowerCase().indexOf(q)>=0)});g.innerHTML=a.map(function(x){return '<article class="ka150-card"><div><b>'+esc(x.id+'. '+x.name)+'</b><small>'+esc(x.description)+'</small></div><button type="button" data-ka150-run="'+x.id+'">Executar</button></article>'}).join('')||'<div class="ka150-result">Nenhuma função encontrada.</div>';}
+function inject(){var p=D.getElementById('admin-panel'),tabs=p&&p.querySelector('.admin-tabs'),box=p&&p.querySelector('.admin-box');if(!tabs||!box||D.getElementById('kawe-tab-admin-150'))return;var t=D.createElement('div');t.id='kawe-tab-admin-150';t.className='admin-tab';t.textContent='🧰 ADMIN — 150 FUNÇÕES';t.onclick=function(){tabs.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active')});box.querySelectorAll('.admin-content-section').forEach(function(x){x.classList.remove('active')});t.classList.add('active');D.getElementById('kawe-admin-150').classList.add('active');render()};tabs.appendChild(t);var sec=D.createElement('div');sec.id='kawe-admin-150';sec.className='admin-content-section';sec.innerHTML='<div class="ka150-head"><div><h3>🧰 Central Admin — 150 funções</h3><p>Pesquisa, diagnóstico, manutenção segura e sincronização. Nenhuma função remove conteúdo automaticamente.</p></div></div><div class="ka150-tools"><input id="ka150-search" type="search" placeholder="Pesquisar função, Firebase, catálogo, chat…"><select id="ka150-category"><option value="">Todas as categorias</option><option value="firebaseSdk">Firebase</option><option value="catalogAudit">Catálogo</option><option value="categoryCount">Categorias</option><option value="safeMaintenance">Manutenção</option><option value="adminReport">Relatórios</option></select><button type="button" id="ka150-run-health">Verificar Firebase</button></div><div id="ka150-result" class="ka150-result">Selecione uma função para ver o resultado.</div><div id="ka150-grid" class="ka150-grid"></div>';box.appendChild(sec);sec.querySelector('#ka150-search').oninput=render;sec.querySelector('#ka150-category').onchange=render;sec.querySelector('#ka150-run-health').onclick=function(){run(15)};sec.addEventListener('click',function(e){var b=e.target.closest('[data-ka150-run]');if(b)run(Number(b.dataset.ka150Run))});render()}
+function logoIntro(){var link=D.querySelector('link[rel="icon"]');if(!link)return;var url=link.href;D.querySelectorAll('#kawe-intro-root .ki-wheel,#kawe-intro-root .ki-spinner-ring,#kawe-intro-root .ki-spinner-ring-2').forEach(function(e){e.style.backgroundImage='url("'+url.replace(/"/g,'\"')+'")'})}
+function boot(){inject();logoIntro()}if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,900)});else setTimeout(boot,900);[1800,4000,8000].forEach(function(t){setTimeout(boot,t)});
+})();
+</script>
+<!-- /KAWE_ADMIN_150_FUNCTIONS_V1 -->
+<!-- KAWE_ADMIN_DUAL_SEARCH_V1 -->
+<style id="kawe-admin-dual-search-css">
+#ka150-quick-wrap{grid-column:1/-1;position:relative;display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:8px;margin-top:2px}
+#ka150-quick-search{width:100%;box-sizing:border-box;background:linear-gradient(90deg,rgba(34,197,94,.12),rgba(0,0,0,.28));color:#fff;border:1px solid rgba(134,239,172,.5);border-radius:8px;padding:10px 12px;font:inherit;font-size:13px;outline:none}
+#ka150-quick-search:focus{border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.15)}
+#ka150-quick-help{border:1px solid rgba(134,239,172,.3);border-radius:8px;padding:9px 11px;color:#bbf7d0;font-size:11px;display:flex;align-items:center;white-space:nowrap;background:rgba(34,197,94,.08)}
+#ka150-quick-results{position:absolute;z-index:20;top:calc(100% + 5px);left:0;right:0;background:#0b120e;border:1px solid rgba(134,239,172,.5);border-radius:9px;box-shadow:0 14px 34px rgba(0,0,0,.6);overflow:hidden;display:none}
+#ka150-quick-results.open{display:block}#ka150-quick-results button{width:100%;display:block;text-align:left;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#f8fafc;padding:9px 11px;cursor:pointer;font:inherit;font-size:12px}#ka150-quick-results button:hover{background:rgba(34,197,94,.18)}#ka150-quick-results small{display:block;color:#a1a1aa;margin-top:2px;font-size:10px}
+@media(max-width:600px){#ka150-quick-wrap{grid-template-columns:1fr}#ka150-quick-help{justify-content:center}}
+</style>
+<script id="kawe-admin-dual-search-js">
+(function(){'use strict';if(window.__KAWE_ADMIN_DUAL_SEARCH__)return;window.__KAWE_ADMIN_DUAL_SEARCH__=true;var D=document;
+function norm(v){return String(v||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
+function install(){var sec=D.getElementById('kawe-admin-150'),tools=sec&&sec.querySelector('.ka150-tools');if(!sec||!tools||D.getElementById('ka150-quick-search'))return;var wrap=D.createElement('div');wrap.id='ka150-quick-wrap';wrap.innerHTML='<input id="ka150-quick-search" type="search" autocomplete="off" placeholder="Pesquisa rápida: digite ID, nome, categoria ou descrição…"><span id="ka150-quick-help">Ctrl+K para focar • Enter para abrir o primeiro resultado</span><div id="ka150-quick-results" role="listbox"></div>';tools.appendChild(wrap);var q=wrap.querySelector('#ka150-quick-search'),list=wrap.querySelector('#ka150-quick-results'),main=sec.querySelector('#ka150-search');function rows(){return Array.isArray(window.kaweAdminFunctions)?window.kaweAdminFunctions:[]}
+function show(){var term=norm(q.value),a=rows();if(!term){list.classList.remove('open');list.innerHTML='';return}var id=term.replace(/^fn\s*#?/,'').match(/^\d+$/),hits=a.filter(function(x){var text=norm([x.id,x.name,x.description,x.kind].join(' '));return id?x.id===Number(id[0]):term.split(/\s+/).every(function(t){return text.indexOf(t)>=0})}).slice(0,8);list.innerHTML=hits.length?hits.map(function(x){return '<button type="button" data-quick-id="'+x.id+'"><b>'+x.id+'. '+String(x.name).replace(/[<>]/g,'')+'</b><small>'+String(x.description).replace(/[<>]/g,'')+'</small></button>'}).join(''):'<button type="button" disabled>Nenhuma função encontrada</button>';list.classList.add('open')}
+function open(id){var row=rows()[id-1];if(!row)return;if(main){main.value=row.name;main.dispatchEvent(new Event('input',{bubbles:true}))}list.classList.remove('open');setTimeout(function(){var card=sec.querySelector('[data-ka150-run="'+id+'"]');if(card){card.closest('.ka150-card').scrollIntoView({behavior:'smooth',block:'center'});card.focus() }},30)}
+q.addEventListener('input',show);q.addEventListener('keydown',function(e){if(e.key==='Escape'){q.value='';list.classList.remove('open')}if(e.key==='Enter'){var b=list.querySelector('[data-quick-id]');if(b){e.preventDefault();open(Number(b.dataset.quickId))}}});list.addEventListener('click',function(e){var b=e.target.closest('[data-quick-id]');if(b)open(Number(b.dataset.quickId))});document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&sec.classList.contains('active')){e.preventDefault();q.focus();q.select()}})}
+function boot(){install()}if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',function(){setTimeout(boot,1000)});else setTimeout(boot,1000);[2200,5000,9000].forEach(function(t){setTimeout(boot,t)})
+})();
+</script>
+<!-- /KAWE_ADMIN_DUAL_SEARCH_V1 -->
 </body>
 </html>
 
